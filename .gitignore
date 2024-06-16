@@ -6,3 +6,13 @@
 *.vcxproj
 *.user
 *.sln
+*.obj
+*.exe
+*.pdb
+*.idb
+*.lib
+*.recipe
+*.ilk
+*.log
+*.tlog
+/LightSource/LightSource.vcxproj.filters
