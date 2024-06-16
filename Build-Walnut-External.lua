@@ -6,6 +6,8 @@ IncludeDir = {}
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
 IncludeDir["glm"] = "../vendor/glm"
 IncludeDir["spdlog"] = "../vendor/spdlog/include"
+IncludeDir["glmLS"] = "$(SolutionDir)Walnut/vendor/glm"
+IncludeDir["spdlogLs"] = "$(SolutionDir)Walnut/vendor/spdlog/include"
 
 LibraryDir = {}
 LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"

@@ -9,14 +9,14 @@ project "LightSource"
 
    includedirs
    {
-      "../vendor/imgui",
-      "../vendor/glfw/include",
+      "$(SolutionDir)Walnut/vendor/imgui",
+      "$(SolutionDir)Walnut/vendor/glfw/include",
 
-      "../Walnut/Source",
-      "../Walnut/Platform/GUI",
+      "$(SolutionDir)Walnut/Walnut/Source",
+      "$(SolutionDir)Walnut/Walnut/Platform/GUI",
 
       --"%{IncludeDir.VulkanSDK}",
-      "%{IncludeDir.glm}",
+      "%{IncludeDir.glmLS}",
    }
 
     links
