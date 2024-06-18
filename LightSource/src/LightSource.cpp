@@ -36,8 +36,6 @@ public:
 
 	virtual void OnUIRender() override
 	{		
-		
-
 		ImGui::ShowDemoWindow();
 
 		UI_DrawAboutModal();
@@ -162,7 +160,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	spec.CustomTitlebar = true;
 	spec.IconPath = "lsb.png";
 	//g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
-	g_AppDirectory = "E:\\programs\\c++\\walnut_\\mywalnut\\Walnut\\LightSource";
+	g_AppDirectory = "E:\\programs\\c++\\Light-Source\\final4\\LightSource\\LightSource";
 
 	Walnut::Application* app = new Walnut::Application(spec);
 	std::shared_ptr<ChessLayer> chessLayer = std::make_shared<ChessLayer>();

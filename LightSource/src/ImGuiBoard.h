@@ -6,7 +6,8 @@
 
 #include <iostream>
 #include <array>
-
+#include <map>
+#include <vector>
 
 class ImGuiBoard
 {
@@ -22,8 +23,12 @@ private:
 	void RenderBoard();
 	void RenderPieces();
 	ImVec2 FindMousePos();
-
 	void  UpdateBoardValues();
+
+private:
+	void NextMovePopup();
+	void NewVariantPopup();
+	void NewPiecePopup();
 
 private:
 	float m_size;
@@ -32,13 +37,16 @@ private:
 	int m_CapturedPieceIndex = 0;
 	float m_oldNumX = -1, m_oldNumY = -1;
 
-	bool m_AboutModalOpen = false;
-
-	bool m_NextMove = false;
-
 	bool m_reverse = false;
 	std::shared_ptr<Walnut::Image> m_board[2];
 	std::shared_ptr<Walnut::Image> m_pieces[12];
 
 	std::array<std::array<int, 8>, 8> m_block;
+	
+private:
+	bool m_NextMove = false;
+	ImVec2 m_Center;
+	std::map<std::string, std::vector<int>> m_PossibleNextMoves;
+	std::string m_MainMove;
+
 };

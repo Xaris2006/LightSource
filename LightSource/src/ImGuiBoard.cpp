@@ -4,6 +4,7 @@
 
 #include "../../Walnut/Source/Walnut/Application.h"
 
+
 void ImGuiBoard::OnAttach()
 {
 	m_board[0] = std::make_shared<Walnut::Image>("board.png");
@@ -29,15 +30,19 @@ void ImGuiBoard::OnAttach()
 
 void ImGuiBoard::OnUIRender()
 {
-	if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
-	{
-		ChessAPI::NextSavedMove();
-		m_NextMove = true;
-	}
-	if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
-		ChessAPI::PreviousSavedMove();
-
 	ImGui::Begin("Hello", 0, ImGuiWindowFlags_NoScrollbar);
+	
+	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+	{
+		if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+		{
+			m_NextMove = true;
+		}
+		if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+		{
+			ChessAPI::PreviousSavedMove();
+		}
+	}
 
 	m_size = ImGui::GetWindowHeight() - ImGui::GetCursorPosY() - 2 * ImGui::GetStyle().ItemSpacing.y;
 
@@ -71,57 +76,59 @@ void ImGuiBoard::OnUIRender()
 
 	ImVec2 bsize = { m_size / 10, m_size / 10 };
 	
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsPopupOpen("Move Choose") && !ImGui::IsPopupOpen("New Move"))
+	//Piece Moving and Playing
+	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
 	{
-		if (MousePos.x > -1 && MousePos.y > -1
-			&& MousePos.x < 8 && MousePos.y < 8)
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
-			m_CapturedPieceIndex = m_block[MousePos.y][MousePos.x];
-			m_oldNumX = MousePos.x;
-			m_oldNumY = MousePos.y;
-			m_block[MousePos.y][MousePos.x] = 0;
-		}
-	}
-	else if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && m_CapturedPieceIndex)
-	{
-		ImGui::SetCursorPos(ImVec2(ImGui::GetMousePos().x - ImGui::GetWindowPos().x - bsize.x / 2, ImGui::GetMousePos().y - ImGui::GetWindowPos().y - bsize.y / 2));
-		ImGui::Image((ImTextureID)m_pieces[m_CapturedPieceIndex - 1]->GetRendererID(), bsize);
-	}
-	else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && m_CapturedPieceIndex)
-	{
-		if (MousePos.x > -1 && MousePos.y > -1
-			&& MousePos.x < 8 && MousePos.y < 8)
-		{
-			m_block[MousePos.y][MousePos.x] = m_CapturedPieceIndex;
-			m_CapturedPieceIndex = 0;
-
-			if (glm::vec2{ m_oldNumX, m_oldNumY } != glm::vec2{ MousePos.x , MousePos.y })
+			if (MousePos.x > -1 && MousePos.y > -1
+				&& MousePos.x < 8 && MousePos.y < 8)
 			{
-				if(!m_reverse)
-					ChessAPI::IsMoveValid({ m_oldNumX, 7 - m_oldNumY }, { MousePos.x , 7 - MousePos.y });
-				else
-					ChessAPI::IsMoveValid({ 7 - m_oldNumX, m_oldNumY }, { 7 - MousePos.x , MousePos.y });
+				m_CapturedPieceIndex = m_block[MousePos.y][MousePos.x];
+				m_oldNumX = MousePos.x;
+				m_oldNumY = MousePos.y;
+				m_block[MousePos.y][MousePos.x] = 0;
 			}
+		}
+		else if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && m_CapturedPieceIndex)
+		{
+			ImGui::SetCursorPos(ImVec2(ImGui::GetMousePos().x - ImGui::GetWindowPos().x - bsize.x / 2, ImGui::GetMousePos().y - ImGui::GetWindowPos().y - bsize.y / 2));
+			ImGui::Image((ImTextureID)m_pieces[m_CapturedPieceIndex - 1]->GetRendererID(), bsize);
+		}
+		else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && m_CapturedPieceIndex)
+		{
+			if (MousePos.x > -1 && MousePos.y > -1
+				&& MousePos.x < 8 && MousePos.y < 8)
+			{
+				m_block[MousePos.y][MousePos.x] = m_CapturedPieceIndex;
+				m_CapturedPieceIndex = 0;
 
-			UpdateBoardValues();
+				if (glm::vec2{ m_oldNumX, m_oldNumY } != glm::vec2{ MousePos.x , MousePos.y })
+				{
+					if (!m_reverse)
+						ChessAPI::IsMoveValid({ m_oldNumX, 7 - m_oldNumY }, { MousePos.x , 7 - MousePos.y });
+					else
+						ChessAPI::IsMoveValid({ 7 - m_oldNumX, m_oldNumY }, { 7 - MousePos.x , MousePos.y });
+				}
+
+				UpdateBoardValues();
+			}
+			else
+			{
+				m_block[m_oldNumY][m_oldNumX] = m_CapturedPieceIndex;
+				m_CapturedPieceIndex = 0;
+			}
 		}
 		else
-		{
-			m_block[m_oldNumY][m_oldNumX] = m_CapturedPieceIndex;
-			m_CapturedPieceIndex = 0;
-		}
+			UpdateBoardValues();
 	}
-	else
-		UpdateBoardValues();
-
 	//ImGui::PopStyleColor(3);
 
+	//flip
 	if (ImGui::IsKeyPressed(ImGuiKey_F) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 		m_reverse = !m_reverse;
 
-	static std::map<std::string, std::vector<int>> possibleNextMoves;
-	static std::string mainMove;
-	
+	//check if there are multiple next moves
 	if (m_NextMove)
 	{
 		std::vector<int> movePath = ChessAPI::GetMoveIntFormat();
@@ -161,12 +168,10 @@ void ImGuiBoard::OnUIRender()
 	
 		if (openPopup)
 		{
-			ImGui::OpenPopup("Move Choose");
+			ImGui::OpenPopup("Move_Choose");
 	
-			possibleNextMoves.clear();
+			m_PossibleNextMoves.clear();
 			
-			ChessAPI::PreviousSavedMove();
-
 			int amountOfPreviousChildren = 0;
 			for (int i = 0; i < index; i++)
 				if (curMoves->move[i] == "child")
@@ -182,7 +187,7 @@ void ImGuiBoard::OnUIRender()
 					curPath.push_back(amountOfPreviousChildren + indexChild);
 					curPath.push_back(0);
 	
-					possibleNextMoves[curMoves->children[amountOfPreviousChildren + indexChild].move[0]] = curPath;
+					m_PossibleNextMoves[curMoves->children[amountOfPreviousChildren + indexChild].move[0]] = curPath;
 	
 					indexChild += 1;
 				}
@@ -190,117 +195,30 @@ void ImGuiBoard::OnUIRender()
 					break;
 			}
 	
-			mainMove = curMoves->move[index];
+			m_MainMove = curMoves->move[index];
 		}
 		else
 			ChessAPI::NextSavedMove();
 		m_NextMove = false;
 	}
-	ImVec2 center = ImGui::GetWindowPos();
-	center.x += ImGui::GetContentRegionMax().x;
-	center.y += ImGui::GetContentRegionMax().y * 0.25;
 
-	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(1, 1));
-	if (ImGui::BeginPopupModal("Move Choose", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
-	{
-		ImGui::PushFont(Walnut::Application::GetFont("Bold"));
-		if (ImGui::Selectable(mainMove.c_str()))
-			ChessAPI::NextSavedMove();
-		ImGui::PopFont();
-	
-		if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow))
-		{
-			ChessAPI::NextSavedMove();
-			ImGui::CloseCurrentPopup();
-		}
-	
-		for (auto it = possibleNextMoves.begin(); it != possibleNextMoves.end(); it++)
-		{
-			if (ImGui::Selectable(it->first.c_str()))
-				ChessAPI::GoMoveByIntFormat(it->second);
-			if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow))
-			{
-				ChessAPI::GoMoveByIntFormat(it->second);
-				ImGui::CloseCurrentPopup();
-			}
-		}
-	
-		if (ImGui::Button("Play Main"))
-		{
-			ChessAPI::NextSavedMove();
-			ImGui::CloseCurrentPopup();
-		}
-	
-		ImGui::SameLine();
-	
-		if (ImGui::Button("Cansel"))
-			ImGui::CloseCurrentPopup();
-		if (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
-			ImGui::CloseCurrentPopup();
-	
-		ImGui::EndPopup();
-	}
-	
+	//check if there multible variations
 	if (ChessAPI::IsNewVariationAdded())
 	{
-		ImGui::OpenPopup("New Move");
+		ImGui::OpenPopup("New_Variant");
 	}
-	
-	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(1, 1));
-	if (ImGui::BeginPopupModal("New Move", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
-	{
-		ImGui::Selectable("New Variation");
-	
-		if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow))
-			ImGui::CloseCurrentPopup();
-	
-		if (ImGui::Selectable("Promote to MainLine")
-			|| (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
-		{
-			auto movePathToPromote = ChessAPI::GetMoveIntFormat();
-			ChessAPI::PreviousSavedMove();
-			ChessAPI::NextSavedMove();
-			auto movePathToGo = ChessAPI::GetMoveIntFormat();
-	
-			ChessAPI::PromoteVariation(movePathToPromote);
-			ChessAPI::GoMoveByIntFormat(movePathToGo);
-			ImGui::CloseCurrentPopup();
-		}
-	
-		if (ImGui::Selectable("OverWrite")
-			|| (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
-		{
-			auto movePath = ChessAPI::GetMoveIntFormat();
-			ChessAPI::PreviousSavedMove();
-			ChessAPI::NextSavedMove();
-			auto movePathToGo = ChessAPI::GetMoveIntFormat();
-	
-			ChessAPI::PromoteVariation(movePath);
-			ChessAPI::DeleteVariation(movePath);
-			ChessAPI::GoMoveByIntFormat(movePathToGo);
-			ImGui::CloseCurrentPopup();
-		}
-		if (ImGui::Button("Play Default"))
-		{
-			ImGui::CloseCurrentPopup();
-		}
-	
-		ImGui::SameLine();
-	
-		if (ImGui::Button("Cansel")
-			|| (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)))
-		{
-			auto movePath = ChessAPI::GetMoveIntFormat();
-			ChessAPI::PreviousSavedMove();
-			auto movePathToGo = ChessAPI::GetMoveIntFormat();
-	
-			ChessAPI::DeleteVariation(movePath);
-			ChessAPI::GoMoveByIntFormat(movePathToGo);
-			ImGui::CloseCurrentPopup();
-		}
-	
-		ImGui::EndPopup();
-	}
+
+	//check if a pawn is ready to be promoted
+	if (ChessAPI::IsWaitingForNewType() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+		ImGui::OpenPopup("New_Piece");
+
+	m_Center = ImGui::GetWindowPos();
+	m_Center.x += ImGui::GetContentRegionMax().x;
+	m_Center.y += ImGui::GetContentRegionMax().y * 0.25;
+
+	NextMovePopup();
+	NewVariantPopup();
+	NewPiecePopup();
 
 	ImGui::End();
 }
@@ -379,6 +297,136 @@ void ImGuiBoard::UpdateBoardValues()
 				indexID++;
 			}
 		}
+	}
+}
+
+void ImGuiBoard::NextMovePopup()
+{
+	ImGui::SetNextWindowPos(m_Center, ImGuiCond_Appearing, ImVec2(1, 1));
+	if (ImGui::BeginPopupModal("Move_Choose", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
+	{
+		ImGui::PushFont(Walnut::Application::GetFont("Bold"));
+		if (ImGui::Selectable(m_MainMove.c_str()) ||
+			(ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
+		{
+			ChessAPI::NextSavedMove();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::PopFont();
+
+		for (auto it = m_PossibleNextMoves.begin(); it != m_PossibleNextMoves.end(); it++)
+		{
+			if (ImGui::Selectable(it->first.c_str()) ||
+				(ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
+			{
+				ChessAPI::GoMoveByIntFormat(it->second);
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		if (ImGui::Button("Play Main"))
+		{
+			ChessAPI::NextSavedMove();
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Cansel"))
+			ImGui::CloseCurrentPopup();
+		if (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+			ImGui::CloseCurrentPopup();
+
+		ImGui::EndPopup();
+	}
+
+}
+
+void ImGuiBoard::NewVariantPopup()
+{
+	ImGui::SetNextWindowPos(m_Center, ImGuiCond_Appearing, ImVec2(1, 1));
+	if (ImGui::BeginPopupModal("New_Variant", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
+	{
+		ImGui::Selectable("New Variation");
+
+		if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+			ImGui::CloseCurrentPopup();
+
+		if (ImGui::Selectable("Promote to MainLine")
+			|| (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
+		{
+			auto movePathToPromote = ChessAPI::GetMoveIntFormat();
+			ChessAPI::PreviousSavedMove();
+			ChessAPI::NextSavedMove();
+			auto movePathToGo = ChessAPI::GetMoveIntFormat();
+
+			ChessAPI::PromoteVariation(movePathToPromote);
+			ChessAPI::GoMoveByIntFormat(movePathToGo);
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (ImGui::Selectable("OverWrite")
+			|| (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
+		{
+			auto movePath = ChessAPI::GetMoveIntFormat();
+			ChessAPI::PreviousSavedMove();
+			ChessAPI::NextSavedMove();
+			auto movePathToGo = ChessAPI::GetMoveIntFormat();
+
+			ChessAPI::PromoteVariation(movePath);
+			ChessAPI::DeleteVariation(movePath);
+			ChessAPI::GoMoveByIntFormat(movePathToGo);
+			ImGui::CloseCurrentPopup();
+		}
+		if (ImGui::Button("Play Default"))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Cansel")
+			|| (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)))
+		{
+			auto movePath = ChessAPI::GetMoveIntFormat();
+			ChessAPI::PreviousSavedMove();
+			auto movePathToGo = ChessAPI::GetMoveIntFormat();
+
+			ChessAPI::DeleteVariation(movePath);
+			ChessAPI::GoMoveByIntFormat(movePathToGo);
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+void ImGuiBoard::NewPiecePopup()
+{
+	if (ImGui::BeginPopup("New_Piece", ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+	{
+		if (!ChessAPI::IsWaitingForNewType())
+			ImGui::CloseCurrentPopup();
+
+		bool color = ChessAPI::GetPlayerColor();
+		int index = color ? 1 : 0;
+
+		for (int i = 0; i < 4; i++)
+		{
+			if (ImGui::ImageButton((uint32_t*)m_pieces[10-i - index * 6]->GetRendererID(), { 100, 100 }))
+			{
+				ChessAPI::SetNewPieceType(5 - i);
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+		{
+			ChessAPI::PreviousSavedMove();
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
 	}
 }
 
