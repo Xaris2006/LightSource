@@ -1,24 +1,31 @@
 #include "OpeningBookPanel.h"
 
-#include "imgui/imgui.h"
-#include "Hazel/Core/Input.h"
-#include "Hazel/ImGui/ImGuiLayer.h"
-#include "Hazel/Utils/PlatformUtils.h"
+#include "imgui.h"
 
-namespace Hazel
+#include "../ChessAPI.h"
+#include "../Windows/WindowsUtils.h"
+
+#include <filesystem>
+
+namespace Panels
 {
-	OpeningBookPanel::OpeningBookPanel(ChessAPI::ChessAPI* chess)
-		:m_chess(chess)
+	OpeningBookPanel::~OpeningBookPanel()
 	{
+		m_EndPlayThreadJob = true;
+		if (m_PlayThread)
+			m_PlayThread->join();
 
+		delete m_CreateThread;
+		delete m_PlayThread;
+		delete m_OpeningBook;
 	}
 
 	void OpeningBookPanel::OnImGuiRender()
 	{
 		if (!m_viewPanel)
 		{
-			if (!m_chess->openBook.GetCobFilePath().empty())
-				m_chess->openBook.CloseCOBfile();
+			if (m_cobPath.empty())
+				CloseCOBfile();
 			return;
 		}
 
@@ -26,7 +33,7 @@ namespace Hazel
 
 		ImGui::Text("Create New Opening Book");
 
-		if (m_chess->openBook.IsReadyCreateThread())
+		if (IsReadyCreateThread())
 		{
 			ImGui::PushID("Create");
 			ImGui::Button("Place Here Pgn File");
@@ -38,20 +45,20 @@ namespace Hazel
 					std::wstring wstr(path);
 					std::string str(wstr.begin(), wstr.end());
 					if (std::filesystem::path(str).extension() == ".pgn")
-						m_chess->openBook.CreateCOBfile(str);
+						CreateCOBfile(str);
 				}
 				else if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Database"))
 				{
-					m_chess->mainBoard.GetPgnFile()->operator[]((int)*(int*)payload->Data);
+					ChessAPI::GetPgnFile()->operator[]((int)*(int*)payload->Data);
 				}
 				ImGui::EndDragDropTarget();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("..."))
 			{
-				std::string path = FileDialogs::OpenFile("Portable Game Notation (*.pgn)\0*.pgn\0");
+				std::string path = Windows::Utils::OpenFile("Portable Game Notation (*.pgn)\0*.pgn\0");
 				if (!path.empty())
-					m_chess->openBook.CreateCOBfile(path);
+					CreateCOBfile(path);
 			}
 			ImGui::PopID();
 		}
@@ -71,37 +78,37 @@ namespace Hazel
 				std::wstring wstr(path);
 				std::string str(wstr.begin(), wstr.end());
 				if(std::filesystem::path(str).extension() == ".cob")
-					m_chess->openBook.OpenCOBfile(str);
+					OpenCOBfile(str);
 			}
 			ImGui::EndDragDropTarget();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("..."))
 		{
-			m_chess->openBook.CloseCOBfile();
-			std::string path = FileDialogs::OpenFile("Chess Opening Book (*.cob)\0*.cob\0");
+			CloseCOBfile();
+			std::string path = Windows::Utils::OpenFile("Chess Opening Book (*.cob)\0*.cob\0");
 			if (!path.empty())
-				m_chess->openBook.OpenCOBfile(path);
+				OpenCOBfile(path);
 		}
 		ImGui::PopID();
 
-		if (!m_chess->openBook.GetCobFilePath().empty())
+		if (!m_cobPath.empty())
 		{
-			ImGui::TextWrapped(m_chess->openBook.GetCobFileName().c_str());
+			ImGui::TextWrapped(m_cobFilename.c_str());
 			if(ImGui::Button("Close"))
 			{
-				m_chess->openBook.CloseCOBfile();
+				CloseCOBfile();
 			}
 		}
 
-		if (!Input::IsKeyPressed(Hazel::Key::Left) && !Input::IsKeyPressed(Hazel::Key::Right))
+		if (!ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && !ImGui::IsKeyPressed(ImGuiKey_RightArrow))
 		{
 			ImVec4 white = ImVec4(0.1, 0.79, 0.31, 1);
 			ImVec4 draw = ImVec4(0.3, 0.58, 0.97, 1);
 			ImVec4 black = ImVec4(0.79, 0.1, 0.1, 1);
 			std::string move;
-			auto posID = m_chess->mainBoard.GetFormatedPosition();
-			const auto& moveptr = m_chess->openBook.GetOpeningBookMoves(posID);
+			auto posID = ChessAPI::GetFormatedPosition();
+			const auto& moveptr = GetOpeningBookMoves(posID);
 
 			if (&moveptr && moveptr.size() && posID.size())
 			{
@@ -114,7 +121,7 @@ namespace Hazel
 					ImGui::SetCursorPosY(cursorStartPosY + ImGui::GetTextLineHeight());
 					ImGui::CalcItemWidth();
 					if (ImGui::Button(moveob.strmove.c_str(), ImVec2(70, 0)))
-						m_chess->mainBoard.GoMoveByStr(moveob.strmove);
+						ChessAPI::GoMoveByStr(moveob.strmove);
 					
 					ImGui::SameLine();
 					ImGui::SetCursorPosY(cursorStartPosY);
@@ -187,6 +194,91 @@ namespace Hazel
 		ImGui::End();
 	}
 
+
+	void OpeningBookPanel::CreateCOBfile(const std::string& pgnfilepath)
+	{
+		m_IsCreateThreadEnd = false;
+
+		m_CreateThread = new std::thread(
+			[this, pgnfilepath]()
+			{
+				chess::OpeningBook::CreateCOBByPGN(pgnfilepath);
+				m_IsCreateThreadEnd = true;
+			}
+		);
+	}
+
+	void OpeningBookPanel::OpenCOBfile(const std::string& filepath)
+	{
+		if (filepath == m_cobPath) { return; }
+
+		delete m_OpeningBook;
+
+		m_cobPath = filepath;
+
+		auto nameWithExtension = std::filesystem::path(filepath).filename();
+		m_cobFilename = nameWithExtension.string().substr(0, nameWithExtension.string().find_last_of('.'));
+
+		m_EndPlayThreadJob = false;
+		m_PlayThread = new std::thread(
+			[this, filepath]()
+			{
+				m_OpeningBook = new chess::OpeningBook(filepath);
+
+				while (true)
+				{
+					if (m_EndPlayThreadJob)
+						return;
+
+					using namespace std::chrono_literals;
+					std::this_thread::sleep_for(0.2s);
+
+					if (m_CurPosition.empty())
+						continue;
+					m_Moves = m_OpeningBook->GetMovesByPosition(m_CurPosition, chess::OpeningBook::MOSTPLAYED);
+				}
+			}
+		);
+	}
+	bool OpeningBookPanel::CloseCOBfile()
+	{
+		if (!m_EndPlayThreadJob)
+		{
+			m_EndPlayThreadJob = true;
+			m_PlayThread->join();
+			delete m_PlayThread;
+			m_PlayThread = nullptr;
+
+			delete m_OpeningBook;
+			m_OpeningBook = nullptr;
+			m_cobFilename = "";
+			m_cobPath = "";
+
+			m_CurPosition.clear();
+			m_Moves.clear();
+
+			return true;
+		}
+		return false;
+	}
+
+	std::vector<chess::OpeningBook::MoveOB>& OpeningBookPanel::GetOpeningBookMoves(const chess::OpeningBook::PositionID& posID)
+	{
+		if (!m_OpeningBook) { return m_Moves; }
+		m_CurPosition = posID;
+		return m_Moves;
+	}
+
+	int OpeningBookPanel::IsReadyCreateThread()
+	{
+		if (m_CreateThread && m_IsCreateThreadEnd)
+		{
+			m_CreateThread->join();
+			delete m_CreateThread;
+			m_CreateThread = nullptr;
+		}
+		return m_Status;
+	}
 
 	bool& OpeningBookPanel::IsPanelOpen()
 	{

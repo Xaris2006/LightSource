@@ -26,6 +26,7 @@ namespace Panels
 		std::shared_ptr<Walnut::Image> m_DirectoryIcon;
 		std::shared_ptr<Walnut::Image> m_FileIcon;
 		std::shared_ptr<Walnut::Image> m_FileIconPGN;
+		std::shared_ptr<Walnut::Image> m_FileIconCOB;
 	};
 
 }

@@ -21,6 +21,7 @@ namespace Panels {
 		m_DirectoryIcon = std::make_shared<Walnut::Image>("Resources/Icons/ContentBrowser/DirectoryIcon.png");
 		m_FileIcon = std::make_shared<Walnut::Image>("Resources/Icons/ContentBrowser/FileIcon.png");
 		m_FileIconPGN = std::make_shared < Walnut::Image>("Resources/Icons/ContentBrowser/FileIconPGN.png");
+		m_FileIconCOB = std::make_shared < Walnut::Image>("Resources/Icons/ContentBrowser/FileIconCOB.png");
 	}
    
 	void ContentBrowserPanel::OnImGuiRender()
@@ -119,6 +120,8 @@ namespace Panels {
 			auto icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
 			if (directoryEntry.path().extension().string() == ".pgn")
 				icon = m_FileIconPGN;
+			if (directoryEntry.path().extension().string() == ".cob")
+				icon = m_FileIconCOB;
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 			ImGui::ImageButton((ImTextureID)icon->GetRendererID(), { thumbnailSize, thumbnailSize });
 

@@ -22,6 +22,7 @@ private:
 
 	void RenderBoard();
 	void RenderPieces();
+	void RenderCirclesAtPossibleMoves();
 	ImVec2 FindMousePos();
 	void  UpdateBoardValues();
 
@@ -40,6 +41,8 @@ private:
 	bool m_reverse = false;
 	std::shared_ptr<Walnut::Image> m_board[2];
 	std::shared_ptr<Walnut::Image> m_pieces[12];
+	std::shared_ptr<Walnut::Image> m_circleFromStart;
+	std::shared_ptr<Walnut::Image> m_circleToEnd;
 
 	std::array<std::array<int, 8>, 8> m_block;
 	

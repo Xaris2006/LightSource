@@ -8,6 +8,7 @@
 void ImGuiBoard::OnAttach()
 {
 	m_board[0] = std::make_shared<Walnut::Image>("board.png");
+	m_board[0] = std::make_shared<Walnut::Image>("board.png");
 	m_board[1] = std::make_shared<Walnut::Image>("boardRev.png");
 
 	m_pieces[0] = std::make_shared<Walnut::Image>("piecies\\white_pawn.png");
@@ -23,6 +24,9 @@ void ImGuiBoard::OnAttach()
 	m_pieces[10] = std::make_shared<Walnut::Image>("piecies\\black_queen.png");
 	m_pieces[11] = std::make_shared<Walnut::Image>("piecies\\black_king.png");
 
+	m_circleFromStart = std::make_shared<Walnut::Image>("f.png");
+	m_circleToEnd = std::make_shared<Walnut::Image>("f2.png");
+
 	UpdateBoardValues();
 
 	//ImGui::StyleColorsDark();
@@ -32,7 +36,7 @@ void ImGuiBoard::OnUIRender()
 {
 	ImGui::Begin("Hello", 0, ImGuiWindowFlags_NoScrollbar);
 	
-	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel) && !ImGui::IsAnyMouseDown())
 	{
 		if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
 		{
@@ -48,7 +52,7 @@ void ImGuiBoard::OnUIRender()
 
 	m_startCursor.y = ImGui::GetCursorPosY();
 	m_startCursor.x = ImGui::GetWindowContentRegionWidth() / 2 - m_size / 2;
-	
+
 	RenderBoard();
 	if (ImGui::BeginDragDropTarget())
 	{
@@ -68,7 +72,11 @@ void ImGuiBoard::OnUIRender()
 	}
 	RenderPieces();
 
+	if (m_CapturedPieceIndex>0)
+		RenderCirclesAtPossibleMoves();
+
 	auto MousePos = FindMousePos();
+	
 
 	//ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0, 0, 0 });
 	//ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0, 0, 0, 0 });
@@ -225,7 +233,7 @@ void ImGuiBoard::OnUIRender()
 
 void ImGuiBoard::RenderBoard()
 {
-	ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionWidth() / 2 - m_size / 2, ImGui::GetCursorPosY()));
+	ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionWidth() / 2 - m_size / 2, m_startCursor.y));
 
 	auto& board = m_board[m_reverse];
 	ImGui::Image((ImTextureID)board->GetRendererID(), { m_size, m_size });
@@ -248,10 +256,52 @@ void ImGuiBoard::RenderPieces()
 				ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
 				ImGui::Image((ImTextureID)m_pieces[m_block[i][j] - 1]->GetRendererID(), bsize);
 			}
+
+			if (i == m_oldNumY && j == m_oldNumX && m_CapturedPieceIndex != 0)
+			{
+				ImGui::SetCursorPos(
+					ImVec2(xposition - bsize.x / 2 + m_startCursor.x + bsize.x / 2.5f / 2.0f + bsize.x/2.0f - bsize.x / 2.5f
+						, yposition - bsize.y / 2 + m_startCursor.y + bsize.y / 2.5f / 2.0f + bsize.y / 2.0f - bsize.y / 2.5f));
+				ImGui::Image((ImTextureID)m_circleFromStart->GetRendererID(), { bsize.x / 2.5f, bsize.y / 2.5f });
+			}
+
 			xposition += blockSize;
 		}
 		xposition = blockSize;
 		yposition += blockSize;
+	}
+}
+
+void ImGuiBoard::RenderCirclesAtPossibleMoves()
+{
+	ImVec2 bsize = { m_size / 10, m_size / 10 };
+	float blockSize = m_size / 9;
+
+	float xposition = blockSize;
+	float yposition = blockSize;
+
+	std::vector<vec2<float>> possibleMoves;
+	if (!m_reverse)
+		possibleMoves = ChessAPI::GetPossibleDirections({ m_oldNumX, 7 - m_oldNumY });
+	else
+		possibleMoves = ChessAPI::GetPossibleDirections({ 7 - m_oldNumX, m_oldNumY });
+	for (auto& move : possibleMoves)
+	{
+		if (!m_reverse)
+		{
+			xposition = (move.x() + m_oldNumX + 1) * blockSize;
+			yposition = (9 -(move.y() +7- m_oldNumY + 1)) * blockSize;
+		}
+		else
+		{
+			xposition = (9-(move.x() +7 - m_oldNumX + 1)) * blockSize;
+			yposition = (move.y() + m_oldNumY + 1) * blockSize;
+		}
+
+		ImGui::SetCursorPos(
+			ImVec2(xposition - bsize.x / 2 + m_startCursor.x
+				, yposition - bsize.y / 2 + m_startCursor.y));
+		ImGui::Image((ImTextureID)m_circleToEnd->GetRendererID(), { bsize.x, bsize.y });
 	}
 }
 

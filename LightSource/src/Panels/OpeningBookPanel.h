@@ -2,23 +2,46 @@
 
 #include <vector>
 #include <string>
+#include <thread>
+#include <atomic>
 
-//#include "chess.h"
+#include "../ChessCore/Opening_Book/OpeningBook.h"
 
-namespace Hazel {
+
+namespace Panels {
 
 	class OpeningBookPanel
 	{
 	public:
-		//OpeningBookPanel(ChessAPI::ChessAPI* chess);
+		OpeningBookPanel() = default;
+		~OpeningBookPanel();
 
 		void OnImGuiRender();
 		
+		void CreateCOBfile(const std::string& pgnfilepath);
+		void OpenCOBfile(const std::string& filepath);
+		bool CloseCOBfile();
+		std::vector<chess::OpeningBook::MoveOB>& GetOpeningBookMoves(const chess::OpeningBook::PositionID& posID);
+
+		int IsReadyCreateThread();
+
 		bool& IsPanelOpen();
 
 	private:
 		bool m_viewPanel = false;
 
-		ChessAPI::ChessAPI* m_chess;
+		chess::OpeningBook* m_OpeningBook = nullptr;
+		chess::OpeningBook::PositionID m_CurPosition;
+		std::vector<chess::OpeningBook::MoveOB> m_Moves;
+
+		std::string m_cobPath = "";
+		std::string m_cobFilename = "";
+
+		std::thread* m_PlayThread = nullptr;
+		std::atomic<bool> m_EndPlayThreadJob = true;
+
+		std::thread* m_CreateThread = nullptr;
+		std::atomic<bool> m_IsCreateThreadEnd = true;
+		std::atomic<int> m_Status = -1;
 	};
 }

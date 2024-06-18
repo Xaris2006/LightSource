@@ -14,6 +14,7 @@
 #include "Panels/GamePropertiesPanel.h"
 #include "Panels/NotePanel.h" //will be included in Move panel
 #include "Panels/MovePanel.h"
+#include "Panels/OpeningBookPanel.h"
 
 #include <iostream>
 #include <array>
@@ -46,6 +47,7 @@ public:
 		m_GamePropertiesPanel.OnImGuiRender();
 		m_NotePanel.OnImGuiRender();
 		m_MovePanel.OnImGuiRender();
+		m_OpeningBookPanel.OnImGuiRender();
 	}
 
 	void UI_DrawAboutModal()
@@ -96,6 +98,11 @@ public:
 	bool& MovePanelViewStatus()
 	{
 		return m_MovePanel.IsPanelOpen();
+	}
+	
+	bool& OpeningBookPanelViewStatus()
+	{
+		return m_OpeningBookPanel.IsPanelOpen();
 	}
 
 	void FlipBoard()
@@ -149,6 +156,7 @@ private:
 	Panels::GamePropertiesPanel m_GamePropertiesPanel;
 	Panels::NotePanel m_NotePanel;
 	Panels::MovePanel m_MovePanel;
+	Panels::OpeningBookPanel m_OpeningBookPanel;
 
 	bool m_AboutModalOpen = false;
 };
@@ -197,6 +205,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			if (ImGui::MenuItem("Game Properties", 0, &chessLayer->GamePropertiesPanelViewStatus())){}
 			if (ImGui::MenuItem("Notes", 0, &chessLayer->NotePanelViewStatus())){}
 			if (ImGui::MenuItem("Moves", 0, &chessLayer->MovePanelViewStatus())){}
+			if (ImGui::MenuItem("Opening Book", 0, &chessLayer->OpeningBookPanelViewStatus())){}
 
 			ImGui::EndMenu();
 		}
