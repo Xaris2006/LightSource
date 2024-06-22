@@ -52,7 +52,7 @@ namespace Windows::Utils
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
 		// Sets the default extension by extracting it from the filter
-		ofn.lpstrDefExt = "*.pgn";//strchr(Filter.c_str(), '\0') + 1;
+		ofn.lpstrDefExt = strchr(Filter.c_str(), '\0') + 1;
 
 		std::string filepath = "";
 

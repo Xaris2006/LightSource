@@ -88,7 +88,7 @@ namespace chess
 		};
 
 	public:
-		static void CreateCOBByPGN(const std::string& pgnfilepath);
+		static void CreateCOBByPGN(const std::string& pgnfilepath, int& status);
 	public:
 		OpeningBook(const std::string& cobfilepath);
 		~OpeningBook() = default;

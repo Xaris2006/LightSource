@@ -37,17 +37,48 @@ public:
 
 	virtual void OnUIRender() override
 	{		
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 
 		UI_DrawAboutModal();
 
-		m_ContentBrowserPanel.OnImGuiRender();
 		m_ChessBoard.OnUIRender();
+		m_ContentBrowserPanel.OnImGuiRender();
 		m_DatabasePanel.OnImGuiRender();
-		m_GamePropertiesPanel.OnImGuiRender();
 		m_NotePanel.OnImGuiRender();
-		m_MovePanel.OnImGuiRender();
 		m_OpeningBookPanel.OnImGuiRender();
+		m_GamePropertiesPanel.OnImGuiRender();
+		m_MovePanel.OnImGuiRender();
+
+		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
+		{
+			if (ImGui::IsKeyPressed(ImGuiKey_N))
+			{
+				New();
+			}
+
+			if (ImGui::IsKeyPressed(ImGuiKey_O))
+			{
+				Open();
+			}
+
+			if (ImGui::IsKeyPressed(ImGuiKey_S))
+			{
+				if (ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift))
+					SaveAs();
+				else
+					Save();
+			}
+
+			if (ImGui::IsKeyPressed(ImGuiKey_F))
+			{
+				FlipBoard();
+			}
+
+			if (ImGui::IsKeyPressed(ImGuiKey_E))
+			{
+				//Open Editor
+			}
+		}
 	}
 
 	void UI_DrawAboutModal()

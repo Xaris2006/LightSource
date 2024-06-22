@@ -78,6 +78,9 @@ namespace chess
 		std::map<std::string, std::string> m_labels;
 		ChessMovesPath m_chessmoves;
 		std::string m_resualt = "*";
+
+		//for debug
+		std::string data;
 	};
 
 	class Pgn_File

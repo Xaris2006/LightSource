@@ -1,5 +1,6 @@
 #include "Pgn.h"
 
+#include <cmath>
 #include <array>
 #include <fstream>
 
@@ -81,11 +82,20 @@ namespace chess
 	std::ostream& operator<<(std::ostream& stream, const Pgn_Game& f)
 	{
 		std::string output = "";
+		bool resultExist = false;
 		for (auto& [name, value] : f.m_labels)
+		{
 			output += "[" + name + " \"" + value + "\"]\n";
+			if (name == "Result")
+				resultExist = true;
+		}
 		output += '\n';
 		f.WriteMoves(output, f.m_chessmoves);
-		output += f.m_resualt;
+		if (resultExist)
+			output += f.m_labels.at("Result");
+		else
+			output += '*';
+		
 		stream << output;
 		return stream;
 	}
@@ -102,7 +112,219 @@ namespace chess
 		Parse(data);
 	}
 
+	void  Pgn_Game::Parse(std::string& data)
+	{
+		if (data.empty())
+			return;
 
+		this->data = data;
+
+		bool labelstart = false;
+		bool labelvalue = false;
+		
+		bool labelArea = true;
+
+		bool dollaropen = false;
+		bool detailsopen = false;
+
+
+		std::string labelnamestr = "";
+		std::string labelvaluestr = "";
+
+		ChessMovesPath* Parent = &m_chessmoves;
+		Parent->move.push_back("");
+
+		for (size_t i = 0; i < data.size(); i++)
+		{
+			if (labelArea)
+			{
+				if (data[i] == '\n')
+					continue;
+
+				if (!labelvalue)
+				{
+					if (!labelstart && data[i] != '[')
+					{
+						i -= 1;
+						labelArea = false;
+						continue;
+					}
+
+					if (data[i] == '[' && !labelstart)
+					{
+						labelstart = true;
+						labelnamestr.clear();
+						labelvaluestr.clear();
+						continue;
+					}
+
+					if (data[i] == ']' && labelstart)
+					{
+						labelstart = false;
+						m_labels[labelnamestr] = labelvaluestr;
+						continue;
+					}
+
+					if (data[i] == '"')
+					{
+						labelvalue = true;
+						continue;
+					}
+				}
+
+				if (data[i] == '"' && labelvalue)
+				{
+					labelvalue = false;
+					continue;
+				}
+				
+				if (labelvalue)
+				{
+					labelvaluestr += data[i];
+					continue;
+				}
+
+				if (labelstart)//!labelvalue
+				{
+					if (data.size() > i + 1 && data[i + 1] == '"')
+						continue;
+					labelnamestr += data[i];
+					continue;
+				}
+			}
+
+			//--moveArea--
+
+			//dollar???
+			{
+				if (data[i] == '$')
+				{
+					dollaropen = true;
+					continue;
+				}
+
+				if (dollaropen)
+				{
+					if (data[i] < '0' || data[i] > '9')
+					{
+						dollaropen = false;
+						i--;
+					}
+					continue;
+				}
+			}
+
+			//notes
+			{
+				if (data[i] == '{' && !detailsopen)
+				{
+					detailsopen = true;
+					continue;
+				}
+
+				if (data[i] == '}')
+				{
+					detailsopen = false;
+					continue;
+				}
+
+				if (detailsopen)
+				{
+					if (Parent->move.empty())
+						continue;
+					Parent->details[Parent->move.size() -1] += data[i];
+					continue;
+				}
+			}
+
+			//variant
+			{
+				if (data[i] == '(')
+				{
+					if (Parent->move[Parent->move.size() - 1].empty())
+						Parent->move.resize(Parent->move.size() - 1);
+
+					Parent->children.push_back(ChessMovesPath(Parent));
+					Parent->move.push_back("child");
+					Parent = &Parent->children[Parent->children.size() - 1];
+
+					Parent->move.push_back("");
+					continue;
+				}
+
+				if (data[i] == ')')
+				{
+					if (Parent->move[Parent->move.size() - 1].empty())
+						Parent->move.resize(Parent->move.size() -1);
+
+					int index1 = Parent->move[Parent->move.size() - 1].rfind('1');
+					int indexDash = Parent->move[Parent->move.size() - 1].find('-');
+
+					if (index1 != std::string::npos && indexDash != std::string::npos && std::abs(index1 - indexDash) == 1)
+					{
+						//detail??
+						Parent->move.resize(Parent->move.size() - 1);
+					}
+
+					Parent = Parent->parent;
+					Parent->move.push_back("");
+
+					continue;
+				}
+			}
+
+			//moves
+			{
+				if (data[i] == '\n' && data[i - 1] == ' ' && data[i-2] == '.')
+					continue;
+
+				if ((data[i] == ' ' || data[i] == '\n') && data[i - 1] != '.')
+				{
+					if (!Parent->move.empty() && Parent->move[Parent->move.size() - 1].empty())
+					{
+						continue;
+					}
+
+					Parent->move.push_back("");
+					continue;
+				}
+
+				if (data[i] == '.' && data[i - 1] == '.')
+				{
+					Parent->move[Parent->move.size() - 1] = "";
+					i+=2;
+					continue;
+				}
+
+				if (data[i] == '\n')
+				{
+					Parent->move[Parent->move.size() - 1] += ' ';
+					continue;
+				}
+
+				Parent->move[Parent->move.size() - 1] += data[i];
+			}
+
+		}
+
+		if (Parent->move[Parent->move.size() - 1].empty())
+			Parent->move.resize(Parent->move.size() - 1);
+
+		if (Parent->move[Parent->move.size() - 1].find('-') != std::string::npos && Parent->move[Parent->move.size() - 1].find('1') != std::string::npos)
+		{
+			m_resualt = Parent->move[Parent->move.size() - 1];
+			Parent->move.resize(Parent->move.size() - 1);
+		}
+
+		func_delete_BC_stuff(&m_chessmoves);
+
+		if (m_labels["Result"] == "?")
+			m_resualt = '*';
+		else
+			m_resualt = m_labels["Result"];
+	}
+
+#if 0
 	void Pgn_Game::Parse(std::string& data)
 	{
 		if (!data.size()) { return; }
@@ -110,7 +332,7 @@ namespace chess
 		if (data[data.size() - 1] == ' ') { data.resize(data.size() - 1); }
 
 		if (!data.size()) { return; }
-
+		this->data = data;
 
 		size_t index = 0;
 		bool labelstart = false;
@@ -123,6 +345,7 @@ namespace chess
 
 
 		ChessMovesPath* Parent = &m_chessmoves;
+		m_chessmoves.move.push_back("");
 
 		for (size_t i = 0; i < data.size(); i++)
 		{
@@ -183,7 +406,7 @@ namespace chess
 
 				continue;
 			}
-			else if ((data[i] == ' ' || data[i] == '\n') && !labelvalue && !detailsopen)
+			else if ((data[i] == ' ' /* || data[i] == '\n'*/) && !labelvalue && !detailsopen)
 			{
 				if (dollaropen)
 				{
@@ -194,9 +417,15 @@ namespace chess
 					if (data[i + 1] == '"')
 						continue;
 				}
-				else if (data[i - 1] != '.' && data[i + 1] != '[' && data[i + 1] != '{' && data[i + 1] != '(' && data[i + 1] != ')' && data[i + 1] != '$')
+				else if (data[i - 1] != '.' && data[i + 1] != '[' && data[i + 1] != '{' && data[i + 1] != '(' && data[i + 1] != ')' && data[i + 1] != '$' && data[i-1] != ' ')
 				{
-					if (m_chessmoves.move.size()) { if (m_chessmoves.move[m_chessmoves.move.size() - 1] == "") { continue; } }
+					if (Parent->move.size())
+					{ 
+						if (Parent->move[Parent->move.size() - 1] == "")
+						{
+							continue; 
+						} 
+					}
 					Parent->move.push_back("");
 					continue;
 				}
@@ -226,7 +455,7 @@ namespace chess
 			{
 				if (Parent->move.size())
 				{
-					if (data[i] == '\n')
+					if (data[i] == '\n')//htan '\n' anti ' '
 						Parent->move[Parent->move.size() - 1] += ' ';
 					else
 						Parent->move[Parent->move.size() - 1] += data[i];
@@ -241,10 +470,18 @@ namespace chess
 			m_resualt = m_chessmoves.move[m_chessmoves.move.size() - 1];
 			m_chessmoves.move.resize(m_chessmoves.move.size() - 1);
 		}
+
 		else if (m_chessmoves.move[m_chessmoves.move.size() - 1] == "*") { m_chessmoves.move.resize(m_chessmoves.move.size() - 1); }
 
 		func_delete_BC_stuff(&m_chessmoves);
+
+		if (m_labels["Result"] == "?")
+			m_resualt = '*';
+		else
+			m_resualt = m_labels["Result"];
 	}
+
+#endif
 
 	void Pgn_Game::WriteMoves(std::string& op, ChessMovesPath par) const
 	{

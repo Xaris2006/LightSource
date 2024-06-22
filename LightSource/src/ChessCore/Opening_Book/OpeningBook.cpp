@@ -9,21 +9,23 @@
 
 namespace chess
 {
-	void OpeningBook::CreateCOBByPGN(const std::string& pgnfilepath)
+	void OpeningBook::CreateCOBByPGN(const std::string& pgnfilepath, int& status)
 	{
 		if (!IsFileValidFormat(pgnfilepath, ".pgn")) { return; }
 		Pgn_File pgnfile;
-		std::ifstream infile(pgnfilepath);
+		std::ifstream infile(pgnfilepath, std::ios::binary);
 		infile >> pgnfile;
 		infile.close();
 		
 		if (!pgnfile.GetSize()) { return; }
 
+		status = 0;
+
 		std::string format_version = "COB_FORMAT_VERSION_0.1";
 
 
 		std::map<PositionID, std::vector<MoveOB>> PositionMoveMap;
-		chess_entry game(pgnfile[0]);
+		//chess_entry game(pgnfile[0]);
 		PositionID pos;
 		int moveIndex = -1;
 		int strindex;
@@ -37,10 +39,19 @@ namespace chess
 
 		for (int i = 0; i < pgnfile.GetSize(); i++)
 		{
+			float s = (float)i / (float)pgnfile.GetSize();
+			status = s * 100.0f - 1;
+			if (status < 1)
+				status = 1;
+
 			if (pgnfile[i].GetResault() == "*")
 				continue;
 
-			game.rerun(pgnfile[i]);
+			if (pgnfile[i]["FEN"] != "?" && pgnfile[i]["FEN"] != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+				continue;
+
+			chess_entry game(pgnfile[i]);
+			game.run();
 			std::string move = "";
 			auto& movestr = game.GetPgnGame().GetMovePathbyRef();
 			for (int j = 0; j < movestr.move.size(); j++)
@@ -146,6 +157,8 @@ namespace chess
 		std::ofstream outfile(name, std::ios_base::binary | std::ios_base::out);
 		outfile.write((const char*)buffer.data(), buffer.size());
 		outfile.close();
+
+		status = 100;
 	}
 
 	OpeningBook::OpeningBook(const std::string& cobfilepath)

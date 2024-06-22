@@ -28,7 +28,7 @@ namespace Panels {
 		bool& IsPanelOpen();
 
 	private:
-		bool m_viewPanel = false;
+		bool m_viewPanel = true;
 
 		chess::OpeningBook* m_OpeningBook = nullptr;
 		chess::OpeningBook::PositionID m_CurPosition;
@@ -42,6 +42,7 @@ namespace Panels {
 
 		std::thread* m_CreateThread = nullptr;
 		std::atomic<bool> m_IsCreateThreadEnd = true;
-		std::atomic<int> m_Status = -1;
+		std::atomic<bool> m_EndCreateThreadJob = true;
+		int m_Status = 0;
 	};
 }

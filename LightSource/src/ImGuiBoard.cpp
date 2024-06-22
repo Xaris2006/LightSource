@@ -132,10 +132,6 @@ void ImGuiBoard::OnUIRender()
 	}
 	//ImGui::PopStyleColor(3);
 
-	//flip
-	if (ImGui::IsKeyPressed(ImGuiKey_F) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
-		m_reverse = !m_reverse;
-
 	//check if there are multiple next moves
 	if (m_NextMove)
 	{

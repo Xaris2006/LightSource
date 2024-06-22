@@ -31,10 +31,11 @@ namespace Panels
 
 		ImGui::Begin("Opening Book", &m_viewPanel);
 
-		ImGui::Text("Create New Opening Book");
 
 		if (IsReadyCreateThread())
 		{
+			ImGui::Text("Create New Opening Book");
+			ImGui::NewLine();
 			ImGui::PushID("Create");
 			ImGui::Button("Place Here Pgn File");
 			if (ImGui::BeginDragDropTarget())
@@ -61,6 +62,32 @@ namespace Panels
 					CreateCOBfile(path);
 			}
 			ImGui::PopID();
+		}
+		else
+		{
+			ImGui::Text("A cob file is currently being created");
+
+			//ImGui::SliderInt("Status", &m_Status, 0, 100, "%d%%", ImGuiSliderFlags_NoInput);
+			
+			auto ycursor = ImGui::GetCursorPosY();
+			auto xcursor = ImGui::GetCursorPosX();
+
+			float availx = 0.6*ImGui::GetContentRegionAvail().x;
+			ImGui::Button("##end", ImVec2(availx, 0));
+			
+			ImGui::SameLine();
+			ImGui::Text("Status");
+
+			ImGui::SetCursorPosY(ycursor);
+			ImGui::SetCursorPosX(xcursor);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
+
+			ImGui::Button(std::to_string(m_Status).c_str(), ImVec2(availx * m_Status / 100, 0));
+			
+			ImGui::PopStyleColor(3);
 		}
 
 		ImGui::Separator();
@@ -197,12 +224,13 @@ namespace Panels
 
 	void OpeningBookPanel::CreateCOBfile(const std::string& pgnfilepath)
 	{
+		m_Status = 0;
 		m_IsCreateThreadEnd = false;
 
 		m_CreateThread = new std::thread(
 			[this, pgnfilepath]()
 			{
-				chess::OpeningBook::CreateCOBByPGN(pgnfilepath);
+				chess::OpeningBook::CreateCOBByPGN(pgnfilepath, m_Status);
 				m_IsCreateThreadEnd = true;
 			}
 		);
@@ -271,13 +299,17 @@ namespace Panels
 
 	int OpeningBookPanel::IsReadyCreateThread()
 	{
-		if (m_CreateThread && m_IsCreateThreadEnd)
+		if (m_IsCreateThreadEnd)
 		{
-			m_CreateThread->join();
-			delete m_CreateThread;
-			m_CreateThread = nullptr;
+			if (m_CreateThread)
+			{
+				m_CreateThread->join();
+				delete m_CreateThread;
+				m_CreateThread = nullptr;
+			}
+			return true;
 		}
-		return m_Status;
+		return false;
 	}
 
 	bool& OpeningBookPanel::IsPanelOpen()

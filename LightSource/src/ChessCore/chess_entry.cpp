@@ -306,6 +306,7 @@ namespace chess
 		m_passiveMoveBack[chess_core::KING] = [this](vec2<float> dir, chess_core::piece* pieceptr)
 		{
 			m_game.get_blocks(dir) = (chess_core::king*)pieceptr;
+
 		};
 		m_passiveMoveBack[chess_core::UNKOWN] = [this](vec2<float> dir, chess_core::piece* pieceptr)
 		{
@@ -320,7 +321,7 @@ namespace chess
 		Pgn_Game::ChessMovesPath& movepath_str = m_settings->GetMovePathbyRef();
 		PropOfMovesPath* movepath_data = &m_movespath;
 
-		stringpath_to_srcpath(movepath_str, movepath_data);
+		stringpath_to_srcpath(movepath_str, movepath_data);//BUGGY
 	}
 
 	void chess_entry::rerun(Pgn_Game& pgngame)
