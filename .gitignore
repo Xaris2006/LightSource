@@ -16,3 +16,6 @@
 *.log
 *.tlog
 /LightSource/LightSource.vcxproj.filters
+*.pgn
+*.cob
+/LightSource/chess_working_directory/exa.cob
