@@ -15,6 +15,7 @@
 #include "Panels/NotePanel.h" //will be included in Move panel
 #include "Panels/MovePanel.h"
 #include "Panels/OpeningBookPanel.h"
+#include "Panels/EnginePanel.h"
 
 #include <iostream>
 #include <array>
@@ -48,6 +49,7 @@ public:
 		m_OpeningBookPanel.OnImGuiRender();
 		m_GamePropertiesPanel.OnImGuiRender();
 		m_MovePanel.OnImGuiRender();
+		m_ChessEnginePanel.OnImGuiRender();
 
 		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
 		{
@@ -136,6 +138,22 @@ public:
 		return m_OpeningBookPanel.IsPanelOpen();
 	}
 
+	void OpenChessEngine(const std::string& path)
+	{
+		m_ChessEnginePanel.OpenChessEngine(path);
+	}
+
+	void OpenChessEngine()
+	{
+		OpenChessEngine(m_ChessEnginePanel.GetDefaultEngine());
+	}
+
+	void CloseChessEngine()
+	{
+		m_ChessEnginePanel.CloseChessEngine();
+		m_ChessEnginePanel.Reset();
+	}
+
 	void FlipBoard()
 	{
 		m_ChessBoard.FlipBoard();
@@ -188,6 +206,7 @@ private:
 	Panels::NotePanel m_NotePanel;
 	Panels::MovePanel m_MovePanel;
 	Panels::OpeningBookPanel m_OpeningBookPanel;
+	Panels::EnginePanel m_ChessEnginePanel;
 
 	bool m_AboutModalOpen = false;
 };
@@ -255,9 +274,19 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		}
 		if (ImGui::BeginMenu("Engine"))
 		{
+			if (ImGui::MenuItem("Open Default"))
+			{
+				chessLayer->OpenChessEngine();
+			}
 			if (ImGui::MenuItem("Open"))
 			{
-
+				std::string filepath = Windows::Utils::OpenFile("Chess Engine (*.exe)\0*.exe\0");
+				if (!filepath.empty())
+					chessLayer->OpenChessEngine(filepath);
+			}
+			if (ImGui::MenuItem("Close"))
+			{
+				chessLayer->CloseChessEngine();
 			}
 			ImGui::EndMenu();
 		}

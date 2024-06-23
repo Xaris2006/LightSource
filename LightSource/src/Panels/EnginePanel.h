@@ -2,17 +2,19 @@
 
 #include <vector>
 #include <string>
+#include <memory>
+#include <thread>
+#include <atomic>
 
-#include "Hazel/Renderer/Texture.h"
+#include "Walnut/Image.h"
 
-#include "chess.h"
-
-namespace Hazel {
+namespace Panels {
 
 	class EnginePanel
 	{
 	public:
-		EnginePanel(ChessAPI::ChessAPI* chess);
+		EnginePanel() = default;
+		~EnginePanel();
 
 		void OnImGuiRender();
 		void Reset();
@@ -20,11 +22,21 @@ namespace Hazel {
 		void SetDefaultEngine(const std::string& path);
 		std::string GetDefaultEngine() const;
 
+		void OpenChessEngine(const std::string& programpath);
+		void CloseChessEngine();
+		bool IsEngineOpen() const;
+	private:
+		void CommandChessEngine(const std::string& command);
+
+		std::vector<std::string> GetBestMoveStr(int list) const;
+		float					 GetScore() const;
+		int						 GetDepth() const;
+		int						 GetNodesPerSecond() const;
+		std::string				 GetName();
+
 	private:
 		bool m_viewPanel = false;
-		bool m_running = true;
-
-		ChessAPI::ChessAPI* m_chess;
+		bool m_running = false;
 
 		std::vector<uint8_t> m_oldBoard;
 
@@ -36,10 +48,26 @@ namespace Hazel {
 
 		float m_winner = 1;
 
-		Ref<Texture2D> m_IconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
-		Ref<Texture2D> m_IconStop = Texture2D::Create("Resources/Icons/StopButton.png");
+		std::shared_ptr<Walnut::Image> m_IconPlay = std::make_shared<Walnut::Image>("Resources/Icons/PlayButton.png");
+		std::shared_ptr<Walnut::Image> m_IconStop = std::make_shared<Walnut::Image>("Resources/Icons/StopButton.png");
 
-		std::string m_defaultEngine = "ChessProject\\Assets\\engines\\stockfish.exe";
+		std::string m_defaultEngine = "chess_working_directory\\engines\\stockfish.exe";
+
+	private:
+		std::thread* m_processThread = nullptr;
+
+		std::vector<std::string> m_write;
+
+		std::atomic<bool> m_EndThread = true;
+		bool m_BlackToPlay = false;
+
+		int m_Depth = 404;
+		float m_Score = 404;
+		int m_Nps = 404;
+		std::vector<std::string> m_Moves[5];
+		int m_FinalStreams[5];
+
+		std::string m_EngineName;
 	};
 }
 
