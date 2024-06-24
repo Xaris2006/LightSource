@@ -1,13 +1,16 @@
 #include "ImGuiBoard.h"
 
 #include "ChessAPI.h"
+#include "ChessCore/chess_board.h"
+#include "ChessCore/chess_entry.h"
+
+#include "imgui_internal.h"
 
 #include "../../Walnut/Source/Walnut/Application.h"
 
 
 void ImGuiBoard::OnAttach()
 {
-	m_board[0] = std::make_shared<Walnut::Image>("board.png");
 	m_board[0] = std::make_shared<Walnut::Image>("board.png");
 	m_board[1] = std::make_shared<Walnut::Image>("boardRev.png");
 
@@ -26,6 +29,8 @@ void ImGuiBoard::OnAttach()
 
 	m_circleFromStart = std::make_shared<Walnut::Image>("f.png");
 	m_circleToEnd = std::make_shared<Walnut::Image>("f2.png");
+
+	m_RedX = std::make_shared<Walnut::Image>("Resources\\RedX.png");
 
 	UpdateBoardValues();
 
@@ -220,11 +225,20 @@ void ImGuiBoard::OnUIRender()
 	m_Center.x += ImGui::GetContentRegionMax().x;
 	m_Center.y += ImGui::GetContentRegionMax().y * 0.25;
 
+	//Open Editor
+	if (m_ToOpenEditor)
+	{
+		m_ToOpenEditor = false;
+		ImGui::OpenPopup("Editor");
+	}
+
 	NextMovePopup();
 	NewVariantPopup();
 	NewPiecePopup();
+	EditorPopup();
 
 	ImGui::End();
+
 }
 
 void ImGuiBoard::RenderBoard()
@@ -476,7 +490,374 @@ void ImGuiBoard::NewPiecePopup()
 	}
 }
 
+void ImGuiBoard::EditorPopup()
+{
+	ImGui::SetNextWindowPos(m_Center, ImGuiCond_Appearing);
+	if (ImGui::BeginPopupModal("Editor"))
+	{
+		ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
+
+		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+		ImVec2 ViewportSize = { viewportPanelSize.x, viewportPanelSize.x };
+		
+		auto editorSize = ImGui::GetWindowWidth() - ImGui::GetCursorPosX() -6 * ImGui::GetStyle().ItemSpacing.x;
+
+		ImVec2 bsize = { editorSize / 10, editorSize / 10 };
+		float blockSize = editorSize / 9;
+		
+		ImVec2 editorStartCursor;
+		editorStartCursor.y = ImGui::GetCursorPosY();
+		editorStartCursor.x = ImGui::GetWindowContentRegionWidth() / 2 - editorSize / 2;
+
+		//render board
+		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionWidth() / 2 - editorSize / 2, editorStartCursor.y));
+		ImGui::Image((uint32_t*)m_board[0]->GetRendererID(), { editorSize, editorSize });
+
+		auto cursorEnd = ImGui::GetCursorPos();
+
+		//render Pieces
+
+		float xposition = blockSize;
+		float yposition = blockSize;
+
+		for (int i = 0; i < 8; i++)
+		{
+			for (int j = 0; j < 8; j++)
+			{
+				if (m_Editorblock[i][j])
+				{
+					ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + editorStartCursor.x, yposition - bsize.y / 2 + editorStartCursor.y));
+					ImGui::Image((ImTextureID)m_pieces[m_Editorblock[i][j] - 1]->GetRendererID(), bsize);
+				}
+
+				xposition += blockSize;
+			}
+			xposition = blockSize;
+			yposition += blockSize;
+		}
+
+		static int pointIndex = -1;
+
+		ImGui::SetCursorPos(cursorEnd);
+
+		for (int i = 0; i < 6; i++)
+		{
+			if (ImGui::ImageButton((uint32_t*)m_pieces[i]->GetRendererID(), { 50, 50 }))
+			{
+				pointIndex = i;
+			}
+			ImGui::SameLine();
+		}
+
+		ImGui::NewLine();
+		for (int i = 6; i < 12; i++)
+		{
+			if (ImGui::ImageButton((uint32_t*)m_pieces[i]->GetRendererID(), { 50, 50 }))
+			{
+				pointIndex = i;
+			}
+			ImGui::SameLine();
+		}
+		if (ImGui::ImageButton((uint32_t*)m_RedX->GetRendererID(), { 50, 50 }, { 0, 1 }, { 1, 0 }))
+		{
+			pointIndex = -1;
+		}
+
+		cursorEnd = ImGui::GetCursorPos();
+
+		ImGui::SetCursorPos(ImVec2(ImGui::GetMousePos().x - ImGui::GetWindowPos().x - bsize.x / 2, ImGui::GetMousePos().y - ImGui::GetWindowPos().y - bsize.y / 2));
+		if (ImGui::GetCursorPos().y > cursorEnd.y - 50)
+			ImGui::SetCursorPosY(cursorEnd.y - 50);
+
+		if (pointIndex == -1)
+		{
+			ImGui::Image((ImTextureID)m_RedX->GetRendererID(), bsize);
+		}
+		else
+		{
+			ImGui::Image((ImTextureID)m_pieces[pointIndex]->GetRendererID(), bsize);
+		}
+
+		//mousePos
+		static int numY = 0;
+		static int numX = 0;
+
+		numX = (ImGui::GetMousePos().x - editorStartCursor.x - ImGui::GetWindowPos().x - blockSize / 2) / blockSize;
+		if (ImGui::GetMousePos().x - editorStartCursor.x - ImGui::GetWindowPos().x - blockSize / 2 < 0)
+			numX = -1;
+		numY = (ImGui::GetMousePos().y - editorStartCursor.y - ImGui::GetWindowPos().y - blockSize / 2) / blockSize;
+		if (ImGui::GetMousePos().y - editorStartCursor.y - ImGui::GetWindowPos().y - blockSize / 2 < 0)
+			numY = -1;
+
+		ImVec2 MousePos = { (float)numX, (float)numY };
+		
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			if (MousePos.x > -1 && MousePos.y > -1
+				&& MousePos.x < 8 && MousePos.y < 8)
+			{
+				if (pointIndex + 1 == m_Editorblock[MousePos.y][MousePos.x])
+					m_Editorblock[MousePos.y][MousePos.x] = 0;
+				else
+					m_Editorblock[MousePos.y][MousePos.x] = pointIndex + 1;
+			}
+		}
+
+		ImGui::SetCursorPos(cursorEnd);
+
+		//ImGui::SeparatorText("Settings");
+		ImGui::Separator();
+		ImGui::Text("Settings:");
+
+		ImGui::Columns(2);
+
+		static bool w_BigRoke = false, b_BigRoke = false, w_SmallRoke = false, b_SmallRoke = false;
+
+		ImGui::PushID("W");
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.2, 0.2, 0.2, 1));
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.8, 0.8, 0.8, 1));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.8, 0.8, 0.8, 1));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.8, 0.8, 0.8, 1));
+		ImGui::Checkbox("0-0-0", &w_BigRoke);
+		ImGui::SameLine();
+		ImGui::Checkbox("0-0", &w_SmallRoke);
+		ImGui::PopStyleColor(4);
+		ImGui::PopID();
+
+		ImGui::PushID("B");
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.25, 0.25, 0.25, 1));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.25, 0.25, 0.25, 1));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.25, 0.25, 0.25, 1));
+		ImGui::Checkbox("0-0-0", &b_BigRoke);
+		ImGui::SameLine();
+		ImGui::Checkbox("0-0", &b_SmallRoke);
+		ImGui::PopStyleColor(3);
+		ImGui::PopID();
+
+		ImGui::NextColumn();
+
+		static int player = 1;
+		ImGui::RadioButton("White", &player, 1);
+		ImGui::SameLine();
+		ImGui::RadioButton("Black", &player, 0);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+		if (ImGui::Button("New"))
+		{
+			chess::Pgn_Game gamePgn;
+			chess::chess_entry gameNew(gamePgn);
+			gameNew.run();
+			
+			int indexID = 0;
+			for (int i = 7; i > -1; i--)
+			{
+				for (int j = 0; j < 8; j++)
+				{
+					m_Editorblock[i][j] = gameNew.get_blockID(vec2<float>(indexID - 8 * (int)(indexID / 8), (int)(indexID / 8)));
+					indexID++;
+				}
+			}
+		}
+		ImGui::PopStyleColor();
+
+		ImGui::SameLine();
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+		if (ImGui::Button("Clear"))
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				for (int j = 0; j < 8; j++)
+				{
+					m_Editorblock[i][j] = 0;
+				}
+			}
+		}
+		ImGui::PopStyleColor();
+
+		ImGui::Columns();
+
+		ImGui::Separator();
+		ImGui::NewLine();
+
+		auto CheckBoard = [this](std::string& fen)
+			{
+				std::string values = " PNBRQKpnbrqk";
+				int boardValue[64];
+
+				int indexBoard = 63;
+				for (int i = 0; i < 8; i++)
+				{
+					for (int j = 7; j > -1; j--)
+					{
+						boardValue[indexBoard] = m_Editorblock[i][j];
+						indexBoard--;
+					}
+				}
+
+				fen = "";
+				int empty = 0;
+				bool once = false;
+
+				//den paizei na exw graphei pio epikinduni function
+				for (int i = 56; i > -1; i++)
+				{
+					if (i % 8 == 0 && once)
+					{
+						once = false;
+						if (empty)
+						{
+							fen += std::to_string(empty);
+							empty = 0;
+						}
+						if (i != 8)
+							fen += '/';
+						i -= 17;
+						continue;
+					}
+					once = true;
+					if (boardValue[i] == 0)
+					{
+						empty += 1;
+						continue;
+					}
+					if (empty)
+					{
+						fen += std::to_string(empty);
+						empty = 0;
+					}
+					fen += values[boardValue[i]];
+				}
+
+				fen += ' ';
+
+				if (player == 1)
+					fen += 'w';
+				else
+					fen += 'b';
+
+				fen += ' ';
+
+				if (w_SmallRoke)
+					fen += 'K';
+				if (w_BigRoke)
+					fen += 'Q';
+				if (b_SmallRoke)
+					fen += 'k';
+				if (b_BigRoke)
+					fen += 'q';
+
+				if (fen[fen.size() - 1] == ' ')
+					fen += '-';
+
+				fen += ' ';
+				fen += '-';
+				fen += ' ';
+				fen += '0';
+				fen += ' ';
+				fen += '1';
+
+				chess_core::board edGame;
+				edGame.set_position(fen);
+
+				return !edGame.ERROR_EXIT;
+			};
+
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+		if (ImGui::Button("Create"/*"OverWrite"*/))
+		{
+			std::string fen;
+			if (CheckBoard(fen))
+			{
+				auto& PgnGame = *ChessAPI::GetPgnGame();
+				PgnGame.clear();
+				PgnGame["FEN"] = fen;
+				ChessAPI::OverWriteChessFile("");
+
+				ImGui::CloseCurrentPopup();
+				ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = false;
+			}
+			else
+			{
+				ImGui::OpenPopup("Error");
+			}
+
+		}
+		//ImGui::SameLine();
+		//if (ImGui::Button("Create As Game"))
+		//{
+		//	m_IsEditorOpen = false;
+		//	ImGui::CloseCurrentPopup();
+		//	m_ActiveScene->OnRuntimeStop();
+		//	Hazel::ClearTexture();
+		//	m_ActiveScene = Scene::Copy(m_MainScene);
+		//	m_ActiveScene->OnRuntimeStart();
+		//}
+		//ImGui::SameLine();
+		//if (ImGui::Button("Create As File"))
+		//{
+		//	m_IsEditorOpen = false;
+		//	ImGui::CloseCurrentPopup();
+		//	m_ActiveScene->OnRuntimeStop();
+		//	Hazel::ClearTexture();
+		//	m_ActiveScene = Scene::Copy(m_MainScene);
+		//	m_ActiveScene->OnRuntimeStart();
+		//}
+		ImGui::PopStyleColor();
+
+		if (ImGui::BeginPopupModal("Error", 0, ImGuiWindowFlags_NoResize))
+		{
+			ImGui::TextWrapped("Invalid Board!");
+
+			ImGui::NewLine();
+
+			ImGui::PushID("in");
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("Close").x - 8);
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			if (ImGui::Button("Close"))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::PopID();
+
+			ImGui::EndPopup();
+		}
+
+		ImGui::SameLine();
+
+		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("Cansel").x - 13);
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+		if (ImGui::Button("Cansel"))
+		{
+			ImGui::CloseCurrentPopup();
+			ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = false;
+		}
+		ImGui::PopStyleColor();
+
+		ImGui::EndPopup();
+	}
+}
+
 void ImGuiBoard::FlipBoard()
 {
 	m_reverse = !m_reverse;
+}
+
+void ImGuiBoard::OpenEditor()
+{
+	m_ToOpenEditor = true;
+
+	int indexID = 0;
+	for (int i = 7; i > -1; i--)
+	{
+		for (int j = 0; j < 8; j++)
+		{
+			m_Editorblock[i][j] = ChessAPI::GetBlockID(indexID);
+			indexID++;
+		}
+	}
 }

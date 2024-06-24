@@ -18,6 +18,8 @@ public:
 
 	void FlipBoard();
 
+	void OpenEditor();
+
 private:
 
 	void RenderBoard();
@@ -30,6 +32,7 @@ private:
 	void NextMovePopup();
 	void NewVariantPopup();
 	void NewPiecePopup();
+	void EditorPopup();
 
 private:
 	float m_size;
@@ -43,6 +46,7 @@ private:
 	std::shared_ptr<Walnut::Image> m_pieces[12];
 	std::shared_ptr<Walnut::Image> m_circleFromStart;
 	std::shared_ptr<Walnut::Image> m_circleToEnd;
+	std::shared_ptr<Walnut::Image> m_RedX;
 
 	std::array<std::array<int, 8>, 8> m_block;
 	
@@ -52,4 +56,7 @@ private:
 	std::map<std::string, std::vector<int>> m_PossibleNextMoves;
 	std::string m_MainMove;
 
+private:
+	bool m_ToOpenEditor = false;
+	std::array<std::array<int, 8>, 8> m_Editorblock;
 };

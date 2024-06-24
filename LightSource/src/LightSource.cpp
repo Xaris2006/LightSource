@@ -37,20 +37,7 @@ public:
 	}
 
 	virtual void OnUIRender() override
-	{		
-		//ImGui::ShowDemoWindow();
-
-		UI_DrawAboutModal();
-
-		m_ChessBoard.OnUIRender();
-		m_ContentBrowserPanel.OnImGuiRender();
-		m_DatabasePanel.OnImGuiRender();
-		m_NotePanel.OnImGuiRender();
-		m_OpeningBookPanel.OnImGuiRender();
-		m_GamePropertiesPanel.OnImGuiRender();
-		m_MovePanel.OnImGuiRender();
-		m_ChessEnginePanel.OnImGuiRender();
-
+	{	
 		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
 		{
 			if (ImGui::IsKeyPressed(ImGuiKey_N))
@@ -78,9 +65,22 @@ public:
 
 			if (ImGui::IsKeyPressed(ImGuiKey_E))
 			{
-				//Open Editor
+				OpenEditor();
 			}
 		}
+
+		//ImGui::ShowDemoWindow();
+
+		UI_DrawAboutModal();
+
+		m_ChessBoard.OnUIRender();
+		m_ContentBrowserPanel.OnImGuiRender();
+		m_DatabasePanel.OnImGuiRender();
+		m_NotePanel.OnImGuiRender();
+		m_OpeningBookPanel.OnImGuiRender();
+		m_GamePropertiesPanel.OnImGuiRender();
+		m_MovePanel.OnImGuiRender();
+		m_ChessEnginePanel.OnImGuiRender();
 	}
 
 	void UI_DrawAboutModal()
@@ -152,6 +152,11 @@ public:
 	{
 		m_ChessEnginePanel.CloseChessEngine();
 		m_ChessEnginePanel.Reset();
+	}
+
+	void OpenEditor()
+	{
+		m_ChessBoard.OpenEditor();
 	}
 
 	void FlipBoard()
@@ -267,7 +272,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			}
 			if (ImGui::MenuItem("Editor", "Ctr+E"))
 			{
-				
+				chessLayer->OpenEditor();
 			}
 			
 			ImGui::EndMenu();

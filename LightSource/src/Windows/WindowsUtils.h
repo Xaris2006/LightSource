@@ -4,7 +4,7 @@
 
 namespace Windows::Utils
 {
-	std::string OpenFile(std::string Filter);
+	std::string OpenFile(const char* Filter);
 
-	std::string SaveFile(std::string Filter);
+	std::string SaveFile(const char* Filter);
 }

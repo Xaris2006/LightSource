@@ -25,7 +25,7 @@ namespace chess
 
 
 		std::map<PositionID, std::vector<MoveOB>> PositionMoveMap;
-		//chess_entry game(pgnfile[0]);
+
 		PositionID pos;
 		int moveIndex = -1;
 		int strindex;
@@ -36,6 +36,8 @@ namespace chess
 
 		for (int x = 0; x < format_version.size(); x++)
 			buffer.push_back(format_version[x]);
+
+		chess_entry game(pgnfile[0]);
 
 		for (int i = 0; i < pgnfile.GetSize(); i++)
 		{
@@ -50,8 +52,8 @@ namespace chess
 			if (pgnfile[i]["FEN"] != "?" && pgnfile[i]["FEN"] != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 				continue;
 
-			chess_entry game(pgnfile[i]);
-			game.run();
+			
+			game.rerun(pgnfile[i]);
 			std::string move = "";
 			auto& movestr = game.GetPgnGame().GetMovePathbyRef();
 			for (int j = 0; j < movestr.move.size(); j++)

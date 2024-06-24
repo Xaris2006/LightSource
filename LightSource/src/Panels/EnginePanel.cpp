@@ -208,8 +208,13 @@ namespace Panels
 				if (EngineMoves[j].empty())
 					break;
 				ImGui::SameLine();
+
+				ImGui::PushID((EngineMoves[j] + std::to_string(i*10 + j)).c_str());
+
 				if (ImGui::Button(EngineMoves[j].c_str()))
 					index = j + 1;
+
+				ImGui::PopID();
 			}
 
 			if (index && s_time.Elapsed() > 0.5)
@@ -485,7 +490,7 @@ namespace Panels
 							pgngame->clear();
 							(*pgngame)["FEN"] = cur_fen;
 							game.rerun(*pgngame);
-							std::cout << cur_fen << " while \n";
+							//std::cout << cur_fen << " while \n";
 
 							int indexhere = 0;
 							for (auto& move : m_Moves[list])
@@ -507,7 +512,7 @@ namespace Panels
 									if (n_type == -1)
 										n_type = 0;
 								}
-								std::cout << game.GetFEN() << '\n';
+								//std::cout << game.GetFEN() << '\n';
 								move = game.GetMoveByUCI(move);
 								game.make_new_move(pos, dir - pos);
 								game.SetNewPawnType((chess_core::piece_type_identifier)n_type);

@@ -307,8 +307,20 @@ namespace chess
 
 		}
 
+		if (Parent->move.empty())
+			return;
+
 		if (Parent->move[Parent->move.size() - 1].empty())
 			Parent->move.resize(Parent->move.size() - 1);
+
+		if (Parent->move.empty())
+			return;
+
+		if (Parent->move[Parent->move.size() - 1] == "*")
+			Parent->move.resize(Parent->move.size() - 1);
+
+		if (Parent->move.empty())
+			return;
 
 		if (Parent->move[Parent->move.size() - 1].find('-') != std::string::npos && Parent->move[Parent->move.size() - 1].find('1') != std::string::npos)
 		{

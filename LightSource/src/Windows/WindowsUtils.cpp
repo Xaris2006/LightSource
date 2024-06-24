@@ -12,7 +12,7 @@
 
 namespace Windows::Utils
 {
-	std::string OpenFile(std::string Filter)
+	std::string OpenFile(const char* Filter)
 	{
 		OPENFILENAMEA ofn;
 		CHAR szFile[260] = { 0 };
@@ -24,7 +24,7 @@ namespace Windows::Utils
 		ofn.nMaxFile = sizeof(szFile);
 		if (GetCurrentDirectoryA(256, currentDir))
 			ofn.lpstrInitialDir = currentDir;
-		ofn.lpstrFilter = Filter.c_str();
+		ofn.lpstrFilter = Filter;
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
@@ -35,7 +35,7 @@ namespace Windows::Utils
 		return filepath;
 	}
 	
-	std::string SaveFile(std::string Filter)
+	std::string SaveFile(const char* Filter)
 	{
 		OPENFILENAMEA ofn;
 		CHAR szFile[260] = { 0 };
@@ -47,18 +47,17 @@ namespace Windows::Utils
 		ofn.nMaxFile = sizeof(szFile);
 		if (GetCurrentDirectoryA(256, currentDir))
 			ofn.lpstrInitialDir = currentDir;
-		ofn.lpstrFilter = Filter.c_str();
+		ofn.lpstrFilter = Filter;
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
 		// Sets the default extension by extracting it from the filter
-		ofn.lpstrDefExt = strchr(Filter.c_str(), '\0') + 1;
-
-		std::string filepath = "";
+		ofn.lpstrDefExt = strchr(Filter, '\0') + 1;
 
 		if (GetSaveFileNameA(&ofn) == TRUE)
-			filepath = ofn.lpstrFile;
-		return filepath;
+			return ofn.lpstrFile;
+
+		return std::string();
 	}
 
 }
