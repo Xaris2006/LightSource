@@ -373,6 +373,9 @@ namespace chess
 			//check for the possible pieces 
 			for (auto& pi : m_game.get_ptr_piece(enegertic_type))
 			{
+				if (enegertic_type == chess_core::PAWN)
+					break;
+
 				if (pi->get_color() == m_game.get_player_color())
 				{
 					auto& pm = pi->possible_moves();
