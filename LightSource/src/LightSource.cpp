@@ -23,6 +23,7 @@
 #include "GLFW/glfw3.h"
 
 std::string g_AppDirectory;
+Walnut::ApplicationSpecification g_spec;
 
 class ChessLayer : public Walnut::Layer
 {
@@ -34,6 +35,19 @@ public:
 		ChessAPI::Init();
 
 		m_ChessBoard.OnAttach();
+
+		if (__argc > 1)
+		{
+			if (chess::IsFileValidFormat(__argv[1], ".pgn"))
+			{
+				ChessAPI::SetNewChessGame(__argv[1]);
+			}
+			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
+			//{
+			//	//m_ChessPanel.IsOpeningBookPanelOpen() = true;
+			//	m_chess.openBook.OpenCOBfile(commandLineArgs[1]);
+			//}
+		}
 	}
 
 	virtual void OnUIRender() override
@@ -228,14 +242,17 @@ private:
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
-	Walnut::ApplicationSpecification spec;
-	spec.Name = "Light Source";
-	spec.CustomTitlebar = true;
-	spec.IconPath = "lsb.png";
-	//g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
-	g_AppDirectory = "E:\\programs\\c++\\Light-Source\\final4\\LightSource\\LightSource";
+	g_spec.Name = "Light Source";
+	g_spec.CustomTitlebar = true;
+	g_spec.IconPath = "lsb.png";
+	g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
+	
+#if defined(WL_DIST)
+	std::filesystem::current_path(g_AppDirectory);
+#endif
 
-	Walnut::Application* app = new Walnut::Application(spec);
+
+	Walnut::Application* app = new Walnut::Application(g_spec);
 	std::shared_ptr<ChessLayer> chessLayer = std::make_shared<ChessLayer>();
 	app->PushLayer(chessLayer);
 	app->SetMenubarCallback([app, chessLayer]()
