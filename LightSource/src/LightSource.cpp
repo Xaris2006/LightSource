@@ -244,9 +244,14 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	g_spec.Name = "Light Source";
 	g_spec.CustomTitlebar = true;
-	g_spec.IconPath = "lsb.png";
+	g_spec.IconPath = "Resources\\LightSource\\ls.png";
+	g_spec.HoveredIconPath = "Resources\\LightSource\\lsOn.png";
+	g_spec.FuncIconPressed = []()
+		{
+			std::cout << "Open!\n";
+		};
 	g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
-	
+
 #if defined(WL_DIST)
 	std::filesystem::current_path(g_AppDirectory);
 #endif
