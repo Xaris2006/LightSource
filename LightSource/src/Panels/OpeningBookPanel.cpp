@@ -96,6 +96,8 @@ namespace Panels
 
 		ImGui::PushID("Play");
 		
+		ImGui::Text("Open An Opening Book");
+		ImGui::NewLine();
 		ImGui::Button("Place Here Cob File");
 		if (ImGui::BeginDragDropTarget())
 		{

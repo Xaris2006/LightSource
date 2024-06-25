@@ -38,6 +38,7 @@ namespace chess
 			buffer.push_back(format_version[x]);
 
 		chess_entry game(pgnfile[0]);
+		game.run();
 
 		for (int i = 0; i < pgnfile.GetSize(); i++)
 		{

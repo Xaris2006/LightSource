@@ -29,7 +29,6 @@ namespace Panels {
 		void CommandChessEngine(const std::string& command);
 
 		std::vector<std::string> GetBestMoveStr(int list) const;
-		float					 GetScore() const;
 		int						 GetDepth() const;
 		int						 GetNodesPerSecond() const;
 		std::string				 GetName();
@@ -46,8 +45,6 @@ namespace Panels {
 		int m_threadCount = 2;
 		int m_hashMb = 256;
 
-		float m_winner = 1;
-
 		std::shared_ptr<Walnut::Image> m_IconPlay = std::make_shared<Walnut::Image>("Resources/Icons/PlayButton.png");
 		std::shared_ptr<Walnut::Image> m_IconStop = std::make_shared<Walnut::Image>("Resources/Icons/StopButton.png");
 
@@ -62,8 +59,8 @@ namespace Panels {
 		bool m_BlackToPlay = false;
 
 		int m_Depth = 404;
-		float m_Score = 404;
 		int m_Nps = 404;
+		float m_Score[5];
 		std::vector<std::string> m_Moves[5];
 		int m_FinalStreams[5];
 

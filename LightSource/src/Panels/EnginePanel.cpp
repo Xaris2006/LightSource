@@ -123,21 +123,19 @@ namespace Panels
 			CommandChessEngine("go infinite");
 		}
 
-		m_winner = GetScore();
-
 		ImVec4 color = ImVec4(0.3f, 0.58f, 0.97f, 1.0f);
-		if (m_winner < -0.8) { color = ImVec4(0.79f, 0.1f, 0.1f, 1.0f); }
-		else if (m_winner > 0.8) { color = ImVec4(0.1f, 0.79f, 0.31f, 1.0f); }
+		if (m_Score[0] < -0.8) { color = ImVec4(0.79f, 0.1f, 0.1f, 1.0f); }
+		else if (m_Score[0] > 0.8) { color = ImVec4(0.1f, 0.79f, 0.31f, 1.0f); }
 
 		ImGui::PushStyleColor(ImGuiCol_Text, color);
 		ImGui::PushFont(io.Fonts->Fonts[1]);
 
-		if (std::abs(m_winner) > 1000.0f)
-			ImGui::TextWrapped("Mate in %.0f", m_winner - 1000.0f * std::abs(m_winner) / m_winner);
-		else if (std::abs(m_winner) == 1000.0f)
+		if (std::abs(m_Score[0]) > 1000.0f)
+			ImGui::TextWrapped("Mate in %.0f", m_Score[0] - 1000.0f * std::abs(m_Score[0]) / m_Score[0]);
+		else if (std::abs(m_Score[0]) == 1000.0f)
 			ImGui::TextWrapped("Mated");
 		else
-			ImGui::TextWrapped("%.2f", m_winner);
+			ImGui::TextWrapped("%.2f", m_Score[0]);
 
 		ImGui::PopFont();
 		ImGui::PopStyleColor();
@@ -200,13 +198,21 @@ namespace Panels
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 		for (int i = 0; i < m_lines; i++)
 		{
-			ImGui::Text("%d:", i + 1);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
+
+			if (std::abs(m_Score[i]) > 1000.0f)
+				ImGui::TextWrapped("Mate in %.0f", m_Score[i] - 1000.0f * std::abs(m_Score[i]) / m_Score[i]);
+			else if (std::abs(m_Score[i]) == 1000.0f)
+				ImGui::TextWrapped("Mated");
+			else
+				ImGui::TextWrapped("%.2f", m_Score[i]);
+
+			ImGui::PopStyleColor();
+
 			auto EngineMoves = GetBestMoveStr(i);
 			int index = 0;
 			for (int j = 0; j < EngineMoves.size() && m_running; j++)
 			{
-				if (EngineMoves[j].empty())
-					break;
 				ImGui::SameLine();
 
 				ImGui::PushID((EngineMoves[j] + std::to_string(i*10 + j)).c_str());
@@ -350,9 +356,10 @@ namespace Panels
 							cur_fen = fen;
 
 							std::scoped_lock(s_vectorMutex);
-							for (auto& move : m_Moves)
+							for (int list = 0; list < 5; list++)
 							{
-								move.clear();
+								m_Moves[list].clear();
+								m_Score[list] = 0;
 							}
 
 							//std::cout << fen << " update \n";
@@ -399,7 +406,7 @@ namespace Panels
 						overall = StockMoveStreams[m_FinalStreams[list]];
 
 						int index = FindLastOf(overall, " depth ");
-						if (index + 7 < overall.size() && index >= 0)
+						if (index + 7 < overall.size() && index >= 0 && list == 0)
 						{
 							index += 7;
 							std::string strdepth;
@@ -423,9 +430,9 @@ namespace Panels
 									break;
 								strscore += overall[j];
 							}
-							m_Score = (float)std::stoi(strscore) / 100.0f;
+							m_Score[list] = (float)std::stoi(strscore) / 100.0f;
 							if (m_BlackToPlay)
-								m_Score *= -1;
+								m_Score[list] *= -1;
 						}
 						else if (index == -1)
 						{
@@ -441,14 +448,14 @@ namespace Panels
 									strscore += overall[j];
 								}
 								float score = (float)std::stoi(strscore);
-								m_Score = score + 1000.0f * std::abs(score) / score;
+								m_Score[list] = score + 1000.0f * std::abs(score) / score;
 								if (m_BlackToPlay)
-									m_Score *= -1;
+									m_Score[list] *= -1;
 							}
 						}
 
 						index = FindLastOf(overall, " nps ");
-						if (index + 5 < overall.size() && index >= 0)
+						if (index + 5 < overall.size() && index >= 0 && list == 0)
 						{
 							index += 5;
 							std::string strnps;
@@ -468,8 +475,6 @@ namespace Panels
 							index += 4;
 							int MoveIntex = 0;
 
-							s_vectorMutex.lock();
-
 							m_Moves[list].clear();
 							m_Moves[list].emplace_back("");
 							for (int j = index; j < overall.size(); j++)
@@ -485,8 +490,6 @@ namespace Panels
 								m_Moves[list][MoveIntex] += overall[j];
 							}
 
-							s_vectorMutex.unlock();
-
 							pgngame->clear();
 							(*pgngame)["FEN"] = cur_fen;
 							game.rerun(*pgngame);
@@ -495,6 +498,11 @@ namespace Panels
 							int indexhere = 0;
 							for (auto& move : m_Moves[list])
 							{
+								if (move.empty())
+								{
+									m_Moves[list].resize(indexhere);
+									break;
+								}
 								if (indexhere == 15)
 								{
 									m_Moves[list].resize(15);
@@ -567,15 +575,7 @@ namespace Panels
 	{
 		if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_RightArrow))
 			return std::vector<std::string>();
-		std::scoped_lock(s_vectorMutex);
 		return m_Moves[list];
-	}
-
-	float EnginePanel::GetScore() const
-	{
-		if (IsEngineOpen())
-			return m_Score;
-		return 404;
 	}
 
 	int EnginePanel::GetDepth() const

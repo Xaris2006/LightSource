@@ -5,9 +5,13 @@
 #include "ChessCore/chess_entry.h"
 
 #include "imgui_internal.h"
+#include "misc/cpp/imgui_stdlib.h"
+
+#include <fstream>
 
 #include "../../Walnut/Source/Walnut/Application.h"
 
+static std::string s_fen;
 
 void ImGuiBoard::OnAttach()
 {
@@ -765,7 +769,7 @@ void ImGuiBoard::EditorPopup()
 
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
-		if (ImGui::Button("Create"/*"OverWrite"*/))
+		if (ImGui::Button("OverWrite"))
 		{
 			std::string fen;
 			if (CheckBoard(fen))
@@ -784,28 +788,45 @@ void ImGuiBoard::EditorPopup()
 			}
 
 		}
-		//ImGui::SameLine();
-		//if (ImGui::Button("Create As Game"))
-		//{
-		//	m_IsEditorOpen = false;
-		//	ImGui::CloseCurrentPopup();
-		//	m_ActiveScene->OnRuntimeStop();
-		//	Hazel::ClearTexture();
-		//	m_ActiveScene = Scene::Copy(m_MainScene);
-		//	m_ActiveScene->OnRuntimeStart();
-		//}
-		//ImGui::SameLine();
-		//if (ImGui::Button("Create As File"))
-		//{
-		//	m_IsEditorOpen = false;
-		//	ImGui::CloseCurrentPopup();
-		//	m_ActiveScene->OnRuntimeStop();
-		//	Hazel::ClearTexture();
-		//	m_ActiveScene = Scene::Copy(m_MainScene);
-		//	m_ActiveScene->OnRuntimeStart();
-		//}
+		ImGui::SameLine();
+		if (ImGui::Button("Create As New Game"))
+		{
+			std::string fen;
+			if (CheckBoard(fen))
+			{
+				ChessAPI::NewGameInFile();
+				auto& PgnGame = *ChessAPI::GetPgnGame();
+				PgnGame.clear();
+				PgnGame["FEN"] = fen;
+				ChessAPI::OverWriteChessFile("");
+
+				ImGui::CloseCurrentPopup();
+				ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = false;
+			}
+			else
+			{
+				ImGui::OpenPopup("Error");
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Create As New File"))
+		{
+			s_fen.clear();
+			if (CheckBoard(s_fen))
+			{
+				ImGui::OpenPopup("New Chess File");
+
+				ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = false;
+			}
+			else
+			{
+				ImGui::OpenPopup("Error");
+			}
+		}
 		ImGui::PopStyleColor();
 
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 		if (ImGui::BeginPopupModal("Error", 0, ImGuiWindowFlags_NoResize))
 		{
 			ImGui::TextWrapped("Invalid Board!");
@@ -824,6 +845,45 @@ void ImGuiBoard::EditorPopup()
 
 			ImGui::PopID();
 
+			ImGui::EndPopup();
+		}
+
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+		if (ImGui::BeginPopupModal("New Chess File", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
+		{
+			static std::string s_inputNName = "NewFile.pgn";
+			ImGui::InputText("Name", &s_inputNName);
+
+			ImGui::NewLine();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+			if (ImGui::Button("Create"))
+			{
+				std::filesystem::path nPath = std::filesystem::path()/ "chess_working_directory" / s_inputNName;
+				nPath.replace_extension(".pgn");
+
+				std::string strNPath = nPath.string();
+					
+				ChessAPI::OverWriteChessFile("");
+
+				chess::Pgn_File NPgnFile;
+				NPgnFile.CreateGame();
+				NPgnFile[0]["FEN"] = s_fen;
+				std::ofstream outfile(strNPath);
+				outfile << NPgnFile;
+				outfile.close();
+
+				ChessAPI::SetNewChessGame(strNPath);
+
+				ImGui::ClosePopupToLevel(0, true);
+				//ImGui::CloseCurrentPopup();
+			}
+			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			if (ImGui::Button("Cansel"))
+				ImGui::CloseCurrentPopup();
+			ImGui::PopStyleColor();
 			ImGui::EndPopup();
 		}
 

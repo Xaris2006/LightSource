@@ -19,15 +19,19 @@ namespace Panels
 		ImGui::Separator();
 		if (!m_addinglabel)
 		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 			if (ImGui::Button("Add a new label"))
 			{
 				m_addinglabel = true;
 			}
+			ImGui::PopStyleColor();
 		}
 		if (m_addinglabel)
 		{
 			ImGui::InputText("Label Name", &m_nlabelname);
 			auto& names = ChessAPI::GetCurPgnLabelNames();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 			if (ImGui::Button("Add") && m_nlabelname != ""
 				&& std::find(names.begin(), names.end(), m_nlabelname) == names.end())
 			{
@@ -35,12 +39,15 @@ namespace Panels
 				m_nlabelname = "";
 				m_addinglabel = false;
 			}
+			ImGui::PopStyleColor();
 			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
 			if (ImGui::Button("Cansel"))
 			{
 				m_nlabelname = "";
 				m_addinglabel = false;
 			}
+			ImGui::PopStyleColor();
 		}
 		ImGui::End();
 		

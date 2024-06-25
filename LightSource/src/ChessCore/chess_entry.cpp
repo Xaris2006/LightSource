@@ -21,12 +21,13 @@ namespace chess
 
 	chess_entry::chess_entry()
 	{
+		
 	}
 
 	chess_entry::chess_entry(Pgn_Game& pgngame)
 		:m_settings(&pgngame)
 	{
-
+		
 	}
 
 	bool chess_entry::IsPawnWaiting() const
@@ -255,63 +256,63 @@ namespace chess
 		names_to_pti['K'] = { chess_core::piece_type_identifier::KING };
 
 		m_energeticMoveBack[chess_core::PAWN] = [this](vec2<float> pos, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(pos) = (chess_core::pawn*)pieceptr;
-		};
+			{
+				m_game.get_blocks(pos) = (chess_core::pawn*)pieceptr;
+			};
 		m_energeticMoveBack[chess_core::KNIGHT] = [this](vec2<float> pos, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(pos) = (chess_core::knight*)pieceptr;
-		};
+			{
+				m_game.get_blocks(pos) = (chess_core::knight*)pieceptr;
+			};
 		m_energeticMoveBack[chess_core::BISHOP] = [this](vec2<float> pos, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(pos) = (chess_core::bishop*)pieceptr;
-		};
+			{
+				m_game.get_blocks(pos) = (chess_core::bishop*)pieceptr;
+			};
 		m_energeticMoveBack[chess_core::ROOK] = [this](vec2<float> pos, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(pos) = (chess_core::rook*)pieceptr;
-		};
+			{
+				m_game.get_blocks(pos) = (chess_core::rook*)pieceptr;
+			};
 		m_energeticMoveBack[chess_core::QUEEN] = [this](vec2<float> pos, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(pos) = (chess_core::queen*)pieceptr;
-		};
+			{
+				m_game.get_blocks(pos) = (chess_core::queen*)pieceptr;
+			};
 		m_energeticMoveBack[chess_core::KING] = [this](vec2<float> pos, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(pos) = (chess_core::king*)pieceptr;
-		};
+			{
+				m_game.get_blocks(pos) = (chess_core::king*)pieceptr;
+			};
 		m_energeticMoveBack[chess_core::UNKOWN] = [this](vec2<float> pos, chess_core::piece* pieceptr)
-		{
-			throw std::runtime_error("Unkown energetic type");
-		};
+			{
+				throw std::runtime_error("Unkown energetic type");
+			};
 
 		m_passiveMoveBack[chess_core::PAWN] = [this](vec2<float> dir, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(dir) = (chess_core::pawn*)pieceptr;
-		};
+			{
+				m_game.get_blocks(dir) = (chess_core::pawn*)pieceptr;
+			};
 		m_passiveMoveBack[chess_core::KNIGHT] = [this](vec2<float> dir, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(dir) = (chess_core::knight*)pieceptr;
-		};
+			{
+				m_game.get_blocks(dir) = (chess_core::knight*)pieceptr;
+			};
 		m_passiveMoveBack[chess_core::BISHOP] = [this](vec2<float> dir, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(dir) = (chess_core::bishop*)pieceptr;
-		};
+			{
+				m_game.get_blocks(dir) = (chess_core::bishop*)pieceptr;
+			};
 		m_passiveMoveBack[chess_core::ROOK] = [this](vec2<float> dir, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(dir) = (chess_core::rook*)pieceptr;
-		};
+			{
+				m_game.get_blocks(dir) = (chess_core::rook*)pieceptr;
+			};
 		m_passiveMoveBack[chess_core::QUEEN] = [this](vec2<float> dir, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(dir) = (chess_core::queen*)pieceptr;
-		};
+			{
+				m_game.get_blocks(dir) = (chess_core::queen*)pieceptr;
+			};
 		m_passiveMoveBack[chess_core::KING] = [this](vec2<float> dir, chess_core::piece* pieceptr)
-		{
-			m_game.get_blocks(dir) = (chess_core::king*)pieceptr;
+			{
+				m_game.get_blocks(dir) = (chess_core::king*)pieceptr;
 
-		};
+			};
 		m_passiveMoveBack[chess_core::UNKOWN] = [this](vec2<float> dir, chess_core::piece* pieceptr)
-		{
+			{
 
-		};
+			};
 
 		//set to zero move
 		m_pmppath.push_back(-1);
@@ -333,7 +334,15 @@ namespace chess
 		m_pmppath.clear();
 		m_game.clear();
 
-		run();
+		//set to zero move
+		m_pmppath.push_back(-1);
+		
+		m_game.set_position((*m_settings)["FEN"]);
+		
+		Pgn_Game::ChessMovesPath& movepath_str = m_settings->GetMovePathbyRef();
+		PropOfMovesPath* movepath_data = &m_movespath;
+		
+		stringpath_to_srcpath(movepath_str, movepath_data);//BUGGY
 	}
 
 	bool chess_entry::make_new_move(vec2<float> piecpos, vec2<float> piecmove)

@@ -67,6 +67,16 @@ public:
 			{
 				OpenEditor();
 			}
+
+			if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+			{
+				OpenChessEngine();
+			}
+			
+			if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+			{
+				CloseChessEngine();
+			}
 		}
 
 		//ImGui::ShowDemoWindow();
@@ -248,6 +258,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				ChessLayer::SaveAs();
 			}
+			ImGui::Separator();
 			if (ImGui::MenuItem("Exit"))
 			{
 				app->Close();
@@ -266,6 +277,10 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		}
 		if (ImGui::BeginMenu("Board"))
 		{
+			if (ImGui::MenuItem("Copy Board", "Ctr+B"))
+			{
+				ImGui::SetClipboardText(ChessAPI::GetFEN().c_str());
+			}
 			if (ImGui::MenuItem("Flip Board", "Ctr+F"))
 			{
 				chessLayer->FlipBoard();
@@ -274,12 +289,20 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				chessLayer->OpenEditor();
 			}
+			if (ImGui::MenuItem("Go Next Move", "Right Arrow"))
+			{
+				ChessAPI::NextSavedMove();
+			}
+			if (ImGui::MenuItem("Go Previous Move", "Left Arrow"))
+			{
+				ChessAPI::PreviousSavedMove();
+			}
 			
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Engine"))
 		{
-			if (ImGui::MenuItem("Open Default"))
+			if (ImGui::MenuItem("Open Default", "Ctr+Up Arrow"))
 			{
 				chessLayer->OpenChessEngine();
 			}
@@ -289,7 +312,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 				if (!filepath.empty())
 					chessLayer->OpenChessEngine(filepath);
 			}
-			if (ImGui::MenuItem("Close"))
+			if (ImGui::MenuItem("Close", "Ctr+Down Arrow"))
 			{
 				chessLayer->CloseChessEngine();
 			}

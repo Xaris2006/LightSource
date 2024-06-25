@@ -74,6 +74,7 @@ namespace Panels {
 
 			ImGui::NewLine();
 
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 			if (ImGui::Button("Create"))
 			{
 				std::filesystem::path nPath = std::filesystem::path() / s_oldpath / s_inputNName;
@@ -86,9 +87,12 @@ namespace Panels {
 					std::filesystem::create_directory(nPath);
 				ImGui::CloseCurrentPopup();
 			}
+			ImGui::PopStyleColor();
 			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
 			if (ImGui::Button("Cansel"))
 				ImGui::CloseCurrentPopup();
+			ImGui::PopStyleColor();
 			ImGui::EndPopup();
 		}
 
@@ -191,15 +195,19 @@ namespace Panels {
 
 				ImGui::NewLine();
 
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 				if (ImGui::Button("Rename"))
 				{
 					std::string fileNpath = s_oldpath.string().substr(0, s_oldpath.string().size() - s_oldpath.filename().string().size() - 1) + '\\' + s_inputNName;
 					std::filesystem::rename(s_oldpath, fileNpath);
 					ImGui::CloseCurrentPopup();
 				}
+				ImGui::PopStyleColor();
 				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
 				if (ImGui::Button("Cansel"))
 					ImGui::CloseCurrentPopup();
+				ImGui::PopStyleColor();
 				ImGui::EndPopup();
 			}
 
