@@ -15,24 +15,24 @@ static std::string s_fen;
 
 void ImGuiBoard::OnAttach()
 {
-	m_board[0] = std::make_shared<Walnut::Image>("board.png");
-	m_board[1] = std::make_shared<Walnut::Image>("boardRev.png");
+	m_board[0] = std::make_shared<Walnut::Image>("Resources\\Board\\board.png");
+	m_board[1] = std::make_shared<Walnut::Image>("Resources\\Board\\boardRev.png");
 
-	m_pieces[0] = std::make_shared<Walnut::Image>("piecies\\white_pawn.png");
-	m_pieces[1] = std::make_shared<Walnut::Image>("piecies\\white_knight.png");
-	m_pieces[2] = std::make_shared<Walnut::Image>("piecies\\white_bishop.png");
-	m_pieces[3] = std::make_shared<Walnut::Image>("piecies\\white_rook.png");
-	m_pieces[4] = std::make_shared<Walnut::Image>("piecies\\white_queen.png");
-	m_pieces[5] = std::make_shared<Walnut::Image>("piecies\\white_king.png");
-	m_pieces[6] = std::make_shared<Walnut::Image>("piecies\\black_pawn.png");
-	m_pieces[7] = std::make_shared<Walnut::Image>("piecies\\black_knight.png");
-	m_pieces[8] = std::make_shared<Walnut::Image>("piecies\\black_bishop.png");
-	m_pieces[9] = std::make_shared<Walnut::Image>("piecies\\black_rook.png");
-	m_pieces[10] = std::make_shared<Walnut::Image>("piecies\\black_queen.png");
-	m_pieces[11] = std::make_shared<Walnut::Image>("piecies\\black_king.png");
+	m_pieces[0] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_pawn.png");
+	m_pieces[1] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_knight.png");
+	m_pieces[2] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_bishop.png");
+	m_pieces[3] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_rook.png");
+	m_pieces[4] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_queen.png");
+	m_pieces[5] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_king.png");
+	m_pieces[6] = std::make_shared<Walnut::Image>("Resources\\piecies\\black_pawn.png");
+	m_pieces[7] = std::make_shared<Walnut::Image>("Resources\\piecies\\black_knight.png");
+	m_pieces[8] = std::make_shared<Walnut::Image>("Resources\\piecies\\black_bishop.png");
+	m_pieces[9] = std::make_shared<Walnut::Image>("Resources\\piecies\\black_rook.png");
+	m_pieces[10] = std::make_shared<Walnut::Image>("Resources\\piecies\\black_queen.png");
+	m_pieces[11] = std::make_shared<Walnut::Image>("Resources\\piecies\\black_king.png");
 
-	m_circleFromStart = std::make_shared<Walnut::Image>("f.png");
-	m_circleToEnd = std::make_shared<Walnut::Image>("f2.png");
+	m_circleFromStart = std::make_shared<Walnut::Image>("Resources\\Board\\f.png");
+	m_circleToEnd = std::make_shared<Walnut::Image>("Resources\\Board\\f2.png");
 
 	m_RedX = std::make_shared<Walnut::Image>("Resources\\RedX.png");
 
