@@ -12,3 +12,4 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 include "Build-Walnut-External.lua"
 include "LightSource/Build-LightSource-App.lua"
+include "LightSource-Lobby/Build-LightSource-Lobby-App.lua"
