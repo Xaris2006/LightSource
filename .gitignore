@@ -20,3 +20,4 @@
 *.cob
 /LightSource/chess_working_directory/exa.cob
 *.suo
+*.filters
