@@ -37,6 +37,12 @@ namespace Panels
 
 	void DatabasePanel::OnImGuiRender()
 	{
+		if (m_filePath != ChessAPI::GetPgnFilePath())
+		{
+			Reset();
+			m_filePath = ChessAPI::GetPgnFilePath();
+		}
+
 		chess::Pgn_File* pgnfile = ChessAPI::GetPgnFile();
 		if (pgnfile)
 		{
@@ -111,6 +117,9 @@ namespace Panels
 
 			ImGui::NewLine();
 			ImGui::Separator();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.48f, 0.87f, 1.0f));
+
 			if (ImGui::Button("New Game"))
 			{
 				ChessAPI::NewGameInFile();
@@ -122,6 +131,8 @@ namespace Panels
 				ChessAPI::DeleteGameInFile(m_lastPointedRow);
 				m_lastPointedRow = 0;
 			}
+
+			ImGui::PopStyleColor();
 
 			ImGui::Separator();
 
@@ -168,8 +179,13 @@ namespace Panels
 					{
 						ImGui::TableNextRow();
 
-						if (row == m_lastPointedRow)
+						if (ChessAPI::GetActiveGame() == m_lastPointedRow && row == m_lastPointedRow)
+							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 80, 80, 255));
+						else if (row == m_lastPointedRow)
 							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
+						else if (row == ChessAPI::GetActiveGame())
+							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 110, 50, 255));
+
 						for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
 						{
 							if (!ImGui::TableSetColumnIndex(column) && column > 0)
@@ -185,7 +201,7 @@ namespace Panels
 									m_lastPointedRow = row;
 								}
 								if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-									ChessAPI::SetNewChessGame(row);
+									ChessAPI::OpenChessGameInFile(row);
 
 								if (ImGui::BeginDragDropSource())
 								{
@@ -206,8 +222,14 @@ namespace Panels
 					for (int i = start; i < start + showed && i < all; i++)
 					{
 						ImGui::TableNextRow();
-						if (m_search_resualt[i] == m_lastPointedRow)
+
+						if (ChessAPI::GetActiveGame() == m_lastPointedRow && m_search_resualt[i] == m_lastPointedRow)
+							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 80, 80, 255));
+						else if (m_search_resualt[i] == m_lastPointedRow)
 							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
+						else if(m_search_resualt[i] == ChessAPI::GetActiveGame())
+							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 110, 50, 255));
+
 						for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
 						{
 							if (!ImGui::TableSetColumnIndex(column) && column > 0)
@@ -223,7 +245,7 @@ namespace Panels
 									m_lastPointedRow = m_search_resualt[i];
 								}
 								if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-									ChessAPI::SetNewChessGame(m_search_resualt[i]);
+									ChessAPI::OpenChessGameInFile(m_search_resualt[i]);
 								if (ImGui::BeginDragDropSource())
 								{
 									ImGui::SetDragDropPayload("Database", &m_search_resualt[i], sizeof(int));

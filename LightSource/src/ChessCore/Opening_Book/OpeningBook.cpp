@@ -57,11 +57,14 @@ namespace chess
 			game.rerun(pgnfile[i]);
 			std::string move = "";
 			auto& movestr = game.GetPgnGame().GetMovePathbyRef();
-			for (int j = 0; j < movestr.move.size(); j++)
+
+			const int maxMoves = 44;
+
+			for (int j = 0; j < movestr.move.size() && j < maxMoves; j++)
 			{
 				game.Go_move_Next();
 			}
-			for (int j = movestr.move.size() - 1; j >= 0; j--)
+			for (int j = movestr.move.size() - 1 < maxMoves -1 ? movestr.move.size() - 1 : maxMoves-1; j >= 0; j--)
 			{
 				if (movestr.move[j] == "child")
 					continue;

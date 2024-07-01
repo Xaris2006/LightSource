@@ -11,7 +11,9 @@
 
 #include "../../Walnut/Source/Walnut/Application.h"
 
+
 static std::string s_fen;
+static bool cross = true;
 
 void ImGuiBoard::OnAttach()
 {
@@ -43,8 +45,78 @@ void ImGuiBoard::OnAttach()
 
 void ImGuiBoard::OnUIRender()
 {
-	ImGui::Begin("Hello", 0, ImGuiWindowFlags_NoScrollbar);
-	
+	ImGui::Begin("Game", 0, ImGuiWindowFlags_NoScrollbar);
+
+	int tabRemove = -1;
+	auto& opened = ChessAPI::GetOpenGames();
+
+	if (ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_Reorderable))
+	{
+		cross = true;
+
+		for (int n = 0; n < opened.size(); n++)
+		{
+			ImVec4 colorTab = ImGui::GetStyle().Colors[ImGuiCol_TabHovered];
+			colorTab.x *= 0.7f;
+			colorTab.y *= 0.7f;
+			colorTab.z *= 0.7f;
+
+			if (ChessAPI::GetActiveGame() == opened[n])
+			{
+				colorTab = ImGui::GetStyle().Colors[ImGuiCol_TabActive];
+			}
+			
+			bool activeTab = false;
+			
+			ImGui::PushStyleColor(ImGuiCol_Tab, colorTab);
+			ImGui::PushStyleColor(ImGuiCol_TabHovered, colorTab);
+			ImGui::PushStyleColor(ImGuiCol_TabActive, colorTab);
+
+			ImGui::PushID(opened[n]);
+
+			bool* crossAddress = &cross;
+			if (opened.size() == 1)
+				crossAddress = nullptr;
+
+			if (ImGui::BeginTabItem((std::to_string(opened[n] + 1) + ": " + ChessAPI::GetPgnFile()->operator[](opened[n])["White"] + " - " + ChessAPI::GetPgnFile()->operator[](opened[n])["Black"]).c_str(),
+				crossAddress, ImGuiTabItemFlags_None))
+				activeTab = true;
+			
+			ImGui::PopID();
+
+			ImGui::PopStyleColor(3);
+
+			if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+			{
+				ChessAPI::OpenChessGameInFile(opened[n]);
+			}
+
+			if (!cross)
+			{
+				tabRemove = n;
+			}
+
+			if(activeTab)
+			{
+				ImGui::EndTabItem();
+			}
+		}
+	}
+	ImGui::EndTabBar();
+
+	if (tabRemove != -1)
+	{
+		if (ChessAPI::GetActiveGame() == opened[tabRemove])
+		{
+			opened.erase(opened.begin() + tabRemove);
+			ChessAPI::OpenChessGameInFile(opened[0]);
+		}
+		else
+			opened.erase(opened.begin() + tabRemove);
+		tabRemove = -1;
+	}
+
+
 	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel) && !ImGui::IsAnyMouseDown())
 	{
 		if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
@@ -75,24 +147,24 @@ void ImGuiBoard::OnUIRender()
 				printf("Could not load {0} - not a chess file", path);
 			}
 			else
-				ChessAPI::SetNewChessGame(strpath);
+				ChessAPI::OpenChessFile(strpath);
 		}
 		ImGui::EndDragDropTarget();
 	}
 	RenderPieces();
 
-	if (m_CapturedPieceIndex>0)
+	if (m_CapturedPieceIndex > 0)
 		RenderCirclesAtPossibleMoves();
 
 	auto MousePos = FindMousePos();
-	
+
 
 	//ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0, 0, 0 });
 	//ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0, 0, 0, 0 });
 	//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0, 0, 0, 0 });
 
 	ImVec2 bsize = { m_size / 10, m_size / 10 };
-	
+
 	//Piece Moving and Playing
 	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
 	{
@@ -145,15 +217,15 @@ void ImGuiBoard::OnUIRender()
 	if (m_NextMove)
 	{
 		std::vector<int> movePath = ChessAPI::GetMoveIntFormat();
-	
+
 		chess::Pgn_Game::ChessMovesPath curMovesRef;
 		ChessAPI::GetMovesPgnFormat(curMovesRef);
 		chess::Pgn_Game::ChessMovesPath* curMoves = &curMovesRef;
-	
+
 		for (int i = 1; i < movePath.size(); i++)
 			if (i % 2 == 1)
 				curMoves = &curMoves->children[movePath[i]];
-	
+
 		int index = -1;
 		for (int i = movePath[movePath.size() - 1] + 1; i < curMoves->move.size(); i++)
 			if (curMoves->move[i] != "child")
@@ -161,7 +233,7 @@ void ImGuiBoard::OnUIRender()
 				index = i;
 				break;
 			}
-	
+
 		bool openPopup = false;
 		if (index + 1)
 		{
@@ -175,21 +247,21 @@ void ImGuiBoard::OnUIRender()
 				}
 				if (i + 1 == curMoves->move.size())
 					openPopup = true;
-	
+
 			}
 		}
-	
+
 		if (openPopup)
 		{
 			ImGui::OpenPopup("Move_Choose");
-	
+
 			m_PossibleNextMoves.clear();
-			
+
 			int amountOfPreviousChildren = 0;
 			for (int i = 0; i < index; i++)
 				if (curMoves->move[i] == "child")
 					amountOfPreviousChildren += 1;
-	
+
 			int indexChild = 0;
 			for (int i = index + 1; i < curMoves->move.size(); i++)
 			{
@@ -199,15 +271,15 @@ void ImGuiBoard::OnUIRender()
 					curPath[curPath.size() - 1] = i;
 					curPath.push_back(amountOfPreviousChildren + indexChild);
 					curPath.push_back(0);
-	
+
 					m_PossibleNextMoves[curMoves->children[amountOfPreviousChildren + indexChild].move[0]] = curPath;
-	
+
 					indexChild += 1;
 				}
 				else
 					break;
 			}
-	
+
 			m_MainMove = curMoves->move[index];
 		}
 		else
@@ -873,7 +945,7 @@ void ImGuiBoard::EditorPopup()
 				outfile << NPgnFile;
 				outfile.close();
 
-				ChessAPI::SetNewChessGame(strNPath);
+				ChessAPI::OpenChessFile(strNPath);
 
 				ImGui::ClosePopupToLevel(0, true);
 				//ImGui::CloseCurrentPopup();

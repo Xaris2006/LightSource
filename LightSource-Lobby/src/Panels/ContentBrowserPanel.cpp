@@ -3,6 +3,8 @@
 #include "Walnut/Application.h"
 #include "Walnut/UI/UI.h"
 
+#include "../AppManager.h"
+
 #include <imgui.h>
 #include "misc/cpp/imgui_stdlib.h"
 
@@ -10,6 +12,8 @@
 
 #include <atlstr.h>
 #include <shlobj.h>
+
+extern AppManager g_AppManager;
 
 namespace Panels {
 
@@ -24,13 +28,13 @@ namespace Panels {
 	static bool s_openNewPopup = false;
 
 	ContentBrowserPanel::ContentBrowserPanel()
-		: m_BaseDirectory(std::filesystem::current_path() / "chess_working_directory"), m_CurrentDirectory(m_BaseDirectory)
+		: m_BaseDirectory(std::filesystem::current_path() / "LightSourceApp\\chess_working_directory"), m_CurrentDirectory(m_BaseDirectory)
 	{
-		m_DirectoryIcon = std::make_shared<Walnut::Image>("Resources/Icons/ContentBrowser/DirectoryIcon.png");
-		m_FileIcon = std::make_shared<Walnut::Image>("Resources/Icons/ContentBrowser/FileIconPGN.png");
-		m_FileIconPGN = std::make_shared < Walnut::Image>("Resources/Icons/ContentBrowser/FileIconPGN.png");
-		m_FileIconCOB = std::make_shared < Walnut::Image>("Resources/Icons/ContentBrowser/FileIconCOB.png");
-		m_BackArrow = std::make_shared < Walnut::Image>("Resources/Icons/ContentBrowser/previous.png");
+		m_DirectoryIcon = std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/DirectoryIcon.png");
+		m_FileIcon = std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconPGN.png");
+		m_FileIconPGN = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconPGN.png");
+		m_FileIconCOB = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconCOB.png");
+		m_BackArrow = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/previous.png");
 
 		s_textColor = ImGui::GetStyle().Colors[ImGuiCol_Text];
 	}
@@ -48,7 +52,10 @@ namespace Panels {
 
 			ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
 			ImGui::Separator();
-			ImGui::Text("Browser");
+			
+			Walnut::UI::TextCentered("Browser");
+
+			ImGui::Separator();
 			ImGui::Separator();
 			ImGui::PopFont();
 
@@ -58,17 +65,21 @@ namespace Panels {
 
 			ImGui::Separator();
 
+			std::filesystem::path userPath;
 			PWSTR userFolderPath;
 			HRESULT result = SHGetKnownFolderPath(FOLDERID_Profile, 0, NULL, &userFolderPath);
 
 			if (result == S_OK)
 			{
-				TreeDirectory(std::filesystem::path(userFolderPath));
-				ImGui::Separator();
+				userPath = std::filesystem::path(userFolderPath);
 			}
-
 			CoTaskMemFree(static_cast<LPVOID>(userFolderPath));
 
+			TreeDirectory(userPath / "Documents");
+			ImGui::Separator();
+			
+			TreeDirectory(userPath / "Desktop");
+			ImGui::Separator();
 
 			ImGui::EndChild();
 
@@ -164,7 +175,7 @@ namespace Panels {
 					}
 					else
 					{
-						ChessAPI::SetNewChessGame(path.string());
+						g_AppManager.CreateApp(path.string());
 					}
 				}
 
@@ -295,7 +306,7 @@ namespace Panels {
 						}
 						else
 						{
-							ChessAPI::SetNewChessGame(directoryEntry.path().string());
+							g_AppManager.CreateApp(directoryEntry.path().string());
 						}
 					}
 					
@@ -323,7 +334,7 @@ namespace Panels {
 				}
 				else
 				{
-					ChessAPI::SetNewChessGame(s_path.string());
+					g_AppManager.CreateApp(s_path.string());
 				}
 
 				ImGui::CloseCurrentPopup();

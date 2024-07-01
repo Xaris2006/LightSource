@@ -13,6 +13,8 @@ namespace Panels
 
 		ImGui::Begin("Moves", &m_viewPanel);
 		
+		//ImGui::Text(std::to_string(ChessAPI::GetActiveGame()+1).c_str());
+
 		ImGui::NewLine();
 
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -30,8 +32,8 @@ namespace Panels
 		}
 		else
 		{
-			ImGui::TextWrapped(ChessAPI::GetPgnFileName().c_str());
-			ImGui::NewLine();
+			//ImGui::TextWrapped(ChessAPI::GetPgnFileName().c_str());
+			//ImGui::NewLine();
 
 			ImGui::PushFont(Walnut::Application::GetFont("Bold"));
 

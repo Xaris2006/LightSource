@@ -138,7 +138,7 @@ namespace Panels {
 				}
 				else
 				{
-					ChessAPI::SetNewChessGame(path.string());
+					ChessAPI::OpenChessFile(path.string());
 					//p_SavedFile = true;
 				}
 			}
@@ -158,7 +158,7 @@ namespace Panels {
 					}
 					else
 					{
-						ChessAPI::SetNewChessGame(path.string());
+						ChessAPI::OpenChessFile(path.string());
 						//p_SavedFile = true;
 					}
 

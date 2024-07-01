@@ -5,6 +5,7 @@
 #include "Walnut/UI/UI.h"
 
 #include "Windows/WindowsUtils.h"
+#include "AppManager.h"
 
 #include "Panels/ContentBrowserPanel.h"
 
@@ -12,6 +13,9 @@
 #include <array>
 
 #include "GLFW/glfw3.h"
+
+
+AppManager g_AppManager;
 
 std::string g_AppDirectory;
 Walnut::ApplicationSpecification g_spec;
@@ -25,10 +29,10 @@ public:
 
 		if (__argc > 1)
 		{
-			//if (chess::IsFileValidFormat(__argv[1], ".pgn"))
-			//{
-			//	ChessAPI::SetNewChessGame(__argv[1]);
-			//}
+			if (chess::IsFileValidFormat(__argv[1], ".pgn"))
+			{
+				g_AppManager.CreateApp(__argv[1]);
+			}
 			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
 			//{
 			//	//m_ChessPanel.IsOpeningBookPanelOpen() = true;
@@ -36,15 +40,16 @@ public:
 			//}
 		}
 
-		m_HomeIcon = std::make_shared<Walnut::Image>("Resources\\menu\\home-button.png");
-		m_ProfilIcon = std::make_shared<Walnut::Image>("Resources\\menu\\user.png");
-		m_WebIcon = std::make_shared<Walnut::Image>("Resources\\menu\\internet.png");
-		m_ToolsIcon = std::make_shared<Walnut::Image>("Resources\\menu\\spanner.png");
-		m_HelpIcon = std::make_shared<Walnut::Image>("Resources\\menu\\question-mark.png");
+		m_HomeIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\home-button.png");
+		m_ProfilIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\user.png");
+		m_WebIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\internet.png");
+		m_ToolsIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\spanner.png");
+		m_HelpIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\question-mark.png");
 
 		auto& colors = ImGui::GetStyle().Colors;
 
 		colors[ImGuiCol_TableBorderLight] = ImColor(255, 225, 135, 80);
+
 	}
 
 	virtual void OnUIRender() override
@@ -158,16 +163,16 @@ public:
 		m_AboutModalOpen = true;
 	}
 
-	static void New()
+	void New()
 	{
-		//ChessAPI::SetNewChessGame("");
+		g_AppManager.CreateApp("");
 	}
 
-	static void Open()
+	void Open()
 	{
-		//std::string filepath = Windows::Utils::OpenFile("Chess Database (*.pgn)\0*.pgn\0");
-		//if (!filepath.empty())
-		//	ChessAPI::SetNewChessGame(filepath);
+		std::string filepath = Windows::Utils::OpenFile("Chess Database (*.pgn)\0*.pgn\0");
+		if (!filepath.empty())
+			g_AppManager.CreateApp(filepath);
 	}
 
 private:
@@ -190,11 +195,11 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	g_spec.Name = "Light Source";
 	g_spec.CustomTitlebar = true;
-	g_spec.IconPath = "Resources\\LightSource\\ls.png";
-	g_spec.HoveredIconPath = "Resources\\LightSource\\lsOn.png";
+	g_spec.IconPath = "LightSourceApp\\Resources\\LightSource\\ls.png";
+	g_spec.HoveredIconPath = "LightSourceApp\\Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
 		{
-			std::cout << "Open!\n";
+			g_AppManager.CreateApp("");
 		};
 	g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
 
@@ -202,10 +207,10 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	std::filesystem::current_path(g_AppDirectory);
 #endif
 
-
 	Walnut::Application* app = new Walnut::Application(g_spec);
-	app->SetMinImGuiWindowSize(50);
-	app->SetDockNodeFlags(ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
+	
+	//app->SetMinImGuiWindowSize(370.0f);
+	app->SetDockNodeFlags(ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
 
 	std::shared_ptr<LobbyLayer> chessLayer = std::make_shared<LobbyLayer>();
 	app->PushLayer(chessLayer);
@@ -215,11 +220,11 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		{
 			if (ImGui::MenuItem("New", "Ctr+N"))
 			{
-				LobbyLayer::New();
+				chessLayer->New();
 			}
 			if (ImGui::MenuItem("Open", "Ctr+O"))
 			{
-				LobbyLayer::Open();
+				chessLayer->Open();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit"))

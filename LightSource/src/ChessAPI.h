@@ -12,6 +12,10 @@ namespace ChessAPI
 {
 	void Init();
 
+	int GetActiveGame();
+	std::vector<int>& GetOpenGames();
+	void CloseOpenGame(int index);
+
 	chess::Pgn_File* GetPgnFile();
 	chess::Pgn_Game* GetPgnGame();
 	std::string& GetPgnFilePath();
@@ -33,8 +37,8 @@ namespace ChessAPI
 
 
 
-	void SetNewChessGame(const std::string& path);
-	void SetNewChessGame(int index);
+	void OpenChessFile(const std::string& path);
+	void OpenChessGameInFile(int index);
 	void OverWriteChessFile(const std::string& filepath);
 	void NewGameInFile();
 	void DeleteGameInFile(int index);

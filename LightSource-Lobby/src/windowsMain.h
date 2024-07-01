@@ -10,6 +10,7 @@
 #include <thread>
 #include <chrono>
 #include <string>
+#include <filesystem>
 
 class Process
 {
@@ -18,7 +19,7 @@ class Process
 
 #define BUFSIZE 4096 
 public:
-    Process(std::wstring processNamepath, std::wstring cmdarg)
+    Process(std::wstring processNamepath, std::wstring cmdarg /*HANDLE ChildStd_OUT_Rd = nullptr, HANDLE ChildStd_OUT_Wr = nullptr*/)
     {
         SECURITY_ATTRIBUTES saAttr;
 		
@@ -29,20 +30,22 @@ public:
         HANDLE ChildStd_OUT_Wr = NULL;
         HANDLE ChildStd_IN_Rd = NULL;
 
+       // if (ChildStd_OUT_Rd)
+       //     m_ChildStd_OUT_Rd = ChildStd_OUT_Rd;
         if (!CreatePipe(&m_ChildStd_OUT_Rd, &ChildStd_OUT_Wr, &saAttr, 0))
-            std::runtime_error("StdoutRd CreatePipe");
-
+            throw std::runtime_error("StdoutRd CreatePipe");
+        
         if (!SetHandleInformation(m_ChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
-            std::runtime_error("Stdout SetHandleInformation");
+            throw std::runtime_error("Stdout SetHandleInformation");
 
+       
         if (!CreatePipe(&ChildStd_IN_Rd, &m_ChildStd_IN_Wr, &saAttr, 0))
-            std::runtime_error("Stdin CreatePipe");
+            throw std::runtime_error("Stdin CreatePipe");
 
         if (!SetHandleInformation(m_ChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0))
-            std::runtime_error("Stdin SetHandleInformation");
+            throw std::runtime_error("Stdin SetHandleInformation");
 
-
-        TCHAR szCmdline[] = TEXT("");
+        TCHAR szCmdline[] = L"";
         PROCESS_INFORMATION piProcInfo;
         STARTUPINFO siStartInfo;
         BOOL bSuccess = FALSE;
@@ -56,10 +59,12 @@ public:
         siStartInfo.hStdInput = ChildStd_IN_Rd;
         siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-        // Create the child process. 
+        // Create the child process.
 
         bSuccess = CreateProcess(processNamepath.c_str(),
-            szCmdline,     // command line 
+            (wchar_t*)(std::filesystem::path(std::filesystem::current_path() / processNamepath).wstring() + 
+            L" " +
+            cmdarg).c_str(),     // command line 
             NULL,          // process security attributes 
             NULL,          // primary thread security attributes 
             TRUE,          // handles are inherited 
@@ -73,17 +78,27 @@ public:
 			throw std::runtime_error("CreateProcess");
         else
         {
-            CloseHandle(piProcInfo.hProcess);
-            CloseHandle(piProcInfo.hThread);
             CloseHandle(ChildStd_OUT_Wr);
             CloseHandle(ChildStd_IN_Rd);
+            CloseHandle(piProcInfo.hThread);
+
+            m_Process = piProcInfo.hProcess;
         }
+    }
+
+    void EndProcess()
+    {
+        CloseHandle(m_ChildStd_IN_Wr);
+        CloseHandle(m_ChildStd_OUT_Rd);
+
+        TerminateProcess(m_Process, 0);
+
+        CloseHandle(m_Process);
     }
 
     ~Process()
     {
-        CloseHandle(m_ChildStd_IN_Wr);
-        CloseHandle(m_ChildStd_OUT_Rd);
+       
     }
 
     void Write(std::string message)
@@ -95,7 +110,7 @@ public:
 
         bSuccess = WriteFile(m_ChildStd_IN_Wr, message.c_str(), message.size(), &dwWritten, NULL);
         if (!bSuccess)
-            std::runtime_error("Write to Process");
+            throw std::runtime_error("Write to Process");
     }
 
     std::string Read()
@@ -112,7 +127,7 @@ public:
             if (!bSuccess || dwRead == 0)
                 break;
             if (!bSuccess)//will not be hitted 
-                std::runtime_error("Read Process");
+                throw std::runtime_error("Read Process");
             output += std::string(chBuf, dwRead);
         } while (dwRead == BUFSIZE);
 
@@ -123,6 +138,7 @@ private:
    
     HANDLE m_ChildStd_IN_Wr = NULL;
     HANDLE m_ChildStd_OUT_Rd = NULL;
+    HANDLE m_Process = NULL;
 
 #endif // PLATFORM_WINDOWS_64
 };

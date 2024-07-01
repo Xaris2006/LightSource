@@ -30,6 +30,8 @@ class ChessLayer : public Walnut::Layer
 public:
 	virtual void OnAttach() override
 	{
+		std::cerr << "App: " << std::this_thread::get_id() << " - " << "Start\n";
+
 		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
 
 		ChessAPI::Init();
@@ -40,7 +42,7 @@ public:
 		{
 			if (chess::IsFileValidFormat(__argv[1], ".pgn"))
 			{
-				ChessAPI::SetNewChessGame(__argv[1]);
+				ChessAPI::OpenChessFile(__argv[1]);
 			}
 			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
 			//{
@@ -50,8 +52,20 @@ public:
 		}
 	}
 
+	virtual void OnDetach() override
+	{
+		std::cerr << "App: " << std::this_thread::get_id() << " - " << "End\n";
+	}
+
 	virtual void OnUIRender() override
 	{	
+		std::cerr << "App: " << std::this_thread::get_id() << "  \n";
+
+		//std::string cmd;
+		//std::cin >> cmd;
+		//if (cmd.find("End") != std::string::npos)
+		//	Walnut::Application::Get().Close();
+
 		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
 		{
 			if (ImGui::IsKeyPressed(ImGuiKey_N))
@@ -195,14 +209,14 @@ public:
 
 	static void New()
 	{
-		ChessAPI::SetNewChessGame("");
+		ChessAPI::OpenChessFile("");
 	}
 
 	static void Open()
 	{
 		std::string filepath = Windows::Utils::OpenFile("Chess Database (*.pgn)\0*.pgn\0");
 		if (!filepath.empty())
-			ChessAPI::SetNewChessGame(filepath);
+			ChessAPI::OpenChessFile(filepath);
 	}
 
 	static void SaveAs()
@@ -211,7 +225,7 @@ public:
 		if (!filepath.empty())
 		{
 			ChessAPI::OverWriteChessFile(filepath);
-			ChessAPI::SetNewChessGame(filepath);
+			ChessAPI::OpenChessFile(filepath);
 		}
 	}
 
@@ -248,7 +262,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	g_spec.HoveredIconPath = "Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
 		{
-			std::cout << "Open!\n";
+			std::cerr << "App: " << std::this_thread::get_id() << " - " << "Open\n";
 		};
 	g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
 
@@ -256,7 +270,9 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	std::filesystem::current_path(g_AppDirectory);
 #endif
 
-
+	//std::filesystem::current_path(g_AppDirectory);
+	
+	
 	Walnut::Application* app = new Walnut::Application(g_spec);
 	std::shared_ptr<ChessLayer> chessLayer = std::make_shared<ChessLayer>();
 	app->PushLayer(chessLayer);

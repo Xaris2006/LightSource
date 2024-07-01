@@ -20,6 +20,8 @@ namespace Panels {
 
 	private:
 
+		std::string m_filePath;
+
 		std::array<std::pair<float, float>, 7> m_columnsSettings;
 		std::map<std::string, std::string> m_searchSetting;
 		bool m_name_white = true;
