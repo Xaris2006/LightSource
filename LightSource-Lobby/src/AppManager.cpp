@@ -2,8 +2,10 @@
 
 #include <mutex>
 #include <chrono>
+#include <unordered_map>
 
 std::mutex addMutex;
+extern bool g_AlreadyOpenedModalOpen;
 
 AppManager::AppManager()
 {
@@ -21,28 +23,147 @@ AppManager::AppManager()
 					return;
 				}
 
+				m_Commands.clear();
+				//m_OpenedPaths.clear();
 				std::vector<int> endApps;
+				std::unordered_map<int, std::filesystem::path> AskForNewFilePath;
+
+				m_Commands.resize(m_Apps.size());
 
 				for (int i = 0; i < m_Apps.size(); i++)
 				{
-					std::string cmd;
-					cmd = m_Apps[i].Read();
-					//std::cout << cmd << std::endl;
+					std::string Strcmd(m_Apps[i].Read());
+					//std::cout << Strcmd << std::endl;
 
-					if (cmd.find("End") != std::string::npos)
+					if (Strcmd.find("*End") != std::string::npos)
 						endApps.emplace_back(i);
-					if (cmd.find("Open") != std::string::npos)
-						CreateApp("");
+					
+					size_t index = 0;
+					std::vector<std::string> rawCommand;
+					while (index < Strcmd.size())
+					{
+						size_t StartIndex = Strcmd.find("*", index);
+						if (StartIndex != std::string::npos)
+						{
+							index = Strcmd.find('\n', StartIndex);
+							if (index == std::string::npos)
+								break;
+							rawCommand.emplace_back(Strcmd.begin() + StartIndex, Strcmd.begin() + index);
+							continue;
+						}
+						index = Strcmd.size();
+					}
+					for(auto& rcmd : rawCommand)
+					{
+						{
+							size_t FileIndex = rcmd.find("*File");
+							if (FileIndex != std::string::npos)
+							{
+								m_Commands[i].File = std::string(rcmd.begin() + FileIndex, rcmd.end());
+								continue;
+							}
+						}
+						{
+							size_t OpenIndex = rcmd.find("*Open");
+							if (OpenIndex != std::string::npos)
+							{
+								m_Commands[i].Open = std::string(rcmd.begin() + OpenIndex, rcmd.end());
+								continue;
+							}
+						}
+						{
+							size_t AskIndex = rcmd.find("*Ask");
+							if (AskIndex != std::string::npos)
+							{
+								m_Commands[i].Ask = std::string(rcmd.begin() + AskIndex, rcmd.end());
+								continue;
+							}
+						}
+					}
 				}
 				
+				for (int i = 0; i < m_Commands.size(); i++)
+				{
+					if (m_Commands[i].File.size())
+					{
+						std::string path = "";
+						size_t IndexPath = m_Commands[i].File.find("Path:");
+						if (IndexPath != std::string::npos)
+							path = std::string(m_Commands[i].File.begin() + IndexPath + 5, m_Commands[i].File.begin() + m_Commands[i].File.find(":Path"));
+
+						if (!path.empty())
+						{
+							m_OpenedPaths[i] = path;
+						}
+					}
+
+					if (m_Commands[i].Open.size())
+					{
+						std::string path = "";
+						size_t IndexPath = m_Commands[i].Open.find("Path:");
+						if (IndexPath != std::string::npos)
+							path = std::string(m_Commands[i].Open.begin() + IndexPath + 5, m_Commands[i].Open.begin() + m_Commands[i].Open.find(":Path"));
+						CreateApp(path);
+					}
+
+					if (m_Commands[i].Ask.size())
+					{
+						std::string path = "";
+						size_t IndexPath = m_Commands[i].Ask.find("Path:");
+						if (IndexPath != std::string::npos)
+							path = std::string(m_Commands[i].Ask.begin() + IndexPath + 5, m_Commands[i].Ask.begin() + m_Commands[i].Ask.find(":Path"));
+
+						if (path.empty())
+							m_Apps[i].Write("Accept\n");
+						else
+							AskForNewFilePath[i] = path;
+					}
+				}
+
+				for (auto& [key, value] : AskForNewFilePath)
+				{
+					bool alreadyOpened = false;
+					for (auto& [otherKey, otherValue] : m_OpenedPaths)
+					{
+						std::filesystem::path completeValue = std::filesystem::path(value);
+						if (std::filesystem::path(value).is_relative())
+							completeValue = std::filesystem::current_path() / "LightSourceApp" / value;
+
+						if (std::filesystem::path(otherValue) == completeValue)
+						{
+							alreadyOpened = true;
+							break;
+						}
+					}
+
+					if (alreadyOpened)
+						m_Apps[key].Write("Decline\n");
+					else
+						m_Apps[key].Write("Accept\n");
+				}
+
 				if (m_AddApp)
 				{
-					addMutex.lock();
-
 					m_AddApp = false;
-					m_Apps.emplace_back(L"LightSourceApp\\LightSource.exe", std::wstring(m_cmd.begin(), m_cmd.end()));
+					bool alreadyOpened = false;
+					for (auto& [key, other] : m_OpenedPaths)
+					{
+						if (other == std::filesystem::path(m_cmd))
+						{
+							alreadyOpened = true;
+							g_AlreadyOpenedModalOpen = true;
+							break;
+						}
+					}
 
-					addMutex.unlock();
+					if (!alreadyOpened)
+					{
+						addMutex.lock();
+
+						m_Apps.emplace_back(L"LightSourceApp\\LightSource.exe", std::wstring(m_cmd.begin(), m_cmd.end()));
+
+						addMutex.unlock();
+					}
 				}
 
 				using namespace std::chrono_literals;
@@ -52,6 +173,7 @@ AppManager::AppManager()
 				{
 					m_Apps[endApps[i] - i].EndProcess();
 					m_Apps.erase(m_Apps.begin() + endApps[i] - i);
+					m_OpenedPaths.erase(endApps[i]);
 				}
 			}
 		}

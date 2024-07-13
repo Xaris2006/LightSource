@@ -24,13 +24,14 @@
 
 std::string g_AppDirectory;
 Walnut::ApplicationSpecification g_spec;
+bool g_AlreadyOpenedModalOpen = false;
 
 class ChessLayer : public Walnut::Layer
 {
 public:
 	virtual void OnAttach() override
 	{
-		std::cerr << "App: " << std::this_thread::get_id() << " - " << "Start\n";
+		std::cerr << "App: " << std::this_thread::get_id() << " - *Start\n";
 
 		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
 
@@ -43,6 +44,7 @@ public:
 			if (chess::IsFileValidFormat(__argv[1], ".pgn"))
 			{
 				ChessAPI::OpenChessFile(__argv[1]);
+				std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
 			}
 			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
 			//{
@@ -54,12 +56,12 @@ public:
 
 	virtual void OnDetach() override
 	{
-		std::cerr << "App: " << std::this_thread::get_id() << " - " << "End\n";
+		std::cerr << "App: " << std::this_thread::get_id() << " - *End\n";
 	}
 
 	virtual void OnUIRender() override
 	{	
-		std::cerr << "App: " << std::this_thread::get_id() << "  \n";
+		std::cerr << "App: " << std::this_thread::get_id() << ' \n';// << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
 
 		//std::string cmd;
 		//std::cin >> cmd;
@@ -107,9 +109,6 @@ public:
 			}
 		}
 
-		//ImGui::ShowDemoWindow();
-
-		UI_DrawAboutModal();
 
 		m_ChessBoard.OnUIRender();
 		m_ContentBrowserPanel.OnImGuiRender();
@@ -119,6 +118,10 @@ public:
 		m_GamePropertiesPanel.OnImGuiRender();
 		m_MovePanel.OnImGuiRender();
 		m_ChessEnginePanel.OnImGuiRender();
+		
+		UI_DrawAboutModal();
+		AlreadyOpenedModal();
+		//ImGui::ShowDemoWindow();
 	}
 
 	void UI_DrawAboutModal()
@@ -146,6 +149,40 @@ public:
 				m_AboutModalOpen = false;
 				ImGui::CloseCurrentPopup();
 			}
+
+			ImGui::EndPopup();
+		}
+	}
+
+	void AlreadyOpenedModal()
+	{
+		if (!g_AlreadyOpenedModalOpen)
+			return;
+		ImGui::OpenPopup("Error-File Is Already Opened");
+
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+		
+		g_AlreadyOpenedModalOpen = ImGui::BeginPopupModal("Error-File Is Already Opened", 0, ImGuiWindowFlags_NoResize);
+		
+		if (g_AlreadyOpenedModalOpen)
+		{
+			ImGui::TextWrapped("The file that you are trying to open is already opened in a different LightSource Window!");
+
+			ImGui::NewLine();
+
+			ImGui::PushID("in2");
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("Close").x - 18);
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			if (ImGui::Button("Close"))
+			{
+				g_AlreadyOpenedModalOpen = false;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::PopID();
 
 			ImGui::EndPopup();
 		}
@@ -207,29 +244,44 @@ public:
 		m_AboutModalOpen = true;
 	}
 
-	static void New()
+	void New()
 	{
 		ChessAPI::OpenChessFile("");
+		std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
 	}
 
-	static void Open()
+	void Open()
 	{
 		std::string filepath = Windows::Utils::OpenFile("Chess Database (*.pgn)\0*.pgn\0");
 		if (!filepath.empty())
-			ChessAPI::OpenChessFile(filepath);
+		{
+			std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << filepath << ":Path \n";
+			std::string anwser;
+			std::cin >> anwser;
+			if (anwser == "Accept")
+			{
+				ChessAPI::OpenChessFile(filepath);
+				std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+			}
+			else if (anwser == "Decline")
+			{
+				g_AlreadyOpenedModalOpen = true;
+			}
+		}
 	}
 
-	static void SaveAs()
+	void SaveAs()
 	{
 		std::string filepath = Windows::Utils::SaveFile("Chess Database (*.pgn)\0*.pgn\0");
 		if (!filepath.empty())
 		{
 			ChessAPI::OverWriteChessFile(filepath);
 			ChessAPI::OpenChessFile(filepath);
+			std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
 		}
 	}
 
-	static void Save()
+	void Save()
 	{
 		if (ChessAPI::GetPgnFileName() == "New Game")
 		{
@@ -258,11 +310,12 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	g_spec.Name = "Light Source";
 	g_spec.CustomTitlebar = true;
+	g_spec.AppIconPath = "Resources\\LightSource\\lsb.png";
 	g_spec.IconPath = "Resources\\LightSource\\ls.png";
 	g_spec.HoveredIconPath = "Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
 		{
-			std::cerr << "App: " << std::this_thread::get_id() << " - " << "Open\n";
+			std::cerr << "App: " << std::this_thread::get_id() << " - *Open\n";
 		};
 	g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
 
@@ -282,19 +335,19 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		{
 			if (ImGui::MenuItem("New", "Ctr+N"))
 			{
-				ChessLayer::New();
+				chessLayer->New();
 			}
 			if (ImGui::MenuItem("Open", "Ctr+O"))
 			{
-				ChessLayer::Open();
+				chessLayer->Open();
 			}
 			if (ImGui::MenuItem("Save", "Ctr+S"))
 			{
-				ChessLayer::Save();
+				chessLayer->Save();
 			}
 			if (ImGui::MenuItem("Save As", "Ctr+Shift+S"))
 			{
-				ChessLayer::SaveAs();
+				chessLayer->SaveAs();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit"))

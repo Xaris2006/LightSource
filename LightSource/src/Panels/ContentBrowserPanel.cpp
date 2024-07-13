@@ -7,6 +7,8 @@
 
 #include <fstream>
 
+extern bool g_AlreadyOpenedModalOpen;
+
 namespace Panels {
 
 	//extern bool p_SavedFile;
@@ -138,8 +140,18 @@ namespace Panels {
 				}
 				else
 				{
-					ChessAPI::OpenChessFile(path.string());
-					//p_SavedFile = true;
+					std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << path.string() << ":Path \n";
+					std::string anwser;
+					std::cin >> anwser;
+					if (anwser == "Accept")
+					{
+						ChessAPI::OpenChessFile(path.string());
+						std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+					}
+					else if(anwser == "Decline")
+					{
+						g_AlreadyOpenedModalOpen = true;
+					}
 				}
 			}
 			
@@ -158,8 +170,18 @@ namespace Panels {
 					}
 					else
 					{
-						ChessAPI::OpenChessFile(path.string());
-						//p_SavedFile = true;
+						std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << path.string() << ":Path \n";
+						std::string anwser;
+						std::cin >> anwser;
+						if (anwser == "Accept")
+						{
+							ChessAPI::OpenChessFile(path.string());
+							std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+						}
+						else if (anwser == "Decline")
+						{
+							g_AlreadyOpenedModalOpen = true;
+						}
 					}
 
 					ImGui::CloseCurrentPopup();

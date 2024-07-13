@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 
-#include "../ChessAPI.h"
+#include "ChessAPI.h"
 #include "../Windows/WindowsUtils.h"
 
 #include <filesystem>

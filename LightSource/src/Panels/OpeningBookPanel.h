@@ -5,7 +5,7 @@
 #include <thread>
 #include <atomic>
 
-#include "../ChessCore/Opening_Book/OpeningBook.h"
+#include "ChessCore/Opening_Book/OpeningBook.h"
 
 
 namespace Panels {

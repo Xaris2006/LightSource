@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "glm/glm.hpp"
+#include "../../Walnut/vendor/glm/glm/glm.hpp"
 
 #include "ChessCore/vec2/vec2_lib.h"
 #include "ChessCore/pgn/Pgn.h"

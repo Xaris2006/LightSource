@@ -91,12 +91,12 @@ namespace chess
 		}
 		output += '\n';
 		f.WriteMoves(output, f.m_chessmoves);
-		if (resultExist)
+		if (resultExist && f.m_labels.at("Result") != "?")
 			output += f.m_labels.at("Result");
 		else
 			output += '*';
 		
-		stream << output;
+		stream << output << '\n';
 		return stream;
 	}
 

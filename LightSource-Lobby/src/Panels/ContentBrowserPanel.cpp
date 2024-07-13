@@ -59,21 +59,25 @@ namespace Panels {
 			ImGui::Separator();
 			ImGui::PopFont();
 
-			ImGui::BeginChild("tree", ImVec2(0, ImGui::GetContentRegionAvail().y - 8 * ImGui::GetStyle().ItemSpacing.y - 8 * ImGui::GetStyle().FramePadding.y));
+			ImGui::BeginChild("tree", ImVec2(0, ImGui::GetContentRegionAvail().y - 8 * ImGui::GetStyle().ItemSpacing.y));
 
 			TreeDirectory(m_BaseDirectory);
 
 			ImGui::Separator();
 
 			std::filesystem::path userPath;
-			PWSTR userFolderPath;
-			HRESULT result = SHGetKnownFolderPath(FOLDERID_Profile, 0, NULL, &userFolderPath);
-
-			if (result == S_OK)
+			
+			//windows only
 			{
-				userPath = std::filesystem::path(userFolderPath);
+				PWSTR userFolderPath;
+				HRESULT result = SHGetKnownFolderPath(FOLDERID_Profile, 0, NULL, &userFolderPath);
+
+				if (result == S_OK)
+				{
+					userPath = std::filesystem::path(userFolderPath);
+				}
+				CoTaskMemFree(static_cast<LPVOID>(userFolderPath));
 			}
-			CoTaskMemFree(static_cast<LPVOID>(userFolderPath));
 
 			TreeDirectory(userPath / "Documents");
 			ImGui::Separator();
@@ -114,38 +118,44 @@ namespace Panels {
 				goto DirectoryChange;
 			}
 			ImGui::SameLine();
-			ImGui::Text("\\");
+			ImGui::Text(">");
 
 			for (int i = indexEnd - 1; i > -1; i--)
 			{
 				ImGui::SameLine();
+				ImGui::PushID(i);
 				if (ImGui::Button(DirectoryNames[i].c_str()))
 				{
 					for (int j = 0; j < i; j++)
 					{
 						m_CurrentDirectory = m_CurrentDirectory.parent_path();
 					}
+					ImGui::PopID();
 					goto DirectoryChange;
 				}
+				ImGui::PopID();
 				ImGui::SameLine();
-				ImGui::Text("\\");
+				ImGui::Text(">");
 			}
 
 			ImGui::Separator();
 
-			ImGui::BeginChild("Files", ImVec2(0, ImGui::GetContentRegionAvail().y - 8 * ImGui::GetStyle().ItemSpacing.y - 8 * ImGui::GetStyle().FramePadding.y));
+			ImGui::BeginChild("Files", ImVec2(0, ImGui::GetContentRegionAvail().y - 8 * ImGui::GetStyle().ItemSpacing.y));
 
 			if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
 				s_openEmptyPopup = true;
 			
 			
 
-			static float padding = 16.0f;
+			static float padding = 32.0f;
 			static float thumbnailSize = 128.0f;
-			float cellSize = thumbnailSize + padding;
+			static float cellSize;
+			cellSize = thumbnailSize + padding;
 
-			float panelWidth = ImGui::GetContentRegionAvail().x;
-			int columnCount = (int)(panelWidth / cellSize);
+			static float panelWidth;
+			panelWidth = ImGui::GetContentRegionAvail().x;
+			static int columnCount;
+			columnCount = (int)(panelWidth / cellSize);
 			if (columnCount < 1)
 				columnCount = 1;
 
@@ -221,10 +231,10 @@ namespace Panels {
 
 			ImGui::EndChild();
 
-			ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 6 * ImGui::GetStyle().ItemSpacing.y - 6 * ImGui::GetStyle().FramePadding.y);
+			ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 6 * ImGui::GetStyle().ItemSpacing.y);
 
-			ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 128, 256);
-			ImGui::SliderFloat("Padding", &padding, 0, 32);
+			ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 128, 256, "%.0f");
+			//ImGui::SliderFloat("Padding", &padding, 0, 32);
 
 		DirectoryChange:
 			ImGui::EndTable();

@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "../ChessAPI.h"
+#include "ChessAPI.h"
 
 namespace Panels {
 

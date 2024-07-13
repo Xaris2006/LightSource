@@ -10,6 +10,10 @@ workspace "LightSource"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+group "Vendor"
+   include "vendor/ChessAPI"
+group ""
+
 include "Build-Walnut-External.lua"
 include "LightSource/Build-LightSource-App.lua"
 include "LightSource-Lobby/Build-LightSource-Lobby-App.lua"

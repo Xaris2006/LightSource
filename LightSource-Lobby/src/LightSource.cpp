@@ -8,17 +8,20 @@
 #include "AppManager.h"
 
 #include "Panels/ContentBrowserPanel.h"
+#include "Panels/ProfilePanel.h"
 
 #include <iostream>
 #include <array>
+#include <concepts>
 
 #include "GLFW/glfw3.h"
-
 
 AppManager g_AppManager;
 
 std::string g_AppDirectory;
 Walnut::ApplicationSpecification g_spec;
+
+bool g_AlreadyOpenedModalOpen = false;
 
 class LobbyLayer : public Walnut::Layer
 {
@@ -49,7 +52,6 @@ public:
 		auto& colors = ImGui::GetStyle().Colors;
 
 		colors[ImGuiCol_TableBorderLight] = ImColor(255, 225, 135, 80);
-
 	}
 
 	virtual void OnUIRender() override
@@ -102,15 +104,13 @@ public:
 
 		ImGui::End();
 
-		UI_DrawAboutModal();
-
 		if (m_MenuIntex == 0)
 		{
 			m_ContentBrowserPanel.OnImGuiRender();
 		}
 		else if (m_MenuIntex == 1)
 		{
-			
+			m_ProfilePanel.OnImGuiRender();
 		}
 		else if (m_MenuIntex == 2)
 		{
@@ -125,7 +125,8 @@ public:
 
 		}
 
-		
+		UI_DrawAboutModal();
+		AlreadyOpenedModal();
 	}
 
 	void UI_DrawAboutModal()
@@ -158,6 +159,40 @@ public:
 		}
 	}
 
+	void AlreadyOpenedModal()
+	{
+		if (!g_AlreadyOpenedModalOpen)
+			return;
+		ImGui::OpenPopup("Error-File Is Already Opened");
+
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+		g_AlreadyOpenedModalOpen = ImGui::BeginPopupModal("Error-File Is Already Opened", 0, ImGuiWindowFlags_NoResize);
+
+		if (g_AlreadyOpenedModalOpen)
+		{
+			ImGui::TextWrapped("The file that you are trying to open is already opened in a different LightSource Window!");
+
+			ImGui::NewLine();
+
+			ImGui::PushID("in2");
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("Close").x - 18);
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			if (ImGui::Button("Close"))
+			{
+				g_AlreadyOpenedModalOpen = false;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::PopID();
+
+			ImGui::EndPopup();
+		}
+	}
+
 	void ShowAboutModal()
 	{
 		m_AboutModalOpen = true;
@@ -178,6 +213,7 @@ public:
 private:
 
 	Panels::ContentBrowserPanel m_ContentBrowserPanel;
+	Panels::ProfilePanel m_ProfilePanel;
 
 	int m_MenuIntex = 0;
 
@@ -195,6 +231,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	g_spec.Name = "Light Source";
 	g_spec.CustomTitlebar = true;
+	//g_spec.AppIconPath = "LightSourceApp\\Resources\\LightSource\\lsb.png";
 	g_spec.IconPath = "LightSourceApp\\Resources\\LightSource\\ls.png";
 	g_spec.HoveredIconPath = "LightSourceApp\\Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
@@ -247,5 +284,6 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			ImGui::EndMenu();
 		}
 	});
+
 	return app;
 }

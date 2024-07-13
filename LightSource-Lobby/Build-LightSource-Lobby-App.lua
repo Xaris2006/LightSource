@@ -17,11 +17,14 @@ project "LightSource-Lobby"
 
       --"%{IncludeDir.VulkanSDK}",
       "%{IncludeDir.glmLS}",
+
+      "$(SolutionDir)vendor/ChessAPI"
    }
 
     links
     {
-        "Walnut"
+        "Walnut",
+        "ChessAPI"
     }
 
    targetdir ("../bin/" .. outputdir .. "/%{prj.name}")

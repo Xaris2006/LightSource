@@ -4,9 +4,9 @@
 #include <string>
 
 #include "Walnut/Image.h"
-#include "../ChessCore/pgn/Pgn.h"
+#include "ChessCore/pgn/Pgn.h"
 
-#include "../ChessAPI.h"
+#include "ChessAPI.h"
 
 namespace Panels {
 

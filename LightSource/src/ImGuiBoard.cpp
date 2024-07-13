@@ -11,6 +11,7 @@
 
 #include "../../Walnut/Source/Walnut/Application.h"
 
+extern bool g_AlreadyOpenedModalOpen;
 
 static std::string s_fen;
 static bool cross = true;
@@ -91,7 +92,7 @@ void ImGuiBoard::OnUIRender()
 				ChessAPI::OpenChessGameInFile(opened[n]);
 			}
 
-			if (!cross)
+			if (!cross && tabRemove == -1)
 			{
 				tabRemove = n;
 			}
@@ -107,12 +108,8 @@ void ImGuiBoard::OnUIRender()
 	if (tabRemove != -1)
 	{
 		if (ChessAPI::GetActiveGame() == opened[tabRemove])
-		{
-			opened.erase(opened.begin() + tabRemove);
 			ChessAPI::OpenChessGameInFile(opened[0]);
-		}
-		else
-			opened.erase(opened.begin() + tabRemove);
+		opened.erase(opened.begin() + tabRemove);
 		tabRemove = -1;
 	}
 
@@ -147,7 +144,20 @@ void ImGuiBoard::OnUIRender()
 				printf("Could not load {0} - not a chess file", path);
 			}
 			else
-				ChessAPI::OpenChessFile(strpath);
+			{
+				std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << strpath << ":Path \n";
+				std::string anwser;
+				std::cin >> anwser;
+				if (anwser == "Accept")
+				{
+					ChessAPI::OpenChessFile(strpath);
+					std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+				}
+				else if (anwser == "Decline")
+				{
+					g_AlreadyOpenedModalOpen = true;
+				}
+			}
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -925,30 +935,38 @@ void ImGuiBoard::EditorPopup()
 		{
 			static std::string s_inputNName = "NewFile.pgn";
 			ImGui::InputText("Name", &s_inputNName);
-
+		
 			ImGui::NewLine();
-
+		
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 			if (ImGui::Button("Create"))
 			{
 				std::filesystem::path nPath = std::filesystem::path()/ "chess_working_directory" / s_inputNName;
 				nPath.replace_extension(".pgn");
-
+				
 				std::string strNPath = nPath.string();
-					
-				ChessAPI::OverWriteChessFile("");
+				
+				std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << strNPath << ":Path \n";
+				std::string anwser;
+				std::cin >> anwser;
+				if (anwser == "Accept")
+				{
+					chess::Pgn_File NPgnFile;
+					NPgnFile.CreateGame();
+					NPgnFile[0]["FEN"] = s_fen;
+					std::ofstream outfile(strNPath);
+					outfile << NPgnFile;
+					outfile.close();
 
-				chess::Pgn_File NPgnFile;
-				NPgnFile.CreateGame();
-				NPgnFile[0]["FEN"] = s_fen;
-				std::ofstream outfile(strNPath);
-				outfile << NPgnFile;
-				outfile.close();
+					std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << strNPath << ":Path \n";
+					ImGui::ClosePopupToLevel(0, true);
+				}
+				else if (anwser == "Decline")
+				{
+					g_AlreadyOpenedModalOpen = true;
+					ImGui::ClosePopupToLevel(0, true);
+				}
 
-				ChessAPI::OpenChessFile(strNPath);
-
-				ImGui::ClosePopupToLevel(0, true);
-				//ImGui::CloseCurrentPopup();
 			}
 			ImGui::PopStyleColor();
 			ImGui::SameLine();

@@ -1,7 +1,7 @@
 #include "EnginePanel.h"
 
-#include "../ChessAPI.h"
-#include "../ChessCore/chess_entry.h"
+#include "ChessAPI.h"
+#include "ChessCore/chess_entry.h"
 #include "imgui.h"
 #include "../Source/Walnut/Application.h"
 
