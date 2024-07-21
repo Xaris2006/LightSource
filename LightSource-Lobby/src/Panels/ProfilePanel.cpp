@@ -34,7 +34,7 @@ namespace Panels
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 
-			ImGui::BeginChild("Main");
+			ImGui::BeginChild("Main", ImVec2(0, ImGui::GetContentRegionAvail().y - 10));
 
 			ImGui::BeginTabBar("ProfileMenu");
 

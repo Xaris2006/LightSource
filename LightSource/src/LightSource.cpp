@@ -61,7 +61,7 @@ public:
 
 	virtual void OnUIRender() override
 	{	
-		std::cerr << "App: " << std::this_thread::get_id() << ' \n';// << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+		std::cerr << "App: " << std::this_thread::get_id() << " \n";// << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
 
 		//std::string cmd;
 		//std::cin >> cmd;

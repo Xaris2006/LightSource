@@ -9,6 +9,7 @@
 
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/ProfilePanel.h"
+#include "Panels/ToolsPanel.h"
 
 #include <iostream>
 #include <array>
@@ -32,7 +33,7 @@ public:
 
 		if (__argc > 1)
 		{
-			if (chess::IsFileValidFormat(__argv[1], ".pgn"))
+			if (std::filesystem::path(__argv[1]).extension().string() == ".pgn")
 			{
 				g_AppManager.CreateApp(__argv[1]);
 			}
@@ -118,7 +119,7 @@ public:
 		}
 		else if (m_MenuIntex == 3)
 		{
-
+			m_ToolsPanel.OnImGuiRender();
 		}
 		else if (m_MenuIntex == 4)
 		{
@@ -214,6 +215,7 @@ private:
 
 	Panels::ContentBrowserPanel m_ContentBrowserPanel;
 	Panels::ProfilePanel m_ProfilePanel;
+	Panels::ToolsPanel m_ToolsPanel;
 
 	int m_MenuIntex = 0;
 
@@ -231,7 +233,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	g_spec.Name = "Light Source";
 	g_spec.CustomTitlebar = true;
-	//g_spec.AppIconPath = "LightSourceApp\\Resources\\LightSource\\lsb.png";
+	g_spec.AppIconPath = "LightSourceApp\\Resources\\LightSource\\lsb.png";
 	g_spec.IconPath = "LightSourceApp\\Resources\\LightSource\\ls.png";
 	g_spec.HoveredIconPath = "LightSourceApp\\Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
