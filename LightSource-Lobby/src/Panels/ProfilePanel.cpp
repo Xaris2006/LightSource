@@ -2,6 +2,8 @@
 
 #include "Walnut/UI/UI.h"
 
+#include "implot.h"
+#include "implot_internal.h"
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 
@@ -60,7 +62,7 @@ namespace Panels
 				"Semptember", "October", "Noveber", "Deseber" };
 
 				float tableSize = 895.0f;//ImGui::GetContentRegionAvail().x * 2 / 3;
-				ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - 895.0f)/2);
+				ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - 895.0f) / 2);
 
 				if (ImGui::BeginTable("Activity", 29, ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit,
 					ImVec2(tableSize, 0)))
@@ -91,27 +93,27 @@ namespace Panels
 								ButtonColor = ImVec4(0.3 * 0.75, 0.58 * 0.75, 0.97 * 0.75, 1);
 							if (j > 25)
 								ButtonColor = ImVec4(0.3, 0.58, 0.97, 1);
-							
+
 							ImVec4 HAButtonColor = ButtonColor;
 							HAButtonColor.w *= 0.7;
-							
+
 							ImGui::PushID(i * 29 + j);
 
 							ImGui::PushStyleColor(ImGuiCol_Button, ButtonColor);
 							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, HAButtonColor);
-							ImGui::PushStyleColor(ImGuiCol_ButtonActive,  HAButtonColor);
+							ImGui::PushStyleColor(ImGuiCol_ButtonActive, HAButtonColor);
 
 							ImGui::Button("##A", ImVec2(ImGui::CalcTextSize("A").y, ImGui::CalcTextSize("A").y));
 
-							if(ImGui::IsItemHovered())
+							if (ImGui::IsItemHovered())
 								ImGui::SetTooltip("At this day {Name} played %i games", j);
 
 							ImGui::PopStyleColor(3);
-							
+
 							ImGui::PopID();
 						}
 					}
-					
+
 					ImGui::EndTable();
 				}
 
@@ -128,16 +130,54 @@ namespace Panels
 
 				ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - size.x) / 2);
 
-				const float values[6] = { 1400.0f, 1200.0f, 1870.0f, 1760.0f, 2430.0f, 2413.0f };
-				ImGui::PlotHistogram("##values", values, IM_ARRAYSIZE(values), 0, "ELO", 1000.0f, 3000.0f, size);
-				
-				//ImPlot?????
+				const float values[6] = { 1400.0f, 1870.0f, 2830.0f, 1200.0f, 1760.0f, 2813.0f };
+				static int items = 2;
+				static int groups = 3;
+				static float plotsize = 0.47f;
+
+				static const char* ilabels[] = { "Max ELO","Current ELO" };
+				static const char* glabels[] = { "Fide", "Lichess", "Chess.com"};
+				static const double positions[] = { 0, 1, 2 };
+
+				if (ImPlot::BeginPlot("ELO", size, ImPlotFlags_NoMouseText | ImPlotFlags_NoInputs))
+				{
+					ImPlot::SetupLegend(ImPlotLocation_East, ImPlotLegendFlags_Outside);
+					ImPlot::SetupAxesLimits(-0.5f, 2.5f, 700, 3400);
+
+					auto flags = ImPlotAxisFlags_RangeFit | ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoLabel;
+
+					ImPlot::SetupAxes("##ELO", "##Points", flags, flags);
+					ImPlot::SetupAxisTicks(ImAxis_X1, positions, groups, glabels);
+					ImPlot::PlotBarGroups(ilabels, values, items, groups, plotsize);
+
+					ImPlot::Annotation(-0.125, values[0], ImVec4(0, 0, 0, 0), ImVec2(0, -15), false, "%.0f", values[0]);
+					ImPlot::Annotation( 0.125, values[3], ImVec4(0, 0, 0, 0), ImVec2(0, -15), false, "%.0f", values[3]);
+					ImPlot::Annotation(-0.125 + 1, values[1], ImVec4(0, 0, 0, 0), ImVec2(0, -15), false, "%.0f", values[1]);
+					ImPlot::Annotation(0.125 + 1, values[4], ImVec4(0, 0, 0, 0), ImVec2(0, -15), false, "%.0f", values[4]);
+					ImPlot::Annotation(-0.125 + 2, values[2], ImVec4(0, 0, 0, 0), ImVec2(0, -15), false, "%.0f", values[2]);
+					ImPlot::Annotation(0.125 + 2, values[5], ImVec4(0, 0, 0, 0), ImVec2(0, -15), false, "%.0f", values[5]);
+
+					ImPlot::EndPlot();
+				}
+
+				//static bool clamp = false;
+				//ImGui::Checkbox("Clamp", &clamp);
+				//if (ImPlot::BeginPlot("##Annotations")) {
+				//	ImPlot::SetupAxesLimits(0, 2, 0, 1);
+				//
+				//	float bx[] = { 1.2f,1.5f,1.8f };
+				//	float by[] = { 0.25f, 0.5f, 0.75f };
+				//	ImPlot::PlotBars("##Bars", bx, by, 3, 0.2);
+				//	for (int i = 0; i < 3; ++i)
+				//		ImPlot::Annotation(bx[i], by[i], ImVec4(0, 0, 0, 0), ImVec2(0, -5), clamp, "B[%d]=%.2f", i, by[i]);
+				//	ImPlot::EndPlot();
+				//}
 
 				ImGui::EndChild();
 
 				ImGui::EndTabItem();
 			}
-
+		
 			if (ImGui::BeginTabItem("Statistics"))
 			{
 				ImGui::EndTabItem();
@@ -188,16 +228,10 @@ namespace Panels
 			static std::string lichessName = "";
 			ImGui::InputText("Lichess Name", &lichessName);
 			
-			static int lichessELO;
-			ImGui::InputInt("Lichess ELO", &lichessELO);
-			
 			ImGui::Separator();
 			
 			static std::string chesscomName = "";
 			ImGui::InputText("Chess.com Name", &chesscomName);
-			
-			static int chesscomELO;
-			ImGui::InputInt("Chess.com ELO", &chesscomELO);
 			
 			ImGui::Separator();
 			

@@ -36,6 +36,11 @@ namespace chess
 		return output;
 	}
 
+	std::string& Pgn_Game::GetFirstNote()
+	{
+		return m_firstNote;
+	}
+
 	void Pgn_Game::clear()
 	{
 		m_labels.clear();
@@ -90,6 +95,10 @@ namespace chess
 				resultExist = true;
 		}
 		output += '\n';
+
+		if (!f.m_firstNote.empty())
+			output += ('{' + f.m_firstNote + "} ");
+
 		f.WriteMoves(output, f.m_chessmoves);
 		if (resultExist && f.m_labels.at("Result") != "?")
 			output += f.m_labels.at("Result");
@@ -117,7 +126,7 @@ namespace chess
 		if (data.empty())
 			return;
 
-		this->data = data;
+		//this->data = data;
 
 		bool labelstart = false;
 		bool labelvalue = false;
@@ -232,6 +241,13 @@ namespace chess
 				{
 					if (Parent->move.empty())
 						continue;
+
+					if (Parent->move[0] == "" && !Parent->parent)
+					{
+						m_firstNote += data[i];
+						continue;
+					}
+
 					Parent->details[Parent->move.size() -1] += data[i];
 					continue;
 				}

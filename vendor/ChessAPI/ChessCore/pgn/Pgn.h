@@ -56,6 +56,7 @@ namespace chess
 		ChessMovesPath& GetMovePathbyRef();
 		std::string& GetResault();
 		std::vector<std::string> GetLabelNames() const;
+		std::string& GetFirstNote();
 
 		void clear();
 		std::string& operator[](const std::string& label);
@@ -78,9 +79,10 @@ namespace chess
 		std::map<std::string, std::string> m_labels;
 		ChessMovesPath m_chessmoves;
 		std::string m_resualt = "*";
+		std::string m_firstNote = "";
 
 		//for debug
-		std::string data;
+		//std::string data;
 	};
 
 	class Pgn_File

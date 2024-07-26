@@ -15,6 +15,7 @@ extern bool g_AlreadyOpenedModalOpen;
 
 static std::string s_fen;
 static bool cross = true;
+static std::array<std::array<int, 8>, 8> s_tags;
 
 void ImGuiBoard::OnAttach()
 {
@@ -36,10 +37,20 @@ void ImGuiBoard::OnAttach()
 
 	m_circleFromStart = std::make_shared<Walnut::Image>("Resources\\Board\\f.png");
 	m_circleToEnd = std::make_shared<Walnut::Image>("Resources\\Board\\f2.png");
+	
+	m_RedTag = std::make_shared<Walnut::Image>("Resources\\Board\\RedTag.png");
+	m_GreenTag = std::make_shared<Walnut::Image>("Resources\\Board\\GreenTag.png");
+	m_BlueTag = std::make_shared<Walnut::Image>("Resources\\Board\\BlueTag.png");
 
 	m_RedX = std::make_shared<Walnut::Image>("Resources\\RedX.png");
 
 	UpdateBoardValues();
+
+	for (int i = 0; i < 8; i++)
+	{
+		for (int j = 0; j < 8; j++)
+			s_tags[i][j] = 0;
+	}
 
 	//ImGui::StyleColorsDark();
 }
@@ -114,15 +125,240 @@ void ImGuiBoard::OnUIRender()
 	}
 
 
-	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel) && !ImGui::IsAnyMouseDown())
+	auto mif = (std::vector<int>)ChessAPI::GetMoveIntFormat();
+	auto& note = ChessAPI::GetNote(mif);
+
+	for (int i = 0; i < 8; i++)
 	{
-		if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+		for (int j = 0; j < 8; j++)
+			s_tags[i][j] = 0;
+	}
+	
+	if (note.find("%csl") != std::string::npos)
+	{
+		static const std::string hor = "abcdefgh";
+		static const std::string ver = "12345678";
+		static const std::string type = " RGY";
+		
+		for (int i = note.find("%csl") + 5; i < note.size(); i++)
 		{
-			m_NextMove = true;
+			if (note[i] == ',')
+				continue;
+			if (note[i] == ']')
+				break;
+			char t = note[i];
+			char h = note[++i];
+			char v = note[++i];
+
+			if(!m_reverse)
+				s_tags[7 - ver.find(v)][hor.find(h)] = type.find(t);
+			else
+				s_tags[ver.find(v)][7 - hor.find(h)] = type.find(t);
 		}
-		if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+
+	}
+
+	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+	{
+		if (!ImGui::IsAnyMouseDown())
 		{
-			ChessAPI::PreviousSavedMove();
+			if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+			{
+				m_NextMove = true;
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+			{
+				ChessAPI::PreviousSavedMove();
+			}
+		}
+		else if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+		{
+			static const std::string hor = "abcdefgh";
+			static const std::string ver = "12345678";
+			
+			if (ImGui::IsKeyPressed(ImGuiKey_R))
+			{
+				auto MousePos = FindMousePos();
+				
+				if (MousePos.x > -1 && MousePos.y > -1
+					&& MousePos.x < 8 && MousePos.y < 8)
+				{
+					std::string vh = "";
+					vh += hor[(int)MousePos.x];
+					vh += ver[7 - (int)MousePos.y];
+
+					int endIndex;
+					int startIndex = note.find("%csl");
+					bool newTagArea = false;
+
+					if (startIndex == std::string::npos)
+					{
+						newTagArea = true;
+
+						note += "[%csl ]";
+						startIndex = note.find("%csl");
+					}
+
+					endIndex = note.find(']', startIndex);
+
+					int indexVH = note.find(vh, startIndex);
+					if (indexVH != std::string::npos && indexVH < endIndex)
+					{
+						if (note[indexVH - 1] == 'R')
+						{
+							bool first = false;
+							if (note[indexVH - 2] != ',')
+								first = true;
+
+							if (!first)
+								note.erase(indexVH - 2, 4);
+							else
+							{
+								bool last = false;
+								if (note[indexVH + 2] == ']')
+									last = true;
+
+								if (last)
+									note.erase(startIndex - 1, startIndex + 2 + 7);
+								else
+									note.erase(indexVH - 1, 4);
+							}
+						}
+						else
+							note[indexVH - 1] = 'R';
+					}
+					else
+					{
+						std::string noteToAdd = 'R' + vh;
+						if (!newTagArea)
+							noteToAdd += ',';
+						note.insert(startIndex + 5, noteToAdd);
+
+					}
+				}
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_G))
+			{
+				auto MousePos = FindMousePos();
+
+				if (MousePos.x > -1 && MousePos.y > -1
+					&& MousePos.x < 8 && MousePos.y < 8)
+				{
+					std::string vh = "";
+					vh += hor[(int)MousePos.x];
+					vh += ver[7 - (int)MousePos.y];
+
+					int endIndex;
+					int startIndex = note.find("%csl");
+					bool newTagArea = false;
+
+					if (startIndex == std::string::npos)
+					{
+						newTagArea = true;
+
+						note += "[%csl ]";
+						startIndex = note.find("%csl");
+					}
+
+					endIndex = note.find(']', startIndex);
+
+					int indexVH = note.find(vh, startIndex);
+					if (indexVH != std::string::npos && indexVH < endIndex)
+					{
+						if (note[indexVH - 1] == 'G')
+						{
+							bool first = false;
+							if (note[indexVH - 2] != ',')
+								first = true;
+
+							if (!first)
+								note.erase(indexVH - 2, 4);
+							else
+							{
+								bool last = false;
+								if (note[indexVH + 2] == ']')
+									last = true;
+
+								if (last)
+									note.erase(startIndex - 1, startIndex + 2 + 7);
+								else
+									note.erase(indexVH - 1, 4);
+							}
+						}
+						else
+							note[indexVH - 1] = 'G';
+					}
+					else
+					{
+						std::string noteToAdd = 'G' + vh;
+						if (!newTagArea)
+							noteToAdd += ',';
+						note.insert(startIndex + 5, noteToAdd);
+
+					}
+				}
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_B))
+			{
+				auto MousePos = FindMousePos();
+
+				if (MousePos.x > -1 && MousePos.y > -1
+					&& MousePos.x < 8 && MousePos.y < 8)
+				{
+					std::string vh = "";
+					vh += hor[(int)MousePos.x];
+					vh += ver[7 - (int)MousePos.y];
+
+					int endIndex;
+					int startIndex = note.find("%csl");
+					bool newTagArea = false;
+
+					if (startIndex == std::string::npos)
+					{
+						newTagArea = true;
+
+						note += "[%csl ]";
+						startIndex = note.find("%csl");
+					}
+
+					endIndex = note.find(']', startIndex);
+
+					int indexVH = note.find(vh, startIndex);
+					if (indexVH != std::string::npos && indexVH < endIndex)
+					{
+						if (note[indexVH - 1] == 'Y')
+						{
+							bool first = false;
+							if (note[indexVH - 2] != ',')
+								first = true;
+
+							if (!first)
+								note.erase(indexVH - 2, 4);
+							else
+							{
+								bool last = false;
+								if (note[indexVH + 2] == ']')
+									last = true;
+
+								if (last)
+									note.erase(startIndex - 1, startIndex + 2 + 7);
+								else
+									note.erase(indexVH - 1, 4);
+							}
+						}
+						else
+							note[indexVH - 1] = 'Y';
+					}
+					else
+					{
+						std::string noteToAdd = 'Y' + vh;
+						if (!newTagArea)
+							noteToAdd += ',';
+						note.insert(startIndex + 5, noteToAdd);
+
+					}
+				}
+			}
 		}
 	}
 
@@ -130,6 +366,7 @@ void ImGuiBoard::OnUIRender()
 
 	m_startCursor.y = ImGui::GetCursorPosY();
 	m_startCursor.x = ImGui::GetWindowContentRegionWidth() / 2 - m_size / 2;
+
 
 	RenderBoard();
 	if (ImGui::BeginDragDropTarget())
@@ -161,6 +398,8 @@ void ImGuiBoard::OnUIRender()
 		}
 		ImGui::EndDragDropTarget();
 	}
+
+	RenderTags();
 	RenderPieces();
 
 	if (m_CapturedPieceIndex > 0)
@@ -367,6 +606,38 @@ void ImGuiBoard::RenderPieces()
 		yposition += blockSize;
 	}
 }
+
+void ImGuiBoard::RenderTags()
+{
+	ImVec2 bsize = { m_size / 10, m_size / 10 };
+	float blockSize = m_size / 9;
+
+	float xposition = blockSize;
+	float yposition = blockSize;
+	
+	for (int i = 0; i < 8; i++)
+	{
+		for (int j = 0; j < 8; j++)
+		{
+			if (s_tags[i][j])
+			{
+				auto tag = m_RedTag;
+				if (s_tags[i][j] == 2)
+					tag = m_GreenTag;
+				else if (s_tags[i][j] == 3)
+					tag = m_BlueTag;
+				ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
+				ImGui::Image((ImTextureID)tag->GetRendererID(), bsize);
+			}
+
+			xposition += blockSize;
+		}
+		xposition = blockSize;
+		yposition += blockSize;
+	}
+}
+
+
 
 void ImGuiBoard::RenderCirclesAtPossibleMoves()
 {
@@ -690,7 +961,7 @@ void ImGuiBoard::EditorPopup()
 		}
 
 		ImGui::SetCursorPos(cursorEnd);
-
+		
 		//ImGui::SeparatorText("Settings");
 		ImGui::Separator();
 		ImGui::Text("Settings:");
@@ -764,7 +1035,6 @@ void ImGuiBoard::EditorPopup()
 		ImGui::Columns();
 
 		ImGui::Separator();
-		ImGui::NewLine();
 
 		auto CheckBoard = [this](std::string& fen)
 			{
@@ -849,6 +1119,38 @@ void ImGuiBoard::EditorPopup()
 				return !edGame.ERROR_EXIT;
 			};
 
+		static std::string currentFEN;
+		CheckBoard(currentFEN);
+		ImGui::TextWrapped(std::string("FEN: " + currentFEN).c_str());
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.58f, 0.97f, 0.7f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.58f, 0.97f, 0.5f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.58f, 0.97f, 0.3f));
+
+		if (ImGui::Button("Copy"))
+		{
+			ImGui::SetClipboardText(currentFEN.c_str());
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Paste"))
+		{
+			currentFEN = ImGui::GetClipboardText();
+			chess_core::board edGame;
+			edGame.set_position(currentFEN);
+
+			if(!edGame.ERROR_EXIT)
+				OpenEditor(currentFEN);
+			else
+				ImGui::OpenPopup("Error");
+		}
+		
+		ImGui::PopStyleColor(3);
+
+		ImGui::Separator();
+
+		ImGui::NewLine();
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 		if (ImGui::Button("OverWrite"))
@@ -1007,6 +1309,27 @@ void ImGuiBoard::OpenEditor()
 		for (int j = 0; j < 8; j++)
 		{
 			m_Editorblock[i][j] = ChessAPI::GetBlockID(indexID);
+			indexID++;
+		}
+	}
+}
+
+void ImGuiBoard::OpenEditor(const std::string& newFEN)
+{
+	m_ToOpenEditor = true;
+
+	chess::Pgn_Game pgngame;
+	pgngame["FEN"] = newFEN;
+
+	chess::chess_entry game(pgngame);
+	game.run();
+
+	int indexID = 0;
+	for (int i = 7; i > -1; i--)
+	{
+		for (int j = 0; j < 8; j++)
+		{
+			m_Editorblock[i][j] = game.get_blockID(vec2<float>(indexID - 8 * (int)(indexID / 8), (int)(indexID / 8)));
 			indexID++;
 		}
 	}

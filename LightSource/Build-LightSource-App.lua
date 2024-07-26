@@ -10,6 +10,7 @@ project "LightSource"
    includedirs
    {
       "$(SolutionDir)Walnut/vendor/imgui",
+      "$(SolutionDir)Walnut/vendor/implot",
       "$(SolutionDir)Walnut/vendor/glfw/include",
 
       "$(SolutionDir)Walnut/Walnut/Source",

@@ -109,14 +109,17 @@ namespace chess
 
 	std::string& chess_entry::GetNote(std::vector<int> path)
 	{
+		if (path.size() == 1 && path[0] == -1)
+			return m_settings->GetFirstNote();
+
 		Pgn_Game::ChessMovesPath* copy_path_ptr = &m_settings->GetMovePathbyRef();
 		for (int i = 0; i < path.size() - 1; i++)
 		{
 			if (i % 2 == 1)
 			{
 				if (copy_path_ptr->children.size() - path[i] <= 0) { return /*risky*/std::string(); }
-				auto copy_chilfren_ptr = &copy_path_ptr->children[path[i]];
-				copy_path_ptr = copy_chilfren_ptr;
+				auto copy_children_ptr = &copy_path_ptr->children[path[i]];
+				copy_path_ptr = copy_children_ptr;
 			}
 		}
 		return copy_path_ptr->details[path[path.size() - 1]];

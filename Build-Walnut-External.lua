@@ -17,6 +17,7 @@ Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 
 group "Dependencies"
    include "Walnut/vendor/imgui"
+   include "Walnut/vendor/implot"
    include "Walnut/vendor/glfw"
    include "Walnut/vendor/glad"
    include "Walnut/vendor/yaml-cpp"

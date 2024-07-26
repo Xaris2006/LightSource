@@ -19,12 +19,15 @@ public:
 	void FlipBoard();
 
 	void OpenEditor();
+	void OpenEditor(const std::string& newFEN);
 
 private:
 
 	void RenderBoard();
 	void RenderPieces();
+	void RenderTags();
 	void RenderCirclesAtPossibleMoves();
+
 	ImVec2 FindMousePos();
 	void  UpdateBoardValues();
 
@@ -47,6 +50,9 @@ private:
 	std::shared_ptr<Walnut::Image> m_circleFromStart;
 	std::shared_ptr<Walnut::Image> m_circleToEnd;
 	std::shared_ptr<Walnut::Image> m_RedX;
+	std::shared_ptr<Walnut::Image> m_RedTag;
+	std::shared_ptr<Walnut::Image> m_GreenTag;
+	std::shared_ptr<Walnut::Image> m_BlueTag;
 
 	std::array<std::array<int, 8>, 8> m_block;
 	
