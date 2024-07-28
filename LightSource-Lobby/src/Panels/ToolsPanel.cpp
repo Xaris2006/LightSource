@@ -13,15 +13,6 @@ namespace Panels
 	{
 		FindAvailableTools();
 		FindDownloadableTools();
-
-		for (auto& path : m_AvailableTools)
-		{
-			std::ifstream toolDetails(path / "tool.details");
-			std::string iconName;
-			toolDetails >> iconName;
-
-			m_ToolIcons.push_back(std::make_shared<Walnut::Image>((path / iconName).string()));
-		}
 	}
 
 	void ToolsPanel::OnImGuiRender()
@@ -97,6 +88,9 @@ namespace Panels
 			ImGui::EndChild();
 
 			ImGui::TableSetColumnIndex(1);
+
+			bool unistallCurrentTool = false;
+
 			if (m_TargetedToolIndex > -1)
 			{
 				float size = std::min(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y) * 0.8f;
@@ -104,8 +98,9 @@ namespace Panels
 				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - size) * 0.5f);
 				ImGui::Image((ImTextureID)m_ToolIcons[m_TargetedToolIndex]->GetRendererID(), ImVec2(size, size));
 				
+				std::string filenameString = m_AvailableTools[m_TargetedToolIndex].filename().string();
+				
 				{
-					std::string filenameString = m_AvailableTools[m_TargetedToolIndex].filename().string();
 
 					float actualSize = ImGui::CalcTextSize(filenameString.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
 					float avail = ImGui::GetContentRegionAvail().x;
@@ -138,7 +133,10 @@ namespace Panels
 						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
 
 
-					ImGui::Button("Open");
+					if (ImGui::Button("Open"))
+					{
+
+					}
 
 					ImGui::PopStyleColor(3);
 				}
@@ -150,7 +148,8 @@ namespace Panels
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 
-					ImGui::Button("Unistall");
+					if (ImGui::Button("Unistall"))
+						unistallCurrentTool = true;
 
 					ImGui::PopStyleColor(3);
 				}
@@ -165,7 +164,7 @@ namespace Panels
 
 				ImGui::NewLine();
 
-				ImGui::Text("aaaaaaaaaaaaa");
+				ImGui::TextWrapped(m_ToolLabelNameToValue[filenameString + "Description"].c_str());
 
 				ImGui::EndChild();
 				
@@ -175,7 +174,7 @@ namespace Panels
 
 				ImGui::NewLine();
 
-				ImGui::Text("aaaaaaaaaaaaa");
+				ImGui::TextWrapped(m_ToolLabelNameToValue[filenameString + "Devaloper_Details"].c_str());
 
 				ImGui::EndChild();
 
@@ -204,6 +203,31 @@ namespace Panels
 
 				ImGui::Text("Select a Tool to interact with it!");
 			}
+			
+			if (unistallCurrentTool)
+			{
+				std::string filenameString = m_AvailableTools[m_TargetedToolIndex].filename().string();
+
+				std::filesystem::remove_all(m_AvailableTools[m_TargetedToolIndex]);
+
+				m_AvailableTools.erase(m_AvailableTools.begin() + m_TargetedToolIndex);
+
+				m_ToolLabelNameToValue.erase(filenameString + "Icon");
+				m_ToolLabelNameToValue.erase(filenameString + "Description");
+				m_ToolLabelNameToValue.erase(filenameString + "Devaloper_Details");
+
+				m_ToolIcons.erase(m_ToolIcons.begin() + m_TargetedToolIndex);
+
+				std::ofstream tools(std::filesystem::current_path() / "LightSourceApp\\chess_working_directory\\Tools\\Tools.txt");
+				for(int i = 0; i < m_AvailableTools.size() - 1; i++)
+					tools << m_AvailableTools[i].filename().string() << '\n';
+
+				tools << m_AvailableTools[m_AvailableTools.size() - 1].filename().string();
+
+				m_TargetedToolIndex = -1;
+				unistallCurrentTool = false;
+			}
+
 			ImGui::EndTable();
 		}
 
@@ -213,12 +237,72 @@ namespace Panels
 	void ToolsPanel::FindAvailableTools()
 	{
 		m_AvailableTools.clear();
+		m_ToolLabelNameToValue.clear();
+		m_ToolIcons.clear();
+		m_TargetedToolIndex = -1;
+
 		std::ifstream pathFile(std::filesystem::current_path() / "LightSourceApp\\chess_working_directory\\Tools\\Tools.txt");
 		while (pathFile.good())
 		{
 			std::string path;
 			pathFile >> path;
 			m_AvailableTools.emplace_back(std::filesystem::current_path() / "LightSourceApp\\chess_working_directory\\Tools" / path);
+		}
+
+		for (auto& path : m_AvailableTools)
+		{
+			std::string filenameString = path.filename().string();
+
+			std::ifstream toolDetails(path / "tool.details", std::ios::binary);
+			toolDetails.seekg(0, std::ios_base::end);
+			std::streampos maxSize = toolDetails.tellg();
+			toolDetails.seekg(0, std::ios_base::beg);
+
+			if (maxSize <= 0)
+				continue;
+
+			char* data = new char[maxSize];
+			toolDetails.read(data, maxSize);
+			toolDetails.close();
+
+			bool labelName = true;
+			std::string name = "", value = "";
+
+			for (size_t i = 0; i < maxSize; i++)
+			{
+				if (data[i] == '\n' || data[i] == '\r')
+					continue;
+				if (labelName && data[i] == ' ')
+					continue;
+
+				if (data[i] == '[')
+				{
+					labelName = false;
+					continue;
+				}
+
+				if (data[i] == ']')
+				{
+					labelName = true;
+
+					m_ToolLabelNameToValue[filenameString + name] = value;
+
+					name.clear();
+					value.clear();
+
+					continue;
+				}
+
+				if (labelName)
+					name += data[i];
+				else
+					value += data[i];
+
+			}
+
+			delete[] data;
+
+			m_ToolIcons.push_back(std::make_shared<Walnut::Image>((path / m_ToolLabelNameToValue[filenameString + "Icon"]).string()));
 		}
 	}
 

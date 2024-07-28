@@ -150,6 +150,12 @@ namespace chess
 				if (data[i] == '\n')
 					continue;
 
+				if (data[i] == '\\')
+				{
+					i++;
+					continue;
+				}
+
 				if (!labelvalue)
 				{
 					if (!labelstart && data[i] != '[')
@@ -167,21 +173,21 @@ namespace chess
 						continue;
 					}
 
-					if (data[i] == ']' && labelstart)
+					if (data[i] == ']' && labelstart && data[i-1])
 					{
 						labelstart = false;
 						m_labels[labelnamestr] = labelvaluestr;
 						continue;
 					}
 
-					if (data[i] == '"')
+					if (data[i] == '"' && data[i-1])
 					{
 						labelvalue = true;
 						continue;
 					}
 				}
 
-				if (data[i] == '"' && labelvalue)
+				if (data[i] == '"' && labelvalue && data[i-1])
 				{
 					labelvalue = false;
 					continue;

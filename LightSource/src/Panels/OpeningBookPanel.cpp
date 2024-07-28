@@ -85,9 +85,13 @@ namespace Panels
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
 
-			ImGui::Button(std::to_string(m_Status).c_str(), ImVec2(availx * m_Status / 100, 0));
+			ImGui::Button((std::to_string(m_Status)+'%').c_str(), ImVec2(availx * m_Status / 100, 0));
 			
 			ImGui::PopStyleColor(3);
+
+			//ImGui::ProgressBar((float)m_Status/100.0f, ImVec2(0.0f, 0.0f));
+			//ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+			//ImGui::Text("Status");
 		}
 
 		ImGui::Separator();

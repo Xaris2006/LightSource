@@ -17,7 +17,7 @@
 
 #include "GLFW/glfw3.h"
 
-#include "Walnut/../../../vendor/implot/implot.h"
+#include "implot.h"
 
 AppManager g_AppManager;
 
@@ -249,10 +249,10 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	std::filesystem::current_path(g_AppDirectory);
 #endif
 
-	Walnut::Application* app = new Walnut::Application(g_spec);
+	Walnut::Application* app = new Walnut::Application(g_spec, 117);
 	
 	//app->SetMinImGuiWindowSize(370.0f);
-	//app->SetDockNodeFlags(ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
+	app->SetDockNodeFlags(ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
 
 	std::shared_ptr<LobbyLayer> chessLayer = std::make_shared<LobbyLayer>();
 	app->PushLayer(chessLayer);

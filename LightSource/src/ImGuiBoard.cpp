@@ -1121,7 +1121,16 @@ void ImGuiBoard::EditorPopup()
 
 		static std::string currentFEN;
 		CheckBoard(currentFEN);
-		ImGui::TextWrapped(std::string("FEN: " + currentFEN).c_str());
+		
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
+
+		ImGui::Text("FEN");
+
+		ImGui::PopStyleColor();
+
+		ImGui::SameLine();
+
+		ImGui::TextWrapped(currentFEN.c_str());
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.58f, 0.97f, 0.7f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.58f, 0.97f, 0.5f));

@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <filesystem>
+#include <unordered_map>
 
 #include "Walnut/Image.h"
 
@@ -25,6 +26,8 @@ namespace Panels
 		std::vector<std::filesystem::path> m_DownloadableTools;
 
 		int m_TargetedToolIndex = -1;
+
+		std::unordered_map<std::string, std::string> m_ToolLabelNameToValue;
 
 		std::vector<std::shared_ptr<Walnut::Image>> m_ToolIcons;
 	};

@@ -326,7 +326,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	//std::filesystem::current_path(g_AppDirectory);
 	
 	
-	Walnut::Application* app = new Walnut::Application(g_spec);
+	Walnut::Application* app = new Walnut::Application(g_spec, 237);
 	std::shared_ptr<ChessLayer> chessLayer = std::make_shared<ChessLayer>();
 	app->PushLayer(chessLayer);
 	app->SetMenubarCallback([app, chessLayer]()
