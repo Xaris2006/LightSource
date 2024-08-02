@@ -4,6 +4,8 @@
 #include "ChessCore/chess_board.h"
 #include "ChessCore/chess_entry.h"
 
+#include "AppManagerChild.h"
+
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 
@@ -184,8 +186,17 @@ void ImGuiBoard::OnUIRender()
 					&& MousePos.x < 8 && MousePos.y < 8)
 				{
 					std::string vh = "";
-					vh += hor[(int)MousePos.x];
-					vh += ver[7 - (int)MousePos.y];
+					
+					if (!m_reverse)
+					{
+						vh += hor[(int)MousePos.x];
+						vh += ver[7 - (int)MousePos.y];
+					}
+					else
+					{
+						vh += hor[7 - (int)MousePos.x];
+						vh += ver[(int)MousePos.y];
+					}
 
 					int endIndex;
 					int startIndex = note.find("%csl");
@@ -245,8 +256,17 @@ void ImGuiBoard::OnUIRender()
 					&& MousePos.x < 8 && MousePos.y < 8)
 				{
 					std::string vh = "";
-					vh += hor[(int)MousePos.x];
-					vh += ver[7 - (int)MousePos.y];
+
+					if (!m_reverse)
+					{
+						vh += hor[(int)MousePos.x];
+						vh += ver[7 - (int)MousePos.y];
+					}
+					else
+					{
+						vh += hor[7 - (int)MousePos.x];
+						vh += ver[(int)MousePos.y];
+					}
 
 					int endIndex;
 					int startIndex = note.find("%csl");
@@ -306,8 +326,17 @@ void ImGuiBoard::OnUIRender()
 					&& MousePos.x < 8 && MousePos.y < 8)
 				{
 					std::string vh = "";
-					vh += hor[(int)MousePos.x];
-					vh += ver[7 - (int)MousePos.y];
+
+					if (!m_reverse)
+					{
+						vh += hor[(int)MousePos.x];
+						vh += ver[7 - (int)MousePos.y];
+					}
+					else
+					{
+						vh += hor[7 - (int)MousePos.x];
+						vh += ver[(int)MousePos.y];
+					}
 
 					int endIndex;
 					int startIndex = note.find("%csl");
@@ -382,15 +411,14 @@ void ImGuiBoard::OnUIRender()
 			}
 			else
 			{
-				std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << strpath << ":Path \n";
-				std::string anwser;
-				std::cin >> anwser;
-				if (anwser == "Accept")
+				bool anwser = AppManagerChild::IsChessFileAvail(strpath);
+
+				if (anwser)
 				{
 					ChessAPI::OpenChessFile(strpath);
-					std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+					AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 				}
-				else if (anwser == "Decline")
+				else
 				{
 					g_AlreadyOpenedModalOpen = true;
 				}
@@ -1257,10 +1285,9 @@ void ImGuiBoard::EditorPopup()
 				
 				std::string strNPath = nPath.string();
 				
-				std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << strNPath << ":Path \n";
-				std::string anwser;
-				std::cin >> anwser;
-				if (anwser == "Accept")
+				bool anwser = AppManagerChild::IsChessFileAvail(strNPath);
+
+				if (anwser)
 				{
 					chess::Pgn_File NPgnFile;
 					NPgnFile.CreateGame();
@@ -1269,10 +1296,10 @@ void ImGuiBoard::EditorPopup()
 					outfile << NPgnFile;
 					outfile.close();
 
-					std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << strNPath << ":Path \n";
+					AppManagerChild::OpenChessFile(strNPath);
 					ImGui::ClosePopupToLevel(0, true);
 				}
-				else if (anwser == "Decline")
+				else
 				{
 					g_AlreadyOpenedModalOpen = true;
 					ImGui::ClosePopupToLevel(0, true);

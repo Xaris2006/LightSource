@@ -48,7 +48,7 @@ namespace Panels {
 		std::shared_ptr<Walnut::Image> m_IconPlay = std::make_shared<Walnut::Image>("Resources/Icons/PlayButton.png");
 		std::shared_ptr<Walnut::Image> m_IconStop = std::make_shared<Walnut::Image>("Resources/Icons/StopButton.png");
 
-		std::string m_defaultEngine = "chess_working_directory\\engines\\stockfish.exe";
+		std::string m_defaultEngine = "MyDocuments\\engines\\stockfish.exe";
 
 	private:
 		std::thread* m_processThread = nullptr;

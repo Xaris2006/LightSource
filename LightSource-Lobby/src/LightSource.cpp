@@ -5,7 +5,9 @@
 #include "Walnut/UI/UI.h"
 
 #include "Windows/WindowsUtils.h"
-#include "AppManager.h"
+
+#include "Manager/AppManager.h"
+#include "Manager/ToolManager.h"
 
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/ProfilePanel.h"
@@ -19,7 +21,7 @@
 
 #include "implot.h"
 
-AppManager g_AppManager;
+Manager::AppManager g_AppManager;
 
 std::string g_AppDirectory;
 Walnut::ApplicationSpecification g_spec;
@@ -31,6 +33,8 @@ class LobbyLayer : public Walnut::Layer
 public:
 	virtual void OnAttach() override
 	{
+		Manager::ToolManager::Init();
+
 		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
 
 		if (__argc > 1)
@@ -46,15 +50,24 @@ public:
 			//}
 		}
 
-		m_HomeIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\home-button.png");
-		m_ProfilIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\user.png");
-		m_WebIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\internet.png");
-		m_ToolsIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\spanner.png");
-		m_HelpIcon = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\question-mark.png");
+		m_ContentBrowserPanel = std::make_unique<Panels::ContentBrowserPanel>();
+		m_ProfilePanel		  = std::make_unique<Panels::ProfilePanel>();
+		m_ToolsPanel		  = std::make_unique<Panels::ToolsPanel>();
+
+		m_HomeIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\home-button.png");
+		m_ProfilIcon		  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\user.png");
+		m_WebIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\internet.png");
+		m_ToolsIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\spanner.png");
+		m_HelpIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\question-mark.png");
 
 		auto& colors = ImGui::GetStyle().Colors;
 
 		colors[ImGuiCol_TableBorderLight] = ImColor(255, 225, 135, 80);
+	}
+
+	virtual void OnDetach() override
+	{
+		Manager::ToolManager::Shutdown();
 	}
 
 	virtual void OnUIRender() override
@@ -110,11 +123,11 @@ public:
 
 		if (m_MenuIntex == 0)
 		{
-			m_ContentBrowserPanel.OnImGuiRender();
+			m_ContentBrowserPanel->OnImGuiRender();
 		}
 		else if (m_MenuIntex == 1)
 		{
-			m_ProfilePanel.OnImGuiRender();
+			m_ProfilePanel->OnImGuiRender();
 		}
 		else if (m_MenuIntex == 2)
 		{
@@ -122,7 +135,7 @@ public:
 		}
 		else if (m_MenuIntex == 3)
 		{
-			m_ToolsPanel.OnImGuiRender();
+			m_ToolsPanel->OnImGuiRender();
 		}
 		else if (m_MenuIntex == 4)
 		{
@@ -216,9 +229,9 @@ public:
 
 private:
 
-	Panels::ContentBrowserPanel m_ContentBrowserPanel;
-	Panels::ProfilePanel m_ProfilePanel;
-	Panels::ToolsPanel m_ToolsPanel;
+	std::unique_ptr<Panels::ContentBrowserPanel> m_ContentBrowserPanel;
+	std::unique_ptr<Panels::ProfilePanel> m_ProfilePanel;
+	std::unique_ptr<Panels::ToolsPanel> m_ToolsPanel;
 
 	int m_MenuIntex = 0;
 

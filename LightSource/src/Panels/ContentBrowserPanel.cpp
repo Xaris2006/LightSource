@@ -2,6 +2,8 @@
 
 #include "Walnut/Application.h"
 
+#include "../AppManagerChild.h"
+
 #include <imgui.h>
 #include "misc/cpp/imgui_stdlib.h"
 
@@ -18,7 +20,7 @@ namespace Panels {
 	static bool s_openPopup = false;
 
 	ContentBrowserPanel::ContentBrowserPanel()
-		: m_BaseDirectory("chess_working_directory"), m_CurrentDirectory(m_BaseDirectory)
+		: m_BaseDirectory("MyDocuments"), m_CurrentDirectory(m_BaseDirectory)
 	{
 		m_DirectoryIcon = std::make_shared<Walnut::Image>("Resources/Icons/ContentBrowser/DirectoryIcon.png");
 		m_FileIcon = std::make_shared<Walnut::Image>("Resources/Icons/ContentBrowser/FileIcon.png");
@@ -76,7 +78,7 @@ namespace Panels {
 
 			ImGui::NewLine();
 
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
 			if (ImGui::Button("Create"))
 			{
 				std::filesystem::path nPath = std::filesystem::path() / s_oldpath / s_inputNName;
@@ -91,7 +93,7 @@ namespace Panels {
 			}
 			ImGui::PopStyleColor();
 			ImGui::SameLine();
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
 			if (ImGui::Button("Cansel"))
 				ImGui::CloseCurrentPopup();
 			ImGui::PopStyleColor();
@@ -136,19 +138,18 @@ namespace Panels {
 				//Bug when open file it does not reset the other panels
 				if (path.extension().string() != ".pgn")
 				{
-					printf("Could not load {0} - not a chess file", path.filename().string());
+					printf("Could not load %c - not a chess file", path.filename().string().c_str());
 				}
 				else
 				{
-					std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << path.string() << ":Path \n";
-					std::string anwser;
-					std::cin >> anwser;
-					if (anwser == "Accept")
+					bool anwser = AppManagerChild::IsChessFileAvail(path);
+
+					if (anwser)
 					{
 						ChessAPI::OpenChessFile(path.string());
-						std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+						AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 					}
-					else if(anwser == "Decline")
+					else
 					{
 						g_AlreadyOpenedModalOpen = true;
 					}
@@ -166,19 +167,41 @@ namespace Panels {
 					//Bug when open file it does not reset the other panels
 					if (path.extension().string() != ".pgn")
 					{
-						printf("Could not load {0} - not a chess file", path.filename().string());
+						printf("Could not load %s - not a chess file", path.filename().string());
 					}
 					else
 					{
-						std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << path.string() << ":Path \n";
-						std::string anwser;
-						std::cin >> anwser;
-						if (anwser == "Accept")
+						bool anwser = AppManagerChild::IsChessFileAvail(path);
+
+						if (anwser)
 						{
 							ChessAPI::OpenChessFile(path.string());
-							std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+							AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 						}
-						else if (anwser == "Decline")
+						else
+						{
+							g_AlreadyOpenedModalOpen = true;
+						}
+					}
+
+					ImGui::CloseCurrentPopup();
+				}
+				if (ImGui::Selectable("Open in window"))
+				{
+					//Bug when open file it does not reset the other panels
+					if (path.extension().string() != ".pgn")
+					{
+						printf("Could not load %s - not a chess file", path.filename().string());
+					}
+					else
+					{
+						bool anwser = AppManagerChild::IsChessFileAvail(path);
+
+						if (anwser)
+						{
+							AppManagerChild::OpenChessFile(path);
+						}
+						else
 						{
 							g_AlreadyOpenedModalOpen = true;
 						}
@@ -217,7 +240,7 @@ namespace Panels {
 
 				ImGui::NewLine();
 
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
 				if (ImGui::Button("Rename"))
 				{
 					std::string fileNpath = s_oldpath.string().substr(0, s_oldpath.string().size() - s_oldpath.filename().string().size() - 1) + '\\' + s_inputNName;
@@ -226,7 +249,7 @@ namespace Panels {
 				}
 				ImGui::PopStyleColor();
 				ImGui::SameLine();
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
 				if (ImGui::Button("Cansel"))
 					ImGui::CloseCurrentPopup();
 				ImGui::PopStyleColor();
@@ -248,6 +271,11 @@ namespace Panels {
 					m_CurrentDirectory /= path.filename();
 
 			}
+
+			int extensionIndex = filenameString.find('.');
+			if (extensionIndex != std::string::npos)
+				filenameString.erase(extensionIndex);
+
 			ImGui::TextWrapped(filenameString.c_str());
 
 			ImGui::NextColumn();

@@ -6,6 +6,8 @@
 
 #include "Windows/WindowsUtils.h"
 
+#include "AppManagerChild.h"
+
 #include "ChessAPI.h"
 
 #include "ImGuiBoard.h"
@@ -19,6 +21,7 @@
 
 #include <iostream>
 #include <array>
+#include <fstream>
 
 #include "GLFW/glfw3.h"
 
@@ -31,20 +34,28 @@ class ChessLayer : public Walnut::Layer
 public:
 	virtual void OnAttach() override
 	{
-		std::cerr << "App: " << std::this_thread::get_id() << " - *Start\n";
-
 		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
 
+		AppManagerChild::Init();
 		ChessAPI::Init();
 
 		m_ChessBoard.OnAttach();
 
 		if (__argc > 1)
 		{
-			if (chess::IsFileValidFormat(__argv[1], ".pgn"))
+			std::string cmd = "";
+
+			for (int i = 1; i < __argc - 1; i++)
 			{
-				ChessAPI::OpenChessFile(__argv[1]);
-				std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+				cmd += __argv[i];
+				cmd += ' ';
+			}
+			cmd += __argv[__argc - 1];
+
+			if (chess::IsFileValidFormat(cmd, ".pgn"))
+			{
+				ChessAPI::OpenChessFile(cmd);
+				AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 			}
 			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
 			//{
@@ -52,21 +63,25 @@ public:
 			//	m_chess.openBook.OpenCOBfile(commandLineArgs[1]);
 			//}
 		}
+
+		std::ifstream lsIni("lightsource.ini");
+		std::string name;
+		lsIni >> name >> ContentBrowserPanelViewStatus();
+		lsIni >> name >> GamePropertiesPanelViewStatus();
+		lsIni >> name >> NotePanelViewStatus();
+		lsIni >> name >> MovePanelViewStatus();
+		lsIni >> name >> OpeningBookPanelViewStatus();
+		lsIni.close();
 	}
 
 	virtual void OnDetach() override
 	{
-		std::cerr << "App: " << std::this_thread::get_id() << " - *End\n";
+		AppManagerChild::ShutDown();
 	}
 
 	virtual void OnUIRender() override
 	{	
-		std::cerr << "App: " << std::this_thread::get_id() << " \n";// << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
-
-		//std::string cmd;
-		//std::cin >> cmd;
-		//if (cmd.find("End") != std::string::npos)
-		//	Walnut::Application::Get().Close();
+		AppManagerChild::OnUpdate();
 
 		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
 		{
@@ -122,6 +137,7 @@ public:
 		UI_DrawAboutModal();
 		AlreadyOpenedModal();
 		//ImGui::ShowDemoWindow();
+		//ImGui::ShowMetricsWindow();
 	}
 
 	void UI_DrawAboutModal()
@@ -247,7 +263,8 @@ public:
 	void New()
 	{
 		ChessAPI::OpenChessFile("");
-		std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+
+		AppManagerChild::OwnChessFile("");
 	}
 
 	void Open()
@@ -255,15 +272,14 @@ public:
 		std::string filepath = Windows::Utils::OpenFile("Chess Database (*.pgn)\0*.pgn\0");
 		if (!filepath.empty())
 		{
-			std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << filepath << ":Path \n";
-			std::string anwser;
-			std::cin >> anwser;
-			if (anwser == "Accept")
+			bool anwser = AppManagerChild::IsChessFileAvail(filepath);
+
+			if (anwser)
 			{
 				ChessAPI::OpenChessFile(filepath);
-				std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+				AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 			}
-			else if (anwser == "Decline")
+			else
 			{
 				g_AlreadyOpenedModalOpen = true;
 			}
@@ -277,7 +293,7 @@ public:
 		{
 			ChessAPI::OverWriteChessFile(filepath);
 			ChessAPI::OpenChessFile(filepath);
-			std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << ChessAPI::GetPgnFilePath() << ":Path \n";
+			AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 		}
 	}
 
@@ -315,7 +331,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	g_spec.HoveredIconPath = "Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
 		{
-			std::cerr << "App: " << std::this_thread::get_id() << " - *Open\n";
+			AppManagerChild::OpenChessFile();
 		};
 	g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
 
@@ -323,9 +339,6 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	std::filesystem::current_path(g_AppDirectory);
 #endif
 
-	//std::filesystem::current_path(g_AppDirectory);
-	
-	
 	Walnut::Application* app = new Walnut::Application(g_spec, 237);
 	std::shared_ptr<ChessLayer> chessLayer = std::make_shared<ChessLayer>();
 	app->PushLayer(chessLayer);
@@ -360,9 +373,21 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		{
 			if (ImGui::MenuItem("Content Browser", 0, &chessLayer->ContentBrowserPanelViewStatus())){}
 			if (ImGui::MenuItem("Game Properties", 0, &chessLayer->GamePropertiesPanelViewStatus())){}
-			if (ImGui::MenuItem("Notes", 0, &chessLayer->NotePanelViewStatus())){}
-			if (ImGui::MenuItem("Moves", 0, &chessLayer->MovePanelViewStatus())){}
-			if (ImGui::MenuItem("Opening Book", 0, &chessLayer->OpeningBookPanelViewStatus())){}
+			if (ImGui::MenuItem("Notes",		   0, &chessLayer->NotePanelViewStatus())){}
+			if (ImGui::MenuItem("Moves",		   0, &chessLayer->MovePanelViewStatus())){}
+			if (ImGui::MenuItem("Opening Book",    0, &chessLayer->OpeningBookPanelViewStatus())){}
+
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Set current View Style as default"))
+			{
+				std::ofstream lsIni("lightsource.ini");
+				lsIni << "Content_Browser" << ' ' << chessLayer->ContentBrowserPanelViewStatus() << '\n';
+				lsIni << "Game_Properties" << ' ' << chessLayer->GamePropertiesPanelViewStatus() << '\n';
+				lsIni << "Notes"		   << ' ' << chessLayer->NotePanelViewStatus() << '\n';
+				lsIni << "Moves"		   << ' ' << chessLayer->MovePanelViewStatus() << '\n';
+				lsIni << "Opening_Book"	   << ' ' << chessLayer->OpeningBookPanelViewStatus();
+			}
 
 			ImGui::EndMenu();
 		}

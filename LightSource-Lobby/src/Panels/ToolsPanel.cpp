@@ -7,6 +7,9 @@
 #include "Walnut/Application.h"
 #include "Walnut/UI/UI.h"
 
+#include "../windowsMain.h"
+#include "../Manager/ToolManager.h"
+
 namespace Panels
 {
 	ToolsPanel::ToolsPanel()
@@ -93,8 +96,8 @@ namespace Panels
 
 			if (m_TargetedToolIndex > -1)
 			{
-				float size = std::min(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y) * 0.8f;
-
+				float size = min(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y) * 0.8f;
+				
 				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - size) * 0.5f);
 				ImGui::Image((ImTextureID)m_ToolIcons[m_TargetedToolIndex]->GetRendererID(), ImVec2(size, size));
 				
@@ -120,36 +123,51 @@ namespace Panels
 
 				ImGui::NewLine();
 
+				if(!Manager::ToolManager::Get()->IsToolRunning(filenameString))
 				{
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 
-					float actualSize = ImGui::CalcTextSize(" Open ").x + ImGui::CalcTextSize(" Unistall ").x + ImGui::GetStyle().FramePadding.x * 3.0f;
-					float avail = ImGui::GetContentRegionAvail().x;
-
-					float off = (avail - actualSize) * 0.5f;
-					if (off > 0.0f)
-						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
-
-
-					if (ImGui::Button("Open"))
 					{
+						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 
+						float actualSize = ImGui::CalcTextSize(" Open ").x + ImGui::CalcTextSize(" Unistall ").x + ImGui::GetStyle().FramePadding.x * 3.0f;
+						float avail = ImGui::GetContentRegionAvail().x;
+
+						float off = (avail - actualSize) * 0.5f;
+						if (off > 0.0f)
+							ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+
+						if (ImGui::Button("Open"))
+						{
+							Manager::ToolManager::Get()->RunTool(filenameString);
+						}
+
+						ImGui::PopStyleColor(3);
 					}
 
-					ImGui::PopStyleColor(3);
+					ImGui::SameLine();
+
+					{
+						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
+
+						if (ImGui::Button("Unistall"))
+							unistallCurrentTool = true;
+
+						ImGui::PopStyleColor(3);
+					}
 				}
-
-				ImGui::SameLine();
-
+				else
 				{
 					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 
-					if (ImGui::Button("Unistall"))
-						unistallCurrentTool = true;
+					if (Walnut::UI::ButtonCentered("Close"))
+						Manager::ToolManager::Get()->ShutdownTool(filenameString);
 
 					ImGui::PopStyleColor(3);
 				}
@@ -218,7 +236,7 @@ namespace Panels
 
 				m_ToolIcons.erase(m_ToolIcons.begin() + m_TargetedToolIndex);
 
-				std::ofstream tools(std::filesystem::current_path() / "LightSourceApp\\chess_working_directory\\Tools\\Tools.txt");
+				std::ofstream tools(std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools\\Tools.txt");
 				for(int i = 0; i < m_AvailableTools.size() - 1; i++)
 					tools << m_AvailableTools[i].filename().string() << '\n';
 
@@ -241,12 +259,12 @@ namespace Panels
 		m_ToolIcons.clear();
 		m_TargetedToolIndex = -1;
 
-		std::ifstream pathFile(std::filesystem::current_path() / "LightSourceApp\\chess_working_directory\\Tools\\Tools.txt");
+		std::ifstream pathFile(std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools\\Tools.txt");
 		while (pathFile.good())
 		{
 			std::string path;
 			pathFile >> path;
-			m_AvailableTools.emplace_back(std::filesystem::current_path() / "LightSourceApp\\chess_working_directory\\Tools" / path);
+			m_AvailableTools.emplace_back(std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools" / path);
 		}
 
 		for (auto& path : m_AvailableTools)
@@ -303,6 +321,7 @@ namespace Panels
 			delete[] data;
 
 			m_ToolIcons.push_back(std::make_shared<Walnut::Image>((path / m_ToolLabelNameToValue[filenameString + "Icon"]).string()));
+			Manager::ToolManager::Get()->AddTool(path / (filenameString + ".exe"), filenameString);
 		}
 	}
 

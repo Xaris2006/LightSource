@@ -3,7 +3,7 @@
 #include "Walnut/Application.h"
 #include "Walnut/UI/UI.h"
 
-#include "../AppManager.h"
+#include "../Manager/AppManager.h"
 
 #include <imgui.h>
 #include "misc/cpp/imgui_stdlib.h"
@@ -13,7 +13,7 @@
 #include <atlstr.h>
 #include <shlobj.h>
 
-extern AppManager g_AppManager;
+extern Manager::AppManager g_AppManager;
 
 namespace Panels {
 
@@ -28,10 +28,10 @@ namespace Panels {
 	static bool s_openNewPopup = false;
 
 	ContentBrowserPanel::ContentBrowserPanel()
-		: m_BaseDirectory(std::filesystem::current_path() / "LightSourceApp\\chess_working_directory"), m_CurrentDirectory(m_BaseDirectory)
+		: m_BaseDirectory(std::filesystem::current_path() / "LightSourceApp\\MyDocuments"), m_CurrentDirectory(m_BaseDirectory)
 	{
 		m_DirectoryIcon = std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/DirectoryIcon.png");
-		m_FileIcon = std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconPGN.png");
+		m_FileIcon = std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIcon.png");
 		m_FileIconPGN = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconPGN.png");
 		m_FileIconCOB = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconCOB.png");
 		m_BackArrow = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/previous.png");
@@ -213,6 +213,10 @@ namespace Panels {
 				}
 
 				ImGuiStyle& style = ImGui::GetStyle();
+
+				int extensionIndex = filenameString.find('.');
+				if(extensionIndex != std::string::npos)
+					filenameString.erase(extensionIndex);
 
 				float actualSize = ImGui::CalcTextSize(filenameString.c_str()).x + style.FramePadding.x * 2.0f;
 				float avail = ImGui::GetContentRegionAvail().x;

@@ -30,16 +30,16 @@ public:
         HANDLE ChildStd_IN_Rd = NULL;
 
         if (!CreatePipe(&m_ChildStd_OUT_Rd, &ChildStd_OUT_Wr, &saAttr, 0))
-            std::runtime_error("StdoutRd CreatePipe");
+            throw std::runtime_error("StdoutRd CreatePipe");
 
         if (!SetHandleInformation(m_ChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
-            std::runtime_error("Stdout SetHandleInformation");
+            throw std::runtime_error("Stdout SetHandleInformation");
 
         if (!CreatePipe(&ChildStd_IN_Rd, &m_ChildStd_IN_Wr, &saAttr, 0))
-            std::runtime_error("Stdin CreatePipe");
+            throw std::runtime_error("Stdin CreatePipe");
 
         if (!SetHandleInformation(m_ChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0))
-            std::runtime_error("Stdin SetHandleInformation");
+            throw std::runtime_error("Stdin SetHandleInformation");
 
 
         TCHAR szCmdline[] = TEXT("");
@@ -95,7 +95,7 @@ public:
 
         bSuccess = WriteFile(m_ChildStd_IN_Wr, message.c_str(), message.size(), &dwWritten, NULL);
         if (!bSuccess)
-            std::runtime_error("Write to Process");
+            throw std::runtime_error("Write to Process");
     }
 
     std::string Read()
@@ -112,7 +112,7 @@ public:
             if (!bSuccess || dwRead == 0)
                 break;
             if (!bSuccess)//will not be hitted 
-                std::runtime_error("Read Process");
+                throw std::runtime_error("Read Process");
             output += std::string(chBuf, dwRead);
         } while (dwRead == BUFSIZE);
 

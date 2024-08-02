@@ -16,8 +16,7 @@ namespace Panels
 
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
 
-		ImGui::InputTextMultiline(" ",
-			&ChessAPI::GetNote(ChessAPI::GetMoveIntFormat()), ImGui::GetContentRegionAvail());
+		ImGui::InputTextMultiline("##note", &ChessAPI::GetNote(ChessAPI::GetMoveIntFormat()), ImGui::GetContentRegionAvail());
 		ImGui::PopStyleColor();
 
 		ImGui::End();
