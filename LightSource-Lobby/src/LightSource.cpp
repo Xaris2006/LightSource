@@ -87,6 +87,7 @@ public:
 
 		//ImGui::ShowDemoWindow();
 		//ImPlot::ShowDemoWindow();
+		//ImGui::ShowMetricsWindow();
 
 		//menu
 		ImGui::Begin("Menu", 0, ImGuiWindowFlags_NoDecoration);
@@ -282,7 +283,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 				chessLayer->Open();
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Exit"))
+			if (ImGui::MenuItem("Exit", "Alt+F4"))
 			{
 				app->Close();
 			}

@@ -8,8 +8,6 @@
 #include <imgui.h>
 #include "misc/cpp/imgui_stdlib.h"
 
-#include <fstream>
-
 #include <atlstr.h>
 #include <shlobj.h>
 
@@ -164,6 +162,8 @@ namespace Panels {
 
 			for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
 			{
+				ImGui::NewLine();
+
 				const auto& path = directoryEntry.path();
 				std::string filenameString = path.filename().string();
 
@@ -200,9 +200,26 @@ namespace Panels {
 				{
 					std::filesystem::path relativePath(path);
 					const wchar_t* itemPath = relativePath.c_str();
-					ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
+					ImGui::SetDragDropPayload("MERGE_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
 					ImGui::EndDragDropSource();
 				}
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MERGE_ITEM"))
+					{
+						const wchar_t* wpath = (const wchar_t*)payload->Data;
+						std::filesystem::path spath(wpath);
+						
+						if (spath.has_extension() && spath.extension() == ".pgn" &&
+							path.has_extension() && path.extension() == ".pgn")
+						{
+							MergeFiles(path, { path, spath });
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
 
 				ImGui::PopStyleColor();
 				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
@@ -244,6 +261,8 @@ namespace Panels {
 			ImGui::EndTable();
 		}
 
+		MergeChildPanel();
+
 		if (s_openFilePopup)
 		{
 			s_openFilePopup = false;
@@ -278,6 +297,125 @@ namespace Panels {
 		NewPopup();
 
 		ImGui::End();
+	}
+
+	void ContentBrowserPanel::MergeChildPanel()
+	{
+		if (m_filesToBeMerged.empty())
+			return;
+		
+		ImGui::Begin("Merge");
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
+		Walnut::UI::TextCentered("Files to be merged");
+		ImGui::PopStyleColor();
+
+		ImGui::Separator();
+		ImGui::NewLine();
+
+		ImGui::BeginChild("##files", ImVec2(0, ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y * 8 - ImGui::GetStyle().ItemSpacing.y * 16), true);
+		for (int i = 0; i < m_filesToBeMerged.size(); i++)
+		{
+			ImGui::PushID(i);
+
+			ImGui::Text(m_filesToBeMerged[i].string().c_str());
+
+			ImGui::SameLine();
+
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			if (ImGui::Button("Remove"))
+			{
+				m_filesToBeMerged.erase(m_filesToBeMerged.begin() + i);
+				i--;
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::PopID();
+		}
+
+		ImGui::EndChild();
+
+		ImGui::NewLine();
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
+
+		ImGui::Text(("Creation Path: " + m_BaseDirectory.string() + '\\').c_str());
+
+		ImGui::PopStyleColor();
+
+		ImGui::SameLine();
+
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
+
+		ImGui::SetNextItemWidth(ImGui::CalcTextSize("12345678911131415").x);
+
+		ImGui::InputText("##MergedName", &m_mergedName);
+		
+		ImGui::Separator();
+		
+		ImGui::NewLine();
+
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
+
+			float actualSize = ImGui::CalcTextSize(" Merge ").x + ImGui::CalcTextSize(" Cansel ").x + ImGui::GetStyle().FramePadding.x * 3.0f;
+			float avail = ImGui::GetContentRegionAvail().x;
+
+			float off = (avail - actualSize) * 0.5f;
+			if (off > 0.0f)
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+			if (ImGui::Button("Merge"))
+			{
+				MergeFiles(m_BaseDirectory / m_mergedName, m_filesToBeMerged);
+				m_filesToBeMerged.clear();
+			}
+
+			ImGui::PopStyleColor(3);
+		}
+
+		ImGui::SameLine();
+
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
+
+			if (ImGui::Button("Cansel"))
+				m_filesToBeMerged.clear();
+
+			ImGui::PopStyleColor(3);
+		}
+
+		ImGui::End();
+	}
+
+	void ContentBrowserPanel::MergeFiles(const std::filesystem::path& dpath, const std::vector<std::filesystem::path>& paths)
+	{
+		std::ofstream osource("helper.pgn");
+
+		for (auto& path : paths)
+		{
+			chess::Pgn_File pgnFile;
+			
+			std::ifstream infile(path, std::ios::binary);
+			infile >> pgnFile;
+			infile.close();
+			
+			osource << pgnFile;
+		}
+		osource.close();
+
+		std::ifstream isource("helper.pgn", std::ios::binary);
+		std::ofstream dFile(dpath, std::ios::binary);
+		
+		dFile << isource.rdbuf();
+		
+		isource.close();
+		dFile.close();
 	}
 
 	void ContentBrowserPanel::TreeDirectory(const std::filesystem::path& directory)
@@ -353,16 +491,42 @@ namespace Panels {
 
 				ImGui::CloseCurrentPopup();
 			}
-			if (ImGui::Selectable("Delete"))
-			{
-				std::filesystem::remove(s_path);
-				ImGui::CloseCurrentPopup();
-			}
+			
 			if (ImGui::Selectable("Rename"))
 			{
 				s_openRenamePopup = true;
 				s_inputNName = s_path.filename().string();
 				s_oldpath = s_path;
+				ImGui::CloseCurrentPopup();
+			}
+			
+			if (s_path.extension().string() == ".pgn" && ImGui::Selectable("Merge..."))
+			{
+				bool alreadyAdded = false;
+
+				if (m_filesToBeMerged.empty())
+					m_mergedName = s_path.filename().string();
+				else
+				{
+					for (auto& other : m_filesToBeMerged)
+					{
+						if (other == s_path)
+						{
+							alreadyAdded = true;
+							break;
+						}
+					}
+				}
+
+				if (!alreadyAdded)
+					m_filesToBeMerged.emplace_back(s_path);
+
+				ImGui::CloseCurrentPopup();
+			}
+
+			if (ImGui::Selectable("Delete"))
+			{
+				std::filesystem::remove(s_path);
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -411,19 +575,23 @@ namespace Panels {
 
 			ImGui::NewLine();
 
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 			if (ImGui::Button("Rename"))
 			{
 				std::string fileNpath = s_oldpath.string().substr(0, s_oldpath.string().size() - s_oldpath.filename().string().size() - 1) + '\\' + s_inputNName;
 				std::filesystem::rename(s_oldpath, fileNpath);
 				ImGui::CloseCurrentPopup();
 			}
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 			ImGui::SameLine();
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 			if (ImGui::Button("Cansel"))
 				ImGui::CloseCurrentPopup();
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 			ImGui::EndPopup();
 		}
 	}
@@ -438,7 +606,9 @@ namespace Panels {
 
 			ImGui::NewLine();
 
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 			if (ImGui::Button("Create"))
 			{
 				std::filesystem::path nPath = std::filesystem::path() / s_oldpath / s_inputNName;
@@ -451,12 +621,14 @@ namespace Panels {
 					std::filesystem::create_directory(nPath);
 				ImGui::CloseCurrentPopup();
 			}
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 			ImGui::SameLine();
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 			if (ImGui::Button("Cansel"))
 				ImGui::CloseCurrentPopup();
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 			ImGui::EndPopup();
 		}
 	}

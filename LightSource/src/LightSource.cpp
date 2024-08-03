@@ -112,6 +112,11 @@ public:
 			{
 				OpenEditor();
 			}
+			
+			if (ImGui::IsKeyPressed(ImGuiKey_B))
+			{
+				ImGui::SetClipboardText(ChessAPI::GetFEN().c_str());
+			}
 
 			if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
 			{
@@ -363,7 +368,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 				chessLayer->SaveAs();
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Exit"))
+			if (ImGui::MenuItem("Exit", "Alt+F4"))
 			{
 				app->Close();
 			}

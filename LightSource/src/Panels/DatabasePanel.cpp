@@ -67,8 +67,9 @@ namespace Panels
 
 			ImGui::Checkbox("Black", &m_name_black);
 
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2, 0.8, 0.2, 0.75));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 			if (ImGui::Button("Search"))
 			{
 				m_search_resualt.clear();
@@ -101,24 +102,27 @@ namespace Panels
 					pgnfile->SearchLabel(m_search_resualt, a, m_searchSetting);
 				}
 			}
-			ImGui::PopStyleColor(2);
+			ImGui::PopStyleColor(3);
 
 			ImGui::SameLine();
 
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8, 0.2, 0.2, 0.75));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 			if (ImGui::Button("Clear"))
 			{
 				m_search_resualt.clear();
 				m_name_to_search = "";
 				m_eco_to_search = "";
 			}
-			ImGui::PopStyleColor(2);
+			ImGui::PopStyleColor(3);
 
 			ImGui::NewLine();
 			ImGui::Separator();
 
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.48f, 0.87f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.48f, 0.87f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.48f, 0.87f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.48f, 0.87f, 0.25f));
 
 			if (ImGui::Button("New Game"))
 			{
@@ -132,7 +136,7 @@ namespace Panels
 				m_lastPointedRow = 0;
 			}
 
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 
 			ImGui::Separator();
 

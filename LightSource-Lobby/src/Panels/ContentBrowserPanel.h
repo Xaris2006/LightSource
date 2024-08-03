@@ -1,10 +1,12 @@
 #pragma once
 
 #include "ChessAPI.h"
+#include "ChessCore/pgn/Pgn.h"
 
 #include "Walnut/Image.h"
 
 #include <filesystem>
+#include <fstream>
 #include <memory>
 
 namespace Panels
@@ -17,6 +19,9 @@ namespace Panels
 		void OnImGuiRender();
 	private:
 
+		void MergeChildPanel();
+		void MergeFiles(const std::filesystem::path& dpath, const std::vector<std::filesystem::path>& paths);
+		
 		void TreeDirectory(const std::filesystem::path& directory);
 
 		void FilePopup();
@@ -34,6 +39,9 @@ namespace Panels
 		std::shared_ptr<Walnut::Image> m_FileIconPGN;
 		std::shared_ptr<Walnut::Image> m_FileIconCOB;
 		std::shared_ptr<Walnut::Image> m_BackArrow;
+
+		std::vector<std::filesystem::path> m_filesToBeMerged;
+		std::string m_mergedName;
 	};
 
 }
