@@ -50,6 +50,12 @@ namespace chess
 		m_resualt = "*";
 	}
 
+	void Pgn_Game::RemoveLabel(const std::string& name)
+	{
+		m_labels[name] = "";
+		m_labels.erase(name);
+	}
+
 	std::string& Pgn_Game::operator[](const std::string& label)
 	{
 		bool finded = false;

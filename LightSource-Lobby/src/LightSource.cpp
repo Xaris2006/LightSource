@@ -12,6 +12,7 @@
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/ProfilePanel.h"
 #include "Panels/ToolsPanel.h"
+#include "Panels/HelpPanel.h"
 
 #include <iostream>
 #include <array>
@@ -53,6 +54,7 @@ public:
 		m_ContentBrowserPanel = std::make_unique<Panels::ContentBrowserPanel>();
 		m_ProfilePanel		  = std::make_unique<Panels::ProfilePanel>();
 		m_ToolsPanel		  = std::make_unique<Panels::ToolsPanel>();
+		m_HelpPanel			  = std::make_unique<Panels::HelpPanel>();
 
 		m_HomeIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\home-button.png");
 		m_ProfilIcon		  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\user.png");
@@ -61,8 +63,8 @@ public:
 		m_HelpIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\question-mark.png");
 
 		auto& colors = ImGui::GetStyle().Colors;
-
 		colors[ImGuiCol_TableBorderLight] = ImColor(255, 225, 135, 80);
+		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 	}
 
 	virtual void OnDetach() override
@@ -140,7 +142,7 @@ public:
 		}
 		else if (m_MenuIntex == 4)
 		{
-
+			m_HelpPanel->OnImGuiRender();
 		}
 
 		UI_DrawAboutModal();
@@ -231,8 +233,9 @@ public:
 private:
 
 	std::unique_ptr<Panels::ContentBrowserPanel> m_ContentBrowserPanel;
-	std::unique_ptr<Panels::ProfilePanel> m_ProfilePanel;
-	std::unique_ptr<Panels::ToolsPanel> m_ToolsPanel;
+	std::unique_ptr<Panels::ProfilePanel>		 m_ProfilePanel;
+	std::unique_ptr<Panels::ToolsPanel>			 m_ToolsPanel;
+	std::unique_ptr<Panels::HelpPanel>			 m_HelpPanel;
 
 	int m_MenuIntex = 0;
 
@@ -263,7 +266,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	std::filesystem::current_path(g_AppDirectory);
 #endif
 
-	Walnut::Application* app = new Walnut::Application(g_spec, 117);
+	Walnut::Application* app = new Walnut::Application(g_spec, 117 - 50);
 	
 	//app->SetMinImGuiWindowSize(370.0f);
 	app->SetDockNodeFlags(ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
@@ -287,10 +290,6 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				app->Close();
 			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("View"))
-		{
 			ImGui::EndMenu();
 		}
 

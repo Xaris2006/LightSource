@@ -72,6 +72,8 @@ public:
 		lsIni >> name >> MovePanelViewStatus();
 		lsIni >> name >> OpeningBookPanelViewStatus();
 		lsIni.close();
+
+		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 	}
 
 	virtual void OnDetach() override

@@ -14,24 +14,45 @@ namespace Panels
 		
 		for (auto& name : ChessAPI::GetCurPgnLabelNames())
 		{
+			ImGui::PushID(&name);
+
 			ImGui::InputText(name.c_str(), &ChessAPI::GetCurPgnLabelValue(name));
+
+			//not worknig well
+#if 0
+			ImGui::SameLine();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
+
+			if (ImGui::Button("Remove"))
+				ChessAPI::GetPgnGame()->RemoveLabel(name);
+
+			ImGui::PopStyleColor(3);
+#endif
+			ImGui::PopID();
 		}
 		ImGui::Separator();
 		if (!m_addinglabel)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 			if (ImGui::Button("Add a new label"))
 			{
 				m_addinglabel = true;
 			}
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 		}
 		if (m_addinglabel)
 		{
 			ImGui::InputText("Label Name", &m_nlabelname);
 			auto& names = ChessAPI::GetCurPgnLabelNames();
 
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 			if (ImGui::Button("Add") && m_nlabelname != ""
 				&& std::find(names.begin(), names.end(), m_nlabelname) == names.end())
 			{
@@ -39,15 +60,17 @@ namespace Panels
 				m_nlabelname = "";
 				m_addinglabel = false;
 			}
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 			ImGui::SameLine();
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 			if (ImGui::Button("Cansel"))
 			{
 				m_nlabelname = "";
 				m_addinglabel = false;
 			}
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 		}
 		ImGui::End();
 		

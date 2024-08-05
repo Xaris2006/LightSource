@@ -58,6 +58,8 @@ namespace chess
 		std::vector<std::string> GetLabelNames() const;
 		std::string& GetFirstNote();
 
+		void RemoveLabel(const std::string& name);
+
 		void clear();
 		std::string& operator[](const std::string& label);
 

@@ -29,10 +29,10 @@ namespace Panels {
 		: m_BaseDirectory(std::filesystem::current_path() / "LightSourceApp\\MyDocuments"), m_CurrentDirectory(m_BaseDirectory)
 	{
 		m_DirectoryIcon = std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/DirectoryIcon.png");
-		m_FileIcon = std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIcon.png");
-		m_FileIconPGN = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconPGN.png");
-		m_FileIconCOB = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconCOB.png");
-		m_BackArrow = std::make_shared < Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/previous.png");
+		m_FileIcon		= std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIcon.png");
+		m_FileIconPGN   = std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconPGN.png");
+		m_FileIconCOB	= std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/FileIconCOB.png");
+		m_BackArrow		= std::make_shared<Walnut::Image>("LightSourceApp/Resources/Icons/ContentBrowser/previous.png");
 
 		s_textColor = ImGui::GetStyle().Colors[ImGuiCol_Text];
 	}
@@ -307,7 +307,11 @@ namespace Panels {
 		ImGui::Begin("Merge");
 
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
+		ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
+
 		Walnut::UI::TextCentered("Files to be merged");
+
+		ImGui::PopFont();
 		ImGui::PopStyleColor();
 
 		ImGui::Separator();
