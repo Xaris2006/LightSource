@@ -29,11 +29,25 @@ Walnut::ApplicationSpecification g_spec;
 
 bool g_AlreadyOpenedModalOpen = false;
 
+static int s_running = 0;
+
 class LobbyLayer : public Walnut::Layer
 {
 public:
 	virtual void OnAttach() override
 	{
+		{
+			std::ifstream infile("appRun.txt");
+			infile >> s_running;
+			infile.close();
+		}
+
+		{
+			std::ofstream outfile("appRun.txt");
+			outfile << 1;
+			outfile.close();
+		}
+		
 		Manager::ToolManager::Init();
 
 		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
@@ -70,10 +84,20 @@ public:
 	virtual void OnDetach() override
 	{
 		Manager::ToolManager::Shutdown();
+
+		if(!s_running)
+		{
+			std::ofstream outfile("appRun.txt");
+			outfile << 0;
+			outfile.close();
+		}
 	}
 
 	virtual void OnUIRender() override
 	{
+		if (s_running)
+			Walnut::Application::Get().Close();
+
 		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
 		{
 			if (ImGui::IsKeyPressed(ImGuiKey_N))

@@ -19,6 +19,47 @@ static std::string s_fen;
 static bool cross = true;
 static std::array<std::array<int, 8>, 8> s_tags;
 
+struct ArrowsData
+{
+	int type = 0;
+	ImVec2 start = ImVec2(-1, -1);
+	ImVec2 end = ImVec2(-1, -1);
+};
+
+static std::vector<ArrowsData> s_arrows;
+static ImVec2 s_startPressedPos = ImVec2(-1, -1);
+
+
+void RenderRotatedImage(ImTextureID texture, ImVec2 pos, ImVec2 size, float cosValue, float sinValue, ImU32 color = IM_COL32_WHITE)
+{
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+	ImVec2 center = ImVec2(pos.x + size.x * 0.5f, pos.y + size.y * 0.5f);
+	float cos_a = cosValue;
+	float sin_a = sinValue;
+
+	ImVec2 vertices[4];
+	vertices[0] = ImVec2(-0.5f, -0.5f); // Top-left
+	vertices[1] = ImVec2(0.5f, -0.5f); // Top-right
+	vertices[2] = ImVec2(0.5f, 0.5f); // Bottom-right
+	vertices[3] = ImVec2(-0.5f, 0.5f); // Bottom-left
+
+	for (int i = 0; i < 4; i++) {
+		float x = vertices[i].x * size.x;
+		float y = vertices[i].y * size.y;
+		vertices[i].x = center.x + x * cos_a - y * sin_a;
+		vertices[i].y = center.y + x * sin_a + y * cos_a;
+	}
+
+	ImVec2 uv0 = ImVec2(0.0f, 0.0f);
+	ImVec2 uv1 = ImVec2(1.0f, 0.0f);
+	ImVec2 uv2 = ImVec2(1.0f, 1.0f);
+	ImVec2 uv3 = ImVec2(0.0f, 1.0f);
+	
+	draw_list->AddImageQuad(texture, vertices[0], vertices[1], vertices[2], vertices[3], uv0, uv1, uv2, uv3, color);
+}
+
+
 void ImGuiBoard::OnAttach()
 {
 	m_board[0] = std::make_shared<Walnut::Image>("Resources\\Board\\board.png");
@@ -44,6 +85,12 @@ void ImGuiBoard::OnAttach()
 	m_GreenTag = std::make_shared<Walnut::Image>("Resources\\Board\\GreenTag.png");
 	m_BlueTag = std::make_shared<Walnut::Image>("Resources\\Board\\BlueTag.png");
 
+	m_RedArrow = std::make_shared<Walnut::Image>("Resources\\Board\\RedArrow.png");
+	m_GreenArrow = std::make_shared<Walnut::Image>("Resources\\Board\\GreenArrow.png");
+	m_BlueArrow = std::make_shared<Walnut::Image>("Resources\\Board\\BlueArrow.png");
+
+	m_RedLine = std::make_shared<Walnut::Image>("Resources\\Board\\RedLine.png");
+
 	m_RedX = std::make_shared<Walnut::Image>("Resources\\RedX.png");
 
 	UpdateBoardValues();
@@ -51,7 +98,9 @@ void ImGuiBoard::OnAttach()
 	for (int i = 0; i < 8; i++)
 	{
 		for (int j = 0; j < 8; j++)
+		{
 			s_tags[i][j] = 0;
+		}
 	}
 
 	//ImGui::StyleColorsDark();
@@ -133,9 +182,13 @@ void ImGuiBoard::OnUIRender()
 	for (int i = 0; i < 8; i++)
 	{
 		for (int j = 0; j < 8; j++)
+		{
 			s_tags[i][j] = 0;
+		}
 	}
 	
+	s_arrows.clear();
+
 	if (note.find("%csl") != std::string::npos)
 	{
 		static const std::string hor = "abcdefgh";
@@ -160,6 +213,44 @@ void ImGuiBoard::OnUIRender()
 
 	}
 
+	if (note.find("%cal") != std::string::npos)
+	{
+		static const std::string hor = "abcdefgh";
+		static const std::string ver = "12345678";
+		static const std::string type = " RGY";
+		
+		for (int i = note.find("%cal") + 5; i < note.size(); i++)
+		{
+			if (note[i] == ',')
+				continue;
+			if (note[i] == ']')
+				break;
+			char t = note[i];
+			char hs = note[++i];
+			char vs = note[++i];
+			char he = note[++i];
+			char ve = note[++i];
+
+			if (!m_reverse)
+			{
+				ArrowsData adata;
+				adata.type = type.find(t);
+				adata.end = ImVec2(7 - ver.find(ve), hor.find(he));
+				adata.start = ImVec2(7 - ver.find(vs), hor.find(hs));
+				s_arrows.emplace_back(adata);
+			}
+			else
+			{
+				ArrowsData adata;
+				adata.type = type.find(t);
+				adata.end = ImVec2(ver.find(ve), 7 - hor.find(he));
+				adata.start = ImVec2(ver.find(vs), 7 - hor.find(hs));
+				s_arrows.emplace_back(adata);
+			}
+		}
+
+	}
+
 	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
 	{
 		if (!ImGui::IsAnyMouseDown())
@@ -173,20 +264,64 @@ void ImGuiBoard::OnUIRender()
 				ChessAPI::PreviousSavedMove();
 			}
 		}
-		else if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+		
 		{
 			static const std::string hor = "abcdefgh";
 			static const std::string ver = "12345678";
 			
-			if (ImGui::IsKeyPressed(ImGuiKey_R))
+			bool redKey = ImGui::IsKeyDown(ImGuiKey_R);
+			bool greenKey = ImGui::IsKeyDown(ImGuiKey_G);
+			bool blueKey = ImGui::IsKeyDown(ImGuiKey_B);
+			bool magicKey = redKey + greenKey + blueKey;
+
+			bool rMouseClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+			bool rMouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+			bool rMouseReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Right);
+
+			bool doArrow = false;
+			bool doTag = false;
+
+			static bool start = false;
+
+			auto MousePos = FindMousePos();
+
+			if (rMouseClicked && magicKey
+				&& MousePos.x > -1 && MousePos.y > -1
+				&& MousePos.x < 8 && MousePos.y < 8)
 			{
-				auto MousePos = FindMousePos();
-				
+				start = true;
+				s_startPressedPos = MousePos;
+			}
+
+			if (rMouseReleased && start)
+			{
 				if (MousePos.x > -1 && MousePos.y > -1
-					&& MousePos.x < 8 && MousePos.y < 8)
+					&& MousePos.x < 8 && MousePos.y < 8
+					&& magicKey)
 				{
+					if (MousePos.x == s_startPressedPos.x
+						&& MousePos.y == s_startPressedPos.y)
+					{
+						doTag = true;
+					}
+					else
+						doArrow = true;
+				}
+				else
+				{
+					start = false;
+					s_startPressedPos = ImVec2(-1, -1);
+				}
+			}
+
+			if (doTag)
+			{
+				if (redKey)
+				{
+					auto MousePos = FindMousePos();
+
 					std::string vh = "";
-					
+
 					if (!m_reverse)
 					{
 						vh += hor[(int)MousePos.x];
@@ -246,15 +381,12 @@ void ImGuiBoard::OnUIRender()
 						note.insert(startIndex + 5, noteToAdd);
 
 					}
+					
 				}
-			}
-			if (ImGui::IsKeyPressed(ImGuiKey_G))
-			{
-				auto MousePos = FindMousePos();
-
-				if (MousePos.x > -1 && MousePos.y > -1
-					&& MousePos.x < 8 && MousePos.y < 8)
+				if (greenKey)
 				{
+					auto MousePos = FindMousePos();
+
 					std::string vh = "";
 
 					if (!m_reverse)
@@ -316,15 +448,12 @@ void ImGuiBoard::OnUIRender()
 						note.insert(startIndex + 5, noteToAdd);
 
 					}
+					
 				}
-			}
-			if (ImGui::IsKeyPressed(ImGuiKey_B))
-			{
-				auto MousePos = FindMousePos();
-
-				if (MousePos.x > -1 && MousePos.y > -1
-					&& MousePos.x < 8 && MousePos.y < 8)
+				if (blueKey)
 				{
+					auto MousePos = FindMousePos();
+
 					std::string vh = "";
 
 					if (!m_reverse)
@@ -386,6 +515,221 @@ void ImGuiBoard::OnUIRender()
 						note.insert(startIndex + 5, noteToAdd);
 
 					}
+					
+				}
+			}
+
+			if (doArrow)
+			{
+				if (redKey)
+				{
+					auto MousePos = FindMousePos();
+
+					std::string vh = "";
+
+					if (!m_reverse)
+					{
+						vh += hor[(int)s_startPressedPos.x];
+						vh += ver[7 - (int)s_startPressedPos.y];
+						vh += hor[(int)MousePos.x];
+						vh += ver[7 - (int)MousePos.y];
+					}
+					else
+					{
+						vh += hor[7 - (int)s_startPressedPos.x];
+						vh += ver[(int)s_startPressedPos.y];
+						vh += hor[7 - (int)MousePos.x];
+						vh += ver[(int)MousePos.y];
+					}
+
+					int endIndex;
+					int startIndex = note.find("%cal");
+					bool newTagArea = false;
+
+					if (startIndex == std::string::npos)
+					{
+						newTagArea = true;
+
+						note += "[%cal ]";
+						startIndex = note.find("%cal");
+					}
+
+					endIndex = note.find(']', startIndex);
+
+					int indexVH = note.find(vh, startIndex);
+					if (indexVH != std::string::npos && indexVH < endIndex)
+					{
+						if (note[indexVH - 1] == 'R')
+						{
+							bool first = false;
+							if (note[indexVH - 2] != ',')
+								first = true;
+
+							if (!first)
+								note.erase(indexVH - 2, 6);
+							else
+							{
+								bool last = false;
+								if (note[indexVH + 2] == ']')
+									last = true;
+
+								if (last)
+									note.erase(startIndex - 1, startIndex + 4 + 7);
+								else
+									note.erase(indexVH - 1, 6);
+							}
+						}
+						else
+							note[indexVH - 1] = 'R';
+					}
+					else
+					{
+						std::string noteToAdd = 'R' + vh;
+						if (!newTagArea)
+							noteToAdd += ',';
+						note.insert(startIndex + 5, noteToAdd);
+
+					}
+				}
+				else if (greenKey)
+				{
+					auto MousePos = FindMousePos();
+
+					std::string vh = "";
+
+					if (!m_reverse)
+					{
+						vh += hor[(int)s_startPressedPos.x];
+						vh += ver[7 - (int)s_startPressedPos.y];
+						vh += hor[(int)MousePos.x];
+						vh += ver[7 - (int)MousePos.y];
+					}
+					else
+					{
+						vh += hor[7 - (int)s_startPressedPos.x];
+						vh += ver[(int)s_startPressedPos.y];
+						vh += hor[7 - (int)MousePos.x];
+						vh += ver[(int)MousePos.y];
+					}
+
+					int endIndex;
+					int startIndex = note.find("%cal");
+					bool newTagArea = false;
+
+					if (startIndex == std::string::npos)
+					{
+						newTagArea = true;
+
+						note += "[%cal ]";
+						startIndex = note.find("%cal");
+					}
+
+					endIndex = note.find(']', startIndex);
+
+					int indexVH = note.find(vh, startIndex);
+					if (indexVH != std::string::npos && indexVH < endIndex)
+					{
+						if (note[indexVH - 1] == 'G')
+						{
+							bool first = false;
+							if (note[indexVH - 2] != ',')
+								first = true;
+
+							if (!first)
+								note.erase(indexVH - 2, 6);
+							else
+							{
+								bool last = false;
+								if (note[indexVH + 2] == ']')
+									last = true;
+
+								if (last)
+									note.erase(startIndex - 1, startIndex + 4 + 7);
+								else
+									note.erase(indexVH - 1, 6);
+							}
+						}
+						else
+							note[indexVH - 1] = 'G';
+					}
+					else
+					{
+						std::string noteToAdd = 'G' + vh;
+						if (!newTagArea)
+							noteToAdd += ',';
+						note.insert(startIndex + 5, noteToAdd);
+
+					}
+				}
+				else if (blueKey)
+				{
+					auto MousePos = FindMousePos();
+
+					std::string vh = "";
+
+					if (!m_reverse)
+					{
+						vh += hor[(int)s_startPressedPos.x];
+						vh += ver[7 - (int)s_startPressedPos.y];
+						vh += hor[(int)MousePos.x];
+						vh += ver[7 - (int)MousePos.y];
+					}
+					else
+					{
+						vh += hor[7 - (int)s_startPressedPos.x];
+						vh += ver[(int)s_startPressedPos.y];
+						vh += hor[7 - (int)MousePos.x];
+						vh += ver[(int)MousePos.y];
+					}
+
+					int endIndex;
+					int startIndex = note.find("%cal");
+					bool newTagArea = false;
+
+					if (startIndex == std::string::npos)
+					{
+						newTagArea = true;
+
+						note += "[%cal ]";
+						startIndex = note.find("%cal");
+					}
+
+					endIndex = note.find(']', startIndex);
+
+					int indexVH = note.find(vh, startIndex);
+					if (indexVH != std::string::npos && indexVH < endIndex)
+					{
+						if (note[indexVH - 1] == 'Y')
+						{
+							bool first = false;
+							if (note[indexVH - 2] != ',')
+								first = true;
+
+							if (!first)
+								note.erase(indexVH - 2, 6);
+							else
+							{
+								bool last = false;
+								if (note[indexVH + 4] == ']')
+									last = true;
+
+								if (last)
+									note.erase(startIndex - 1, startIndex + 4 + 7);
+								else
+									note.erase(indexVH - 1, 6);
+							}
+						}
+						else
+							note[indexVH - 1] = 'Y';
+					}
+					else
+					{
+						std::string noteToAdd = 'Y' + vh;
+						if (!newTagArea)
+							noteToAdd += ',';
+						note.insert(startIndex + 5, noteToAdd);
+
+					}
 				}
 			}
 		}
@@ -405,7 +749,7 @@ void ImGuiBoard::OnUIRender()
 			const wchar_t* path = (const wchar_t*)payload->Data;
 			std::wstring wstrpath = path;
 			std::string strpath = std::string(wstrpath.begin(), wstrpath.end());
-			if (strpath.find(".pgn") == strpath.size() - 5)
+			if (std::filesystem::path(strpath).extension().string() != ".pgn")
 			{
 				printf("Could not load {0} - not a chess file", path);
 			}
@@ -427,14 +771,18 @@ void ImGuiBoard::OnUIRender()
 		ImGui::EndDragDropTarget();
 	}
 
-	RenderTags();
+	if(ShowTags)
+		RenderTags();
+	
 	RenderPieces();
 
-	if (m_CapturedPieceIndex > 0)
+	if (m_CapturedPieceIndex > 0 && ShowPossibleMoves)
 		RenderCirclesAtPossibleMoves();
 
-	auto MousePos = FindMousePos();
+	if(ShowArrows)
+		RenderArrows();
 
+	auto MousePos = FindMousePos();
 
 	//ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0, 0, 0 });
 	//ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0, 0, 0, 0 });
@@ -655,13 +1003,70 @@ void ImGuiBoard::RenderTags()
 				else if (s_tags[i][j] == 3)
 					tag = m_BlueTag;
 				ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
-				ImGui::Image((ImTextureID)tag->GetRendererID(), bsize);
+				ImGui::Image((ImTextureID)tag->GetRendererID(), bsize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.9, 0.9, 0.9, 0.6));
 			}
 
 			xposition += blockSize;
 		}
 		xposition = blockSize;
 		yposition += blockSize;
+	}
+}
+
+void ImGuiBoard::RenderArrows()
+{
+	ImVec2 bsize = { m_size / 10, m_size / 10 };
+	float blockSize = m_size / 9;
+
+	for(auto& arrowD : s_arrows)
+	{
+		auto arrow = m_RedArrow;
+		auto colorLine = IM_COL32(161, 7, 13, 250);
+		if (arrowD.type == 2)
+		{
+			arrow = m_GreenArrow;
+			colorLine = IM_COL32(30, 172, 8, 250);
+		}
+		else if (arrowD.type == 3)
+		{
+			arrow = m_BlueArrow;
+			colorLine = IM_COL32(0, 172, 234, 250);
+		}
+
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		
+		ImVec2 startPosCenter = ImVec2(arrowD.start.y * blockSize + blockSize + m_startCursor.x, arrowD.start.x * blockSize + blockSize + m_startCursor.y);
+		ImVec2 endPosCenter = ImVec2(arrowD.end.y * blockSize + blockSize + m_startCursor.x, arrowD.end.x * blockSize + blockSize + m_startCursor.y);
+
+		float xCor = endPosCenter.x - startPosCenter.x;
+		float yCor = endPosCenter.y - startPosCenter.y;
+
+		ImGui::SetCursorPos(ImVec2(arrowD.end.y * blockSize + blockSize - bsize.x / 2 + m_startCursor.x, arrowD.end.x * blockSize + blockSize - bsize.y / 2 + m_startCursor.y));
+		ImVec2 arrowPos = window->DC.CursorPos;
+
+		RenderRotatedImage((ImTextureID)arrow->GetRendererID(), arrowPos, bsize, -yCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)), xCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)), IM_COL32(255, 255, 255, 210));
+		
+		ImGui::SetCursorPos(startPosCenter);
+		ImVec2 startPosWindow = window->DC.CursorPos;
+		//startPosWindow.x -= (bsize.x / 10);
+
+		ImGui::SetCursorPos(endPosCenter);
+		ImVec2 endPosWindow = window->DC.CursorPos;
+
+		float len = glm::sqrt(glm::pow(endPosWindow.x - startPosWindow.x, 2) + glm::pow(endPosWindow.y - startPosWindow.y, 2));
+		endPosWindow.y -= (blockSize / 3 * (endPosWindow.y - startPosWindow.y) / len);
+		endPosWindow.x -= (blockSize / 3 * (endPosWindow.x - startPosWindow.x) / len);
+		startPosWindow.y += (blockSize / 6 * (endPosWindow.y - startPosWindow.y) / len);
+		startPosWindow.x += (blockSize / 6 * (endPosWindow.x - startPosWindow.x) / len);
+
+		//RenderRotatedImage((ImTextureID)m_RedLine->GetRendererID(), startPosW,
+		//	ImVec2(
+		//		bsize.x/2,
+		//		glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2))), -yCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)),
+		//				xCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)),
+		//		IM_COL32(255, 255, 255, 210));
+		draw_list->AddLine(startPosWindow, endPosWindow, colorLine, bsize.x/7);
 	}
 }
 
@@ -693,10 +1098,8 @@ void ImGuiBoard::RenderCirclesAtPossibleMoves()
 			yposition = (move.y() + m_oldNumY + 1) * blockSize;
 		}
 
-		ImGui::SetCursorPos(
-			ImVec2(xposition - bsize.x / 2 + m_startCursor.x
-				, yposition - bsize.y / 2 + m_startCursor.y));
-		ImGui::Image((ImTextureID)m_circleToEnd->GetRendererID(), { bsize.x, bsize.y });
+		ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
+		ImGui::Image((ImTextureID)m_circleToEnd->GetRendererID(), bsize);
 	}
 }
 

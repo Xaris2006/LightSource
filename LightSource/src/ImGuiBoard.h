@@ -21,11 +21,17 @@ public:
 	void OpenEditor();
 	void OpenEditor(const std::string& newFEN);
 
+public:
+	bool ShowPossibleMoves = true;
+	bool ShowTags = true;
+	bool ShowArrows = true;
+
 private:
 
 	void RenderBoard();
 	void RenderPieces();
 	void RenderTags();
+	void RenderArrows();
 	void RenderCirclesAtPossibleMoves();
 
 	ImVec2 FindMousePos();
@@ -47,12 +53,21 @@ private:
 	bool m_reverse = false;
 	std::shared_ptr<Walnut::Image> m_board[2];
 	std::shared_ptr<Walnut::Image> m_pieces[12];
+	
 	std::shared_ptr<Walnut::Image> m_circleFromStart;
 	std::shared_ptr<Walnut::Image> m_circleToEnd;
+	
 	std::shared_ptr<Walnut::Image> m_RedX;
+	
 	std::shared_ptr<Walnut::Image> m_RedTag;
 	std::shared_ptr<Walnut::Image> m_GreenTag;
 	std::shared_ptr<Walnut::Image> m_BlueTag;
+	
+	std::shared_ptr<Walnut::Image> m_RedArrow;
+	std::shared_ptr<Walnut::Image> m_GreenArrow;
+	std::shared_ptr<Walnut::Image> m_BlueArrow;
+
+	std::shared_ptr<Walnut::Image> m_RedLine;
 
 	std::array<std::array<int, 8>, 8> m_block;
 	

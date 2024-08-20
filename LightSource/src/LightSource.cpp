@@ -71,6 +71,9 @@ public:
 		lsIni >> name >> NotePanelViewStatus();
 		lsIni >> name >> MovePanelViewStatus();
 		lsIni >> name >> OpeningBookPanelViewStatus();
+		lsIni >> name >> ShowPossibleMoves();
+		lsIni >> name >> ShowTags();
+		lsIni >> name >> ShowArrows();
 		lsIni.close();
 
 		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
@@ -262,6 +265,21 @@ public:
 		m_ChessBoard.FlipBoard();
 	}
 
+	bool& ShowPossibleMoves()
+	{
+		return m_ChessBoard.ShowPossibleMoves;
+	}
+
+	bool& ShowTags()
+	{
+		return m_ChessBoard.ShowTags;
+	}
+
+	bool& ShowArrows()
+	{
+		return m_ChessBoard.ShowArrows;
+	}
+
 	void ShowAboutModal()
 	{
 		m_AboutModalOpen = true;
@@ -391,9 +409,13 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 				std::ofstream lsIni("lightsource.ini");
 				lsIni << "Content_Browser" << ' ' << chessLayer->ContentBrowserPanelViewStatus() << '\n';
 				lsIni << "Game_Properties" << ' ' << chessLayer->GamePropertiesPanelViewStatus() << '\n';
-				lsIni << "Notes"		   << ' ' << chessLayer->NotePanelViewStatus() << '\n';
-				lsIni << "Moves"		   << ' ' << chessLayer->MovePanelViewStatus() << '\n';
-				lsIni << "Opening_Book"	   << ' ' << chessLayer->OpeningBookPanelViewStatus();
+				lsIni << "Notes"		   << ' ' << chessLayer->NotePanelViewStatus()			 << '\n';
+				lsIni << "Moves"		   << ' ' << chessLayer->MovePanelViewStatus()			 << '\n';
+				lsIni << "Opening_Book"	   << ' ' << chessLayer->OpeningBookPanelViewStatus()	 << '\n';
+				lsIni << "Possible_Moves"  << ' ' << chessLayer->ShowPossibleMoves()			 << '\n';
+				lsIni << "Tags"			   << ' ' << chessLayer->ShowTags()						 << '\n';
+				lsIni << "Arrows"		   << ' ' << chessLayer->ShowArrows();
+				lsIni.close();
 			}
 
 			ImGui::EndMenu();
@@ -420,6 +442,9 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				ChessAPI::PreviousSavedMove();
 			}
+			if (ImGui::MenuItem("Show Possible Moves", 0, &chessLayer->ShowPossibleMoves())) {}
+			if (ImGui::MenuItem("Show Tags", 0, &chessLayer->ShowTags())) {}
+			if (ImGui::MenuItem("Show Arrows", 0, &chessLayer->ShowArrows())) {}
 			
 			ImGui::EndMenu();
 		}

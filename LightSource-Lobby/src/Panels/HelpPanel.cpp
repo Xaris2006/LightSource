@@ -16,33 +16,33 @@ namespace Panels
 	{
 		ImGui::Begin("Help");
 
+		ImVec4 bcolor = { 0, 0.66, 0.95, 1 };
+		ImVec4 gcolor = { 0.38, 0.67, 0, 1 };
+		
+		auto helpFunc = [bcolor, gcolor](const std::string& name, const std::string& desc)
+			{
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 30);
+
+				ImGui::PushStyleColor(ImGuiCol_Text, bcolor);
+				
+				ImGui::Text(name.c_str());
+
+				ImGui::PopStyleColor();
+				
+				ImGui::SameLine();
+
+				ImGui::PushStyleColor(ImGuiCol_Text, gcolor);
+
+				ImGui::Text(desc.c_str());
+
+				ImGui::PopStyleColor();
+			};
+
 		ImGui::BeginTabBar("Help Sections");
 
 		if (ImGui::BeginTabItem("Chess Window"))
 		{
 			ImGui::NewLine();
-
-			ImVec4 bcolor = { 0, 0.66, 0.95, 1 };
-			ImVec4 gcolor = { 0.38, 0.67, 0, 1 };
-			
-			auto helpFunc = [bcolor, gcolor](const std::string& name, const std::string& desc)
-				{
-					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 30);
-
-					ImGui::PushStyleColor(ImGuiCol_Text, bcolor);
-					
-					ImGui::Text(name.c_str());
-
-					ImGui::PopStyleColor();
-					
-					ImGui::SameLine();
-
-					ImGui::PushStyleColor(ImGuiCol_Text, gcolor);
-
-					ImGui::Text(desc.c_str());
-
-					ImGui::PopStyleColor();
-				};
 
 			ImGui::PushStyleColor(ImGuiCol_Text, bcolor);
 			ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
@@ -58,7 +58,6 @@ namespace Panels
 			{				
 				ImGui::Separator();
 
-
 				helpFunc("Ctrl + O",			 "Opens a explore window that can choose a file to open.");
 				helpFunc("Ctrl + N",			 "Open an empty chess file.");
 				helpFunc("Ctrl + S",			 "Save the current chess file.");
@@ -70,9 +69,14 @@ namespace Panels
 				helpFunc("Right Arrow",			 "Go to next move.");
 				helpFunc("Ctrl + Up Arrow",		 "Open the default chess engine (stockfish16).");
 				helpFunc("Ctrl + Down Arrow",	 "Close the chess engine.");
-				helpFunc("Right Click Down + R", "Highlight a block on your board with red.");
-				helpFunc("Right Click Down + G", "Highlight a block on your board with green.");
-				helpFunc("Right Click Down + B", "Highlight a block on your board with blue.");
+
+				helpFunc("R key Down + Right Click", "Highlight a block on your board with red.");
+				helpFunc("G key Down + Right Click", "Highlight a block on your board with green.");
+				helpFunc("B key Down + Right Click", "Highlight a block on your board with blue.");
+
+				helpFunc("R key Down + Right Down and Released", "Draw a red arrow on your board from the first click to the release of the mouse button.");
+				helpFunc("G key Down + Right Down and Released", "Draw a green arrow on your board from the first click to the release of the mouse button.");
+				helpFunc("B key Down + Right Down and Released", "Draw a blue arrow on your board from the first click to the release of the mouse button.");
 
 				ImGui::Separator();
 
@@ -179,6 +183,29 @@ namespace Panels
 		
 		if (ImGui::BeginTabItem("Browser"))
 		{
+			//ImGui::PushStyleColor(ImGuiCol_Text, bcolor);
+			//ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
+			//
+			//bool openTree = false;
+			//
+			//openTree = ImGui::TreeNodeEx("Content Browser", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow);
+			//
+			//ImGui::PopFont();
+			//ImGui::PopStyleColor();
+
+			if (true)
+			{
+				ImGui::Separator();
+
+				helpFunc("Double Click", "Open a chess file or a directory.");
+				helpFunc("Click on <-", "Go back a directory.");
+				helpFunc("Right Click", "Open a menu with useful options.");
+
+				ImGui::Separator();
+
+				//ImGui::TreePop();
+			}
+
 			ImGui::EndTabItem();
 		}
 		
