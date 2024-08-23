@@ -1,5 +1,7 @@
 #include "ToolManager.h"
 
+//#include "Walnut/Core/Assert.h"
+
 static Manager::ToolManager* s_ToolManager = nullptr;
 
 namespace Manager
@@ -11,16 +13,14 @@ namespace Manager
 
 	void ToolManager::Init()
 	{
-		if (s_ToolManager)
-			throw std::runtime_error("ToolManager is reinitialized without it being shuted down!");
+		//WL_ASSERT(s_ToolManager, "ToolManager is reinitialized without it being shuted down!");
 		
 		s_ToolManager = new ToolManager();
 	}
 
 	void ToolManager::Shutdown()
 	{
-		if (!s_ToolManager)
-			throw std::runtime_error("ToolManager is shuted down but is nullptr!");
+		//WL_ASSERT(!s_ToolManager, "ToolManager is shuted down but is nullptr!");
 
 		for (auto& [key, value] : s_ToolManager->m_Tools)
 		{
@@ -44,8 +44,7 @@ namespace Manager
 	
 	void ToolManager::RunTool(const std::string& name)
 	{
-		if (m_Tools[name].m_program)
-			throw std::runtime_error("Tool already opened!");
+		//WL_ASSERT(m_Tools[name].m_program, "Tool already opened!");
 
 		m_Tools[name].m_program = new Process(m_Tools[name].m_exePath.wstring(), L"");
 		m_Tools[name].m_program->Write("Ok");
@@ -54,8 +53,7 @@ namespace Manager
 	
 	void ToolManager::ShutdownTool(const std::string& name)
 	{
-		if (!m_Tools[name].m_program)
-			throw std::runtime_error("Tool already closed!");
+		//WL_ASSERT(!m_Tools[name].m_program, "Tool already closed!");
 
 		m_Tools[name].m_program->EndProcess();
 		delete m_Tools[name].m_program;

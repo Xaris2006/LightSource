@@ -29,6 +29,8 @@ std::string g_AppDirectory;
 Walnut::ApplicationSpecification g_spec;
 bool g_AlreadyOpenedModalOpen = false;
 
+static std::vector<std::string> s_arg;
+
 class ChessLayer : public Walnut::Layer
 {
 public:
@@ -41,20 +43,11 @@ public:
 
 		m_ChessBoard.OnAttach();
 
-		if (__argc > 1)
+		if (s_arg.size() > 1)
 		{
-			std::string cmd = "";
-
-			for (int i = 1; i < __argc - 1; i++)
+			if (chess::IsFileValidFormat(s_arg[1], ".pgn"))
 			{
-				cmd += __argv[i];
-				cmd += ' ';
-			}
-			cmd += __argv[__argc - 1];
-
-			if (chess::IsFileValidFormat(cmd, ".pgn"))
-			{
-				ChessAPI::OpenChessFile(cmd);
+				ChessAPI::OpenChessFile(s_arg[1]);
 				AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 			}
 			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
@@ -358,7 +351,21 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		{
 			AppManagerChild::OpenChessFile();
 		};
-	g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
+
+	//fix arg
+	s_arg.emplace_back(argv[0]);
+	for (int i = 1; i < argc; i++)
+	{
+		if (std::filesystem::path(s_arg[s_arg.size() - 1]).has_extension())
+			s_arg.emplace_back(argv[i]);
+		else
+		{
+			s_arg[s_arg.size() - 1] += ' ';
+			s_arg[s_arg.size() - 1] += argv[i];
+		}
+	}
+
+	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().string();
 
 #if defined(WL_DIST)
 	std::filesystem::current_path(g_AppDirectory);

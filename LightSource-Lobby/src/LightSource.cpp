@@ -30,6 +30,7 @@ Walnut::ApplicationSpecification g_spec;
 bool g_AlreadyOpenedModalOpen = false;
 
 static int s_running = 0;
+static std::vector<std::string> s_arg;
 
 class LobbyLayer : public Walnut::Layer
 {
@@ -37,26 +38,45 @@ public:
 	virtual void OnAttach() override
 	{
 		{
-			std::ifstream infile("appRun.txt");
+			std::ifstream infile("singleApp.txt");
 			infile >> s_running;
 			infile.close();
 		}
 
 		{
-			std::ofstream outfile("appRun.txt");
+			std::ofstream outfile("singleApp.txt");
 			outfile << 1;
 			outfile.close();
 		}
 		
+		if (s_running)
+		{
+			if (s_arg.size() > 1)
+			{
+				std::ofstream outfile("secondAppRequest.txt");
+				outfile << s_arg[1];
+				outfile.close();
+			}
+			return;
+		}
+
+		Process s_startProcess(L"start.exe", L"");
+		
 		Manager::ToolManager::Init();
 
-		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
+		using namespace std::chrono_literals;
 
-		if (__argc > 1)
+		std::this_thread::sleep_for(2s);
+
+		s_startProcess.EndProcess();
+
+		std::this_thread::sleep_for(200ms);
+
+		if (s_arg.size() > 1)
 		{
-			if (std::filesystem::path(__argv[1]).extension().string() == ".pgn")
+			if (std::filesystem::path(s_arg[1]).extension().string() == ".pgn")
 			{
-				g_AppManager.CreateApp(__argv[1]);
+				g_AppManager.CreateApp(s_arg[1]);
 			}
 			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
 			//{
@@ -79,24 +99,46 @@ public:
 		auto& colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_TableBorderLight] = ImColor(255, 225, 135, 80);
 		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
+
+		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
 	}
 
 	virtual void OnDetach() override
 	{
-		Manager::ToolManager::Shutdown();
-
-		if(!s_running)
+		if (!s_running)
 		{
-			std::ofstream outfile("appRun.txt");
+			std::ofstream outfile("singleApp.txt");
 			outfile << 0;
 			outfile.close();
 		}
+		else
+			return;
+		
+		Manager::ToolManager::Shutdown();
 	}
 
 	virtual void OnUIRender() override
 	{
 		if (s_running)
+		{
 			Walnut::Application::Get().Close();
+			return;
+		}
+
+		{
+			std::ifstream infile("secondAppRequest.txt");
+			std::string path;
+			infile >> path;
+			if (!path.empty())
+				g_AppManager.CreateApp(path);
+			infile.close();
+		}
+
+		{
+			std::ofstream outfile("secondAppRequest.txt");
+			outfile << "";
+			outfile.close();
+		}
 
 		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
 		{
@@ -284,7 +326,21 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		{
 			g_AppManager.CreateApp("");
 		};
-	g_AppDirectory = std::filesystem::path(argv[0]).parent_path().string();
+
+	//fix arg
+	s_arg.emplace_back(argv[0]);
+	for (int i = 1; i < argc; i++)
+	{
+		if (std::filesystem::path(s_arg[s_arg.size() - 1]).has_extension())
+			s_arg.emplace_back(argv[i]);
+		else
+		{
+			s_arg[s_arg.size() - 1] += ' ';
+			s_arg[s_arg.size() - 1] += argv[i];
+		}
+	}
+
+	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().string();
 
 #if defined(WL_DIST)
 	std::filesystem::current_path(g_AppDirectory);

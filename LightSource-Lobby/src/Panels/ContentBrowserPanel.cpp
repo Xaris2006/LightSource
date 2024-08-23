@@ -306,6 +306,41 @@ namespace Panels {
 		
 		ImGui::Begin("Merge");
 
+		auto curPos = ImGui::GetCursorPos();
+
+		ImGui::InvisibleButton("##dragndrop", ImVec2(ImGui::GetWindowSize().x - 20, ImGui::GetWindowSize().y - 20));
+
+		ImGui::SetCursorPos(curPos);
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MERGE_ITEM"))
+			{
+				const wchar_t* wpath = (const wchar_t*)payload->Data;
+				std::filesystem::path spath(wpath);
+
+				bool alreadyAdded = false;
+
+				if (m_filesToBeMerged.empty())
+					m_mergedName = spath.filename().string();
+				else
+				{
+					for (auto& other : m_filesToBeMerged)
+					{
+						if (other == spath)
+						{
+							alreadyAdded = true;
+							break;
+						}
+					}
+				}
+
+				if (!alreadyAdded && spath.has_extension() && spath.extension() == ".pgn")
+					m_filesToBeMerged.emplace_back(spath);
+			}
+			ImGui::EndDragDropTarget();
+		}
+
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
 		ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
 
@@ -318,6 +353,7 @@ namespace Panels {
 		ImGui::NewLine();
 
 		ImGui::BeginChild("##files", ImVec2(0, ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y * 8 - ImGui::GetStyle().ItemSpacing.y * 16), true);
+		
 		for (int i = 0; i < m_filesToBeMerged.size(); i++)
 		{
 			ImGui::PushID(i);
