@@ -14,9 +14,9 @@ namespace Panels
 		
 		for (auto& name : ChessAPI::GetCurPgnLabelNames())
 		{
-			ImGui::PushID(&name);
+			ImGui::PushID(name.data());
 
-			ImGui::InputText(name.c_str(), &ChessAPI::GetCurPgnLabelValue(name));
+			ImGui::InputText(name.c_str(), &(ChessAPI::GetCurPgnLabelValue(name)));
 
 			//not worknig well
 #if 0

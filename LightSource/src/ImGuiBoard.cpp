@@ -879,6 +879,7 @@ void ImGuiBoard::OnUIRender()
 		if (openPopup)
 		{
 			ImGui::OpenPopup("Move_Choose");
+			ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
 			m_PossibleNextMoves.clear();
 
@@ -916,6 +917,7 @@ void ImGuiBoard::OnUIRender()
 	if (ChessAPI::IsNewVariationAdded())
 	{
 		ImGui::OpenPopup("New_Variant");
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	}
 
 	//check if a pawn is ready to be promoted
@@ -1151,13 +1153,14 @@ void ImGuiBoard::UpdateBoardValues()
 void ImGuiBoard::NextMovePopup()
 {
 	ImGui::SetNextWindowPos(m_Center, ImGuiCond_Appearing, ImVec2(1, 1));
-	if (ImGui::BeginPopupModal("Move_Choose", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
+	if (ImGui::BeginPopupModal("Move_Choose", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar))
 	{
 		ImGui::PushFont(Walnut::Application::GetFont("Bold"));
 		if (ImGui::Selectable(m_MainMove.c_str()) ||
 			(ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
 		{
 			ChessAPI::NextSavedMove();
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::PopFont();
@@ -1168,6 +1171,7 @@ void ImGuiBoard::NextMovePopup()
 				(ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
 			{
 				ChessAPI::GoMoveByIntFormat(it->second);
+				ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 				ImGui::CloseCurrentPopup();
 			}
 		}
@@ -1175,16 +1179,22 @@ void ImGuiBoard::NextMovePopup()
 		if (ImGui::Button("Play Main"))
 		{
 			ChessAPI::NextSavedMove();
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
 
 		ImGui::SameLine();
 
 		if (ImGui::Button("Cansel"))
+		{
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
+		}
 		if (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+		{
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
-
+		}
 		ImGui::EndPopup();
 	}
 
@@ -1193,12 +1203,15 @@ void ImGuiBoard::NextMovePopup()
 void ImGuiBoard::NewVariantPopup()
 {
 	ImGui::SetNextWindowPos(m_Center, ImGuiCond_Appearing, ImVec2(1, 1));
-	if (ImGui::BeginPopupModal("New_Variant", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
+	if (ImGui::BeginPopupModal("New_Variant", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar))
 	{
 		ImGui::Selectable("New Variation");
 
 		if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+		{
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
+		}
 
 		if (ImGui::Selectable("Promote to MainLine")
 			|| (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_RightArrow)))
@@ -1210,6 +1223,8 @@ void ImGuiBoard::NewVariantPopup()
 
 			ChessAPI::PromoteVariation(movePathToPromote);
 			ChessAPI::GoMoveByIntFormat(movePathToGo);
+
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -1224,10 +1239,13 @@ void ImGuiBoard::NewVariantPopup()
 			ChessAPI::PromoteVariation(movePath);
 			ChessAPI::DeleteVariation(movePath);
 			ChessAPI::GoMoveByIntFormat(movePathToGo);
+
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
 		if (ImGui::Button("Play Default"))
 		{
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -1242,6 +1260,8 @@ void ImGuiBoard::NewVariantPopup()
 
 			ChessAPI::DeleteVariation(movePath);
 			ChessAPI::GoMoveByIntFormat(movePathToGo);
+
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
 

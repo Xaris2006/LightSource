@@ -206,6 +206,27 @@ namespace Panels
 				//ImGui::TreePop();
 			}
 
+			ImGui::PushStyleColor(ImGuiCol_Text, bcolor);
+			ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
+
+			auto openTree = ImGui::TreeNodeEx("Merge Chess Files", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow);
+
+			ImGui::PopFont();
+			ImGui::PopStyleColor();
+
+			if (openTree)
+			{
+				ImGui::Separator();
+
+				helpFunc("Click merge on the option menu", "It openes Merge Window.");
+				helpFunc("Drag file and Drop to Merge Window", "Add the file to the file that everything will be merged into.");
+				helpFunc("Drag file and Drop to file", "Merges the first file into the second one.");
+
+				ImGui::Separator();
+
+				ImGui::TreePop();
+			}
+
 			ImGui::EndTabItem();
 		}
 		

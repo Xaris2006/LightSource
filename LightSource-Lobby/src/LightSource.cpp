@@ -29,7 +29,9 @@ Walnut::ApplicationSpecification g_spec;
 
 bool g_AlreadyOpenedModalOpen = false;
 
-static int s_running = 0;
+static bool s_IamSecond = false;
+static HANDLE s_hMutex;
+
 static std::vector<std::string> s_arg;
 
 class LobbyLayer : public Walnut::Layer
@@ -37,19 +39,13 @@ class LobbyLayer : public Walnut::Layer
 public:
 	virtual void OnAttach() override
 	{
-		{
-			std::ifstream infile("singleApp.txt");
-			infile >> s_running;
-			infile.close();
+		s_hMutex = CreateMutex(NULL, TRUE, L"MyUniqueAppMutex");
+
+		if (GetLastError() == ERROR_ALREADY_EXISTS) {
+			s_IamSecond = true;
 		}
 
-		{
-			std::ofstream outfile("singleApp.txt");
-			outfile << 1;
-			outfile.close();
-		}
-		
-		if (s_running)
+		if (s_IamSecond)
 		{
 			if (s_arg.size() > 1)
 			{
@@ -74,9 +70,12 @@ public:
 
 		if (s_arg.size() > 1)
 		{
-			if (std::filesystem::path(s_arg[1]).extension().string() == ".pgn")
+			std::filesystem::path pathToOpen(s_arg[1]);
+			if (pathToOpen.is_relative())
+				pathToOpen = std::filesystem::current_path() / s_arg[1];
+			if (pathToOpen.extension().string() == ".pgn")
 			{
-				g_AppManager.CreateApp(s_arg[1]);
+				g_AppManager.CreateApp(pathToOpen.string());
 			}
 			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
 			//{
@@ -101,15 +100,15 @@ public:
 		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 
 		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
+		glfwFocusWindow(Walnut::Application::Get().GetWindowHandle());
 	}
 
 	virtual void OnDetach() override
 	{
-		if (!s_running)
+		if (!s_IamSecond)
 		{
-			std::ofstream outfile("singleApp.txt");
-			outfile << 0;
-			outfile.close();
+			ReleaseMutex(s_hMutex);
+			CloseHandle(s_hMutex);
 		}
 		else
 			return;
@@ -119,7 +118,7 @@ public:
 
 	virtual void OnUIRender() override
 	{
-		if (s_running)
+		if (s_IamSecond)
 		{
 			Walnut::Application::Get().Close();
 			return;
@@ -130,7 +129,22 @@ public:
 			std::string path;
 			infile >> path;
 			if (!path.empty())
-				g_AppManager.CreateApp(path);
+			{
+				std::filesystem::path pathToOpen(path);
+
+				while (!pathToOpen.has_extension())
+				{
+					std::string addpath;
+					infile >> addpath;
+					path = path + ' ' + addpath;
+					pathToOpen = std::filesystem::path(path);
+				}
+
+				if (pathToOpen.is_relative())
+					pathToOpen = std::filesystem::current_path() / path;
+
+				g_AppManager.CreateApp(pathToOpen.string());
+			}
 			infile.close();
 		}
 
@@ -196,15 +210,103 @@ public:
 		}
 		else if (m_MenuIntex == 1)
 		{
-			m_ProfilePanel->OnImGuiRender();
+			ImGui::Begin("Not Ready");
+
+			ImVec2 textSize = ImGui::CalcTextSize("Coming Soon!");
+
+			{
+				float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
+				float availX = ImGui::GetContentRegionAvail().x;
+
+				float offX = (availX - actualSizeX) * 0.5f;
+				if (offX > 0.0f)
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
+			}
+
+			{
+				float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+				float availY = ImGui::GetContentRegionAvail().y;
+
+				float offY = (availY - actualSizeY) * 0.5f;
+				if (offY > 0.0f)
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
+			}
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+
+			ImGui::Text("Coming Soon!");
+
+			ImGui::PopStyleColor();
+
+			ImGui::End();
+
+			//m_ProfilePanel->OnImGuiRender();
 		}
 		else if (m_MenuIntex == 2)
 		{
+			ImGui::Begin("Not Ready");
 
+			ImVec2 textSize = ImGui::CalcTextSize("Coming Soon!");
+
+			{
+				float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
+				float availX = ImGui::GetContentRegionAvail().x;
+
+				float offX = (availX - actualSizeX) * 0.5f;
+				if (offX > 0.0f)
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
+			}
+
+			{
+				float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+				float availY = ImGui::GetContentRegionAvail().y;
+
+				float offY = (availY - actualSizeY) * 0.5f;
+				if (offY > 0.0f)
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
+			}
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+
+			ImGui::Text("Coming Soon!");
+
+			ImGui::PopStyleColor();
+
+			ImGui::End();
 		}
 		else if (m_MenuIntex == 3)
 		{
-			m_ToolsPanel->OnImGuiRender();
+			ImGui::Begin("Not Ready");
+
+			ImVec2 textSize = ImGui::CalcTextSize("Coming Soon!");
+
+			{
+				float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
+				float availX = ImGui::GetContentRegionAvail().x;
+
+				float offX = (availX - actualSizeX) * 0.5f;
+				if (offX > 0.0f)
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
+			}
+
+			{
+				float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+				float availY = ImGui::GetContentRegionAvail().y;
+
+				float offY = (availY - actualSizeY) * 0.5f;
+				if (offY > 0.0f)
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
+			}
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f/255.0f, 225.0f/255.0f, 135.0f/255.0f, 255.0f/255.0f));
+
+			ImGui::Text("Coming Soon!");
+
+			ImGui::PopStyleColor();
+
+			ImGui::End();
+
+			//m_ToolsPanel->OnImGuiRender();
 		}
 		else if (m_MenuIntex == 4)
 		{

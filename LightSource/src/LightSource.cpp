@@ -37,6 +37,7 @@ public:
 	virtual void OnAttach() override
 	{
 		glfwMaximizeWindow(Walnut::Application::Get().GetWindowHandle());
+		glfwFocusWindow(Walnut::Application::Get().GetWindowHandle());
 
 		AppManagerChild::Init();
 		ChessAPI::Init();

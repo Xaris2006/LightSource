@@ -306,9 +306,22 @@ namespace Panels {
 		
 		ImGui::Begin("Merge");
 
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
+		ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
+
+		Walnut::UI::TextCentered("Files to be merged");
+
+		ImGui::PopFont();
+		ImGui::PopStyleColor();
+
+		ImGui::Separator();
+		ImGui::NewLine();
+
 		auto curPos = ImGui::GetCursorPos();
 
-		ImGui::InvisibleButton("##dragndrop", ImVec2(ImGui::GetWindowSize().x - 20, ImGui::GetWindowSize().y - 20));
+		static float dropYSize = ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y * 8 - ImGui::GetStyle().ItemSpacing.y * 16;
+
+		ImGui::InvisibleButton("##dragndrop", ImVec2(ImGui::GetWindowSize().x - 20, dropYSize));
 
 		ImGui::SetCursorPos(curPos);
 
@@ -341,19 +354,8 @@ namespace Panels {
 			ImGui::EndDragDropTarget();
 		}
 
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
-		ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
+		ImGui::BeginChild("##files", ImVec2(0, dropYSize), true);
 
-		Walnut::UI::TextCentered("Files to be merged");
-
-		ImGui::PopFont();
-		ImGui::PopStyleColor();
-
-		ImGui::Separator();
-		ImGui::NewLine();
-
-		ImGui::BeginChild("##files", ImVec2(0, ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y * 8 - ImGui::GetStyle().ItemSpacing.y * 16), true);
-		
 		for (int i = 0; i < m_filesToBeMerged.size(); i++)
 		{
 			ImGui::PushID(i);

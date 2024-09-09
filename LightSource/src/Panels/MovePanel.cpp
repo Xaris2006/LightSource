@@ -38,24 +38,48 @@ namespace Panels
 			ImGui::PushFont(Walnut::Application::GetFont("Bold"));
 
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.7, 0.7, 0.7, 1));
+
 			float size = ImGui::CalcTextSize(ChessAPI::GetCurPgnLabelValue("White").c_str()).y + ImGui::CalcTextSize(ChessAPI::GetCurPgnLabelValue("WhiteElo").c_str()).y + 10;
+			
 			if (ImGui::BeginChild("White", ImVec2(0, size)))
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(21, 21, 21, 255));
-				Walnut::UI::TextCentered(ChessAPI::GetCurPgnLabelValue("White").c_str());
-				Walnut::UI::TextCentered(ChessAPI::GetCurPgnLabelValue("WhiteElo").c_str());
+				if(ChessAPI::GetCurPgnLabelValue("White") == "?")
+					Walnut::UI::TextCentered("Unknown");
+				else
+					Walnut::UI::TextCentered(ChessAPI::GetCurPgnLabelValue("White").c_str());
+				
+				if (ChessAPI::GetCurPgnLabelValue("WhiteElo") == "?")
+					Walnut::UI::TextCentered("");
+				else
+					Walnut::UI::TextCentered(ChessAPI::GetCurPgnLabelValue("WhiteElo").c_str());
+
 				ImGui::PopStyleColor();
 			}
+
 			ImGui::EndChild();
+
 			ImGui::PopStyleColor();
+
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.4, 0.4, 0.4, 1));
+
 			size = ImGui::CalcTextSize(ChessAPI::GetCurPgnLabelValue("Black").c_str()).y + ImGui::CalcTextSize(ChessAPI::GetCurPgnLabelValue("BlackElo").c_str()).y + 10;
+			
 			if (ImGui::BeginChild("Black", ImVec2(0, size)))
 			{
-				Walnut::UI::TextCentered(ChessAPI::GetCurPgnLabelValue("Black").c_str());
-				Walnut::UI::TextCentered(ChessAPI::GetCurPgnLabelValue("BlackElo").c_str());
+				if (ChessAPI::GetCurPgnLabelValue("Black") == "?")
+					Walnut::UI::TextCentered("Unknown");
+				else
+					Walnut::UI::TextCentered(ChessAPI::GetCurPgnLabelValue("Black").c_str());
+
+				if (ChessAPI::GetCurPgnLabelValue("BlackElo") == "?")
+					Walnut::UI::TextCentered("");
+				else
+					Walnut::UI::TextCentered(ChessAPI::GetCurPgnLabelValue("BlackElo").c_str());
 			}
+			
 			ImGui::EndChild();
+			
 			ImGui::PopStyleColor();
 			ImGui::PopFont();
 
