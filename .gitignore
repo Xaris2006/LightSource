@@ -7,7 +7,6 @@
 *.user
 *.sln
 *.obj
-*.exe
 *.pdb
 *.idb
 *.lib
@@ -21,3 +20,10 @@
 /LightSource/chess_working_directory/exa.cob
 *.suo
 *.filters
+/bin/Debug-windows-x86_64/LightSource/LightSource.exe
+/bin/Debug-windows-x86_64/LightSource-Lobby/LightSource-Lobby.exe
+/bin/Dist-windows-x86_64/LightSource/LightSource.exe
+/bin/Release-windows-x86_64/LightSource/LightSource.exe
+/bin/Release-windows-x86_64/LightSource-Lobby/LightSource-Lobby.exe
+/bin/Dist-windows-x86_64/LightSource-Lobby/LightSource-Lobby.exe
+/bin/Dist-windows-x86_64/LightSource-Lobby/singleApp.txt
