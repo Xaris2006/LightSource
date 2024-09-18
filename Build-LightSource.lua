@@ -12,8 +12,10 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Vendor"
    include "vendor/ChessAPI"
+   include "vendor/Web"
 group ""
 
 include "Build-Walnut-External.lua"
 include "LightSource/Build-LightSource-App.lua"
+include "Tool/Build-Tool-App.lua"
 include "LightSource-Lobby/Build-LightSource-Lobby-App.lua"

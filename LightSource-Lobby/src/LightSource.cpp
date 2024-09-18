@@ -22,8 +22,6 @@
 
 #include "implot.h"
 
-Manager::AppManager g_AppManager;
-
 std::string g_AppDirectory;
 Walnut::ApplicationSpecification g_spec;
 
@@ -58,11 +56,12 @@ public:
 
 		Process s_startProcess(L"start.exe", L"");
 		
+		Manager::AppManager::Init();
 		Manager::ToolManager::Init();
 
 		using namespace std::chrono_literals;
 
-		std::this_thread::sleep_for(2s);
+		//std::this_thread::sleep_for(2s);
 
 		s_startProcess.EndProcess();
 
@@ -75,7 +74,7 @@ public:
 				pathToOpen = std::filesystem::current_path() / s_arg[1];
 			if (pathToOpen.extension().string() == ".pgn")
 			{
-				g_AppManager.CreateApp(pathToOpen.string());
+				Manager::AppManager::Get().CreateApp(pathToOpen.string());
 			}
 			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
 			//{
@@ -113,6 +112,7 @@ public:
 		else
 			return;
 		
+		Manager::AppManager::Shutdown();
 		Manager::ToolManager::Shutdown();
 	}
 
@@ -143,7 +143,7 @@ public:
 				if (pathToOpen.is_relative())
 					pathToOpen = std::filesystem::current_path() / path;
 
-				g_AppManager.CreateApp(pathToOpen.string());
+				Manager::AppManager::Get().CreateApp(pathToOpen.string());
 			}
 			infile.close();
 		}
@@ -276,37 +276,37 @@ public:
 		}
 		else if (m_MenuIntex == 3)
 		{
-			ImGui::Begin("Not Ready");
+			//ImGui::Begin("Not Ready");
+			//
+			//ImVec2 textSize = ImGui::CalcTextSize("Coming Soon!");
+			//
+			//{
+			//	float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
+			//	float availX = ImGui::GetContentRegionAvail().x;
+			//
+			//	float offX = (availX - actualSizeX) * 0.5f;
+			//	if (offX > 0.0f)
+			//		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
+			//}
+			//
+			//{
+			//	float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+			//	float availY = ImGui::GetContentRegionAvail().y;
+			//
+			//	float offY = (availY - actualSizeY) * 0.5f;
+			//	if (offY > 0.0f)
+			//		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
+			//}
+			//
+			//ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f/255.0f, 225.0f/255.0f, 135.0f/255.0f, 255.0f/255.0f));
+			//
+			//ImGui::Text("Coming Soon!");
+			//
+			//ImGui::PopStyleColor();
+			//
+			//ImGui::End();
 
-			ImVec2 textSize = ImGui::CalcTextSize("Coming Soon!");
-
-			{
-				float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
-				float availX = ImGui::GetContentRegionAvail().x;
-
-				float offX = (availX - actualSizeX) * 0.5f;
-				if (offX > 0.0f)
-					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
-			}
-
-			{
-				float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
-				float availY = ImGui::GetContentRegionAvail().y;
-
-				float offY = (availY - actualSizeY) * 0.5f;
-				if (offY > 0.0f)
-					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
-			}
-
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f/255.0f, 225.0f/255.0f, 135.0f/255.0f, 255.0f/255.0f));
-
-			ImGui::Text("Coming Soon!");
-
-			ImGui::PopStyleColor();
-
-			ImGui::End();
-
-			//m_ToolsPanel->OnImGuiRender();
+			m_ToolsPanel->OnImGuiRender();
 		}
 		else if (m_MenuIntex == 4)
 		{
@@ -388,14 +388,14 @@ public:
 
 	void New()
 	{
-		g_AppManager.CreateApp("");
+		Manager::AppManager::Get().CreateApp("");
 	}
 
 	void Open()
 	{
 		std::string filepath = Windows::Utils::OpenFile("Chess Database (*.pgn)\0*.pgn\0");
 		if (!filepath.empty())
-			g_AppManager.CreateApp(filepath);
+			Manager::AppManager::Get().CreateApp(filepath);
 	}
 
 private:
@@ -426,7 +426,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	g_spec.HoveredIconPath = "LightSourceApp\\Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
 		{
-			g_AppManager.CreateApp("");
+			Manager::AppManager::Get().CreateApp("");
 		};
 
 	//fix arg
@@ -451,7 +451,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	Walnut::Application* app = new Walnut::Application(g_spec, 117 - 50);
 	
 	//app->SetMinImGuiWindowSize(370.0f);
-	app->SetDockNodeFlags(ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
+	//app->SetDockNodeFlags(ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
 
 	std::shared_ptr<LobbyLayer> chessLayer = std::make_shared<LobbyLayer>();
 	app->PushLayer(chessLayer);

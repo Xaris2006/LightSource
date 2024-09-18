@@ -4,3 +4,4 @@
 <a href="https://www.flaticon.com/free-icons/workshop" title="workshop icons">Workshop icons created by Smashicons - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/question-mark" title="question mark icons">Question mark icons created by Hight Quality Icons - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/back" title="back icons">Back icons created by Roundicons - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/turbo" title="turbo icons">Turbo icons created by IwitoStudio - Flaticon</a>

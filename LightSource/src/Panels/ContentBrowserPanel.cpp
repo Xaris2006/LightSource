@@ -53,6 +53,12 @@ namespace Panels {
 				s_oldpath = m_CurrentDirectory;
 				ImGui::CloseCurrentPopup();
 			}
+			if (ImGui::Selectable("Open Explorer"))
+			{
+				std::string cmd = "explorer " + m_CurrentDirectory.string();
+				std::system(cmd.c_str());
+				ImGui::CloseCurrentPopup();
+			}
 			//if (ImGui::Selectable("New Directory"))
 			//{
 			//	s_openPopup = true;
@@ -225,7 +231,12 @@ namespace Panels {
 					s_oldpath = path;
 					ImGui::CloseCurrentPopup();
 				}
-
+				if (ImGui::Selectable("Open Explorer"))
+				{
+					std::string cmd = "explorer " + m_CurrentDirectory.string();
+					std::system(cmd.c_str());
+					ImGui::CloseCurrentPopup();
+				}
 
 				ImGui::EndPopup();
 			}

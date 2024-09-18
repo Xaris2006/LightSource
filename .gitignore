@@ -27,3 +27,6 @@
 /bin/Release-windows-x86_64/LightSource-Lobby/LightSource-Lobby.exe
 /bin/Dist-windows-x86_64/LightSource-Lobby/LightSource-Lobby.exe
 /bin/Dist-windows-x86_64/LightSource-Lobby/singleApp.txt
+/bin/Debug-windows-x86_64/Tool/Tool.exe
+/bin/Dist-windows-x86_64/Tool/Tool.exe
+/bin/Release-windows-x86_64/Tool/Tool.exe

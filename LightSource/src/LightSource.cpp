@@ -235,7 +235,7 @@ public:
 
 	void OpenChessEngine(const std::string& path)
 	{
-		m_ChessEnginePanel.OpenChessEngine(path);
+		m_ChessEnginePanel.OpenEngine(path);
 	}
 
 	void OpenChessEngine()
@@ -245,8 +245,13 @@ public:
 
 	void CloseChessEngine()
 	{
-		m_ChessEnginePanel.CloseChessEngine();
+		m_ChessEnginePanel.CloseEngine();
 		m_ChessEnginePanel.Reset();
+	}
+
+	std::vector<std::string>& GetAvailableChessEngines()
+	{
+		return m_ChessEnginePanel.GetAvailEngines();
 	}
 
 	void OpenEditor()
@@ -462,11 +467,20 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				chessLayer->OpenChessEngine();
 			}
-			if (ImGui::MenuItem("Open"))
+			if (ImGui::BeginMenu("Open"))
 			{
-				std::string filepath = Windows::Utils::OpenFile("Chess Engine (*.exe)\0*.exe\0");
-				if (!filepath.empty())
-					chessLayer->OpenChessEngine(filepath);
+				for (auto& Engine : chessLayer->GetAvailableChessEngines())
+				{
+					if (ImGui::MenuItem(Engine.c_str()))
+						chessLayer->OpenChessEngine("MyDocuments\\engines\\" + Engine + ".exe");
+				}
+				if (ImGui::MenuItem("from Explorer..."))
+				{
+					std::string filepath = Windows::Utils::OpenFile("Chess Engine (*.exe)\0*.exe\0");
+					if (!filepath.empty())
+						chessLayer->OpenChessEngine(filepath);
+				}
+				ImGui::EndMenu();
 			}
 			if (ImGui::MenuItem("Close", "Ctr+Down Arrow"))
 			{

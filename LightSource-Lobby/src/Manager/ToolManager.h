@@ -21,7 +21,7 @@ namespace Manager
 	class ToolManager
 	{
 	public:
-		static ToolManager* Get();
+		static ToolManager& Get();
 		static void Init();
 		static void Shutdown();
 

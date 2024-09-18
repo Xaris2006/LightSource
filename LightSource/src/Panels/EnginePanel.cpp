@@ -8,6 +8,8 @@
 #include "mutex"
 #include <thread>
 #include <string>
+#include <fstream>
+
 #include "../../Walnut/Source/Walnut/Timer.h"
 
 #include "../windowsMain.h"
@@ -36,21 +38,63 @@ static int FindLastOf(const std::string& source, const std::string& target)
 
 namespace Panels
 {
+	EnginePanel::EnginePanel()
+	{
+		std::ifstream inFile("MyDocuments\\engines\\settings.ce");
+
+		inFile >> m_threadCount;
+		inFile >> m_hashMb;
+		inFile >> m_lines;
+		inFile >> m_SkillLevel;
+		inFile >> m_SyzygyPath;
+		inFile >> m_Syzygy50MoveRule;
+		inFile >> m_LimitStrength;
+		inFile >> m_Elo;
+		inFile >> m_DefaultEngine;
+
+		if (m_SyzygyPath == "False")
+			m_SyzygyPath = "";
+
+		if (m_DefaultEngine == "False")
+			m_DefaultEngine = "";
+
+		inFile.close();
+	}
+
 	EnginePanel::~EnginePanel()
 	{
-		CloseChessEngine();
+		CloseEngine();
 	}
 
 	void EnginePanel::OnImGuiRender()
 	{
+		{
+			m_AvailEngines.clear();
+
+			std::ifstream inFile("MyDocuments\\engines\\Avail.ce");
+
+			while (inFile.good())
+			{
+				std::string nEngine;
+				inFile >> nEngine;
+				int extensionIndex = nEngine.find('.');
+				if (extensionIndex != std::string::npos)
+					nEngine.erase(extensionIndex);
+				m_AvailEngines.emplace_back(nEngine);
+			}
+
+			inFile.close();
+		}
+
 		m_viewPanel = IsEngineOpen();
 		if (!m_viewPanel)
 			return;
 
+
 		ImGui::Begin("Chess Engine", &m_viewPanel);
 		
 		if (!m_viewPanel)
-			CloseChessEngine();
+			CloseEngine();
 
 		//Title
 		ImGui::TextWrapped(GetName().c_str());
@@ -239,33 +283,51 @@ namespace Panels
 
 		if(!m_viewPanel)
 		{
-			CloseChessEngine();
+			CloseEngine();
 		}
 		ImGui::End();
 	}
 
 	void EnginePanel::Reset()
 	{
-		m_hashMb = 256;
-		m_threadCount = 2;
 		m_running = false;
 		m_oldBoard.clear();
+
+		{
+			std::ifstream inFile("MyDocuments\\engines\\settings.ce");
+
+			inFile >> m_threadCount;
+			inFile >> m_hashMb;
+			inFile >> m_lines;
+			inFile >> m_SkillLevel;
+			inFile >> m_SyzygyPath;
+			inFile >> m_Syzygy50MoveRule;
+			inFile >> m_LimitStrength;
+			inFile >> m_Elo;
+			inFile >> m_DefaultEngine;
+
+			if (m_SyzygyPath == "False")
+				m_SyzygyPath = "";
+
+			if (m_DefaultEngine == "False")
+				m_DefaultEngine = "";
+
+			inFile.close();
+		}
 	}
 
 	std::string EnginePanel::GetDefaultEngine() const
 	{
-		return m_defaultEngine;
+		return "MyDocuments\\engines\\" + m_DefaultEngine;
 	}
 
-	void EnginePanel::SetDefaultEngine(const std::string& path)
+	void EnginePanel::OpenEngine(const std::string& programpath)
 	{
-		m_defaultEngine = path;
-	}
+		if (programpath.empty())
+			return;
 
-	void EnginePanel::OpenChessEngine(const std::string& programpath)
-	{
 		if (IsEngineOpen())
-			CloseChessEngine();
+			CloseEngine();
 
 		m_running = true;
 
@@ -534,7 +596,7 @@ namespace Panels
 		);
 	}
 
-	void EnginePanel::CloseChessEngine()
+	void EnginePanel::CloseEngine()
 	{
 		if (!IsEngineOpen())
 			return;
@@ -545,6 +607,12 @@ namespace Panels
 		m_processThread = nullptr;
 		m_running = false;
 		m_oldBoard.clear();
+		Reset();
+	}
+
+	std::vector<std::string>& EnginePanel::GetAvailEngines()
+	{
+		return m_AvailEngines;
 	}
 
 	void EnginePanel::CommandChessEngine(const std::string& command)

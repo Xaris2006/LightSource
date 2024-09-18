@@ -33,6 +33,8 @@ namespace Panels
 
 			if (ImGui::BeginTabItem("Available"))
 			{
+				ImGui::BeginChild("Files", ImVec2(0, ImGui::GetContentRegionAvail().y - 8 * ImGui::GetStyle().ItemSpacing.y));
+
 				static float padding = 32.0f;
 				static float thumbnailSize = 128.0f;
 				static float cellSize;
@@ -45,6 +47,26 @@ namespace Panels
 				if (columnCount < 1)
 					columnCount = 1;
 
+				ImGui::PushStyleColor(ImGuiCol_Text, { 0.38, 0.67, 0, 1 });
+				ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
+
+				auto oldCursorY = ImGui::GetCursorPosY();
+				ImGui::SetCursorPosY(oldCursorY + 5);
+
+				ImGui::Text("Search");
+
+				ImGui::PopFont();
+				ImGui::PopStyleColor();
+
+				ImGui::SameLine();
+
+				ImGui::SetCursorPosY(oldCursorY);
+
+				static ImGuiTextFilter filter;
+				filter.Draw("##SearchFilter", ImGui::GetContentRegionAvail().x / 3);
+
+				ImGui::Separator();
+				ImGui::NewLine();
 
 				ImGui::Columns(columnCount, 0, false);
 
@@ -52,6 +74,9 @@ namespace Panels
 				{
 					auto& path = m_AvailableTools[i];
 					std::string filenameString = path.filename().string();
+
+					if (!filter.PassFilter(filenameString.c_str()))
+						continue;
 
 					ImGui::PushID(filenameString.c_str());
 
@@ -75,6 +100,12 @@ namespace Panels
 					ImGui::PopID();
 				}
 				ImGui::Columns(1);
+
+				ImGui::EndChild();
+
+				ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 6 * ImGui::GetStyle().ItemSpacing.y);
+
+				ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 128, 256, "%.0f");
 
 				ImGui::EndTabItem();
 			}
@@ -123,7 +154,7 @@ namespace Panels
 
 				ImGui::NewLine();
 
-				if(!Manager::ToolManager::Get()->IsToolRunning(filenameString))
+				if(!Manager::ToolManager::Get().IsToolRunning(filenameString))
 				{
 
 					{
@@ -141,7 +172,7 @@ namespace Panels
 
 						if (ImGui::Button("Open"))
 						{
-							Manager::ToolManager::Get()->RunTool(filenameString);
+							Manager::ToolManager::Get().RunTool(filenameString);
 						}
 
 						ImGui::PopStyleColor(3);
@@ -167,7 +198,7 @@ namespace Panels
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 
 					if (Walnut::UI::ButtonCentered("Close"))
-						Manager::ToolManager::Get()->ShutdownTool(filenameString);
+						Manager::ToolManager::Get().ShutdownTool(filenameString);
 
 					ImGui::PopStyleColor(3);
 				}
@@ -219,7 +250,11 @@ namespace Panels
 						ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
 				}
 
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+
 				ImGui::Text("Select a Tool to interact with it!");
+
+				ImGui::PopStyleColor();
 			}
 			
 			if (unistallCurrentTool)
@@ -321,7 +356,7 @@ namespace Panels
 			delete[] data;
 
 			m_ToolIcons.push_back(std::make_shared<Walnut::Image>((path / m_ToolLabelNameToValue[filenameString + "Icon"]).string()));
-			Manager::ToolManager::Get()->AddTool(path / (filenameString + ".exe"), filenameString);
+			Manager::ToolManager::Get().AddTool(path / (filenameString + ".exe"), filenameString);
 		}
 	}
 

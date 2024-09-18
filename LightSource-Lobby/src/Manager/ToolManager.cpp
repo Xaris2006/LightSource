@@ -6,21 +6,42 @@ static Manager::ToolManager* s_ToolManager = nullptr;
 
 namespace Manager
 {
-	ToolManager* ToolManager::Get()
+	ToolManager& ToolManager::Get()
 	{
-		return s_ToolManager;
+		return *s_ToolManager;
 	}
 
 	void ToolManager::Init()
 	{
-		//WL_ASSERT(s_ToolManager, "ToolManager is reinitialized without it being shuted down!");
-		
 		s_ToolManager = new ToolManager();
+
+		s_ToolManager->m_EndThread = false;
+		s_ToolManager->m_CheckingThread = new std::thread(
+			[]()
+			{
+				while (!s_ToolManager->m_EndThread)
+				{
+					for (auto& [key, value] : s_ToolManager->m_Tools)
+					{
+						if (value.m_opened)
+						{
+							if (!value.m_program->IsProcessActive())
+								s_ToolManager->ShutdownTool(key);
+						}
+					}
+
+					std::this_thread::sleep_for(std::chrono::milliseconds(300));
+				}
+			}
+		);
 	}
 
 	void ToolManager::Shutdown()
 	{
-		//WL_ASSERT(!s_ToolManager, "ToolManager is shuted down but is nullptr!");
+		s_ToolManager->m_EndThread = true;
+		s_ToolManager->m_CheckingThread->join();
+		delete s_ToolManager->m_CheckingThread;
+		s_ToolManager->m_CheckingThread = nullptr;
 
 		for (auto& [key, value] : s_ToolManager->m_Tools)
 		{
@@ -44,8 +65,6 @@ namespace Manager
 	
 	void ToolManager::RunTool(const std::string& name)
 	{
-		//WL_ASSERT(m_Tools[name].m_program, "Tool already opened!");
-
 		m_Tools[name].m_program = new Process(m_Tools[name].m_exePath.wstring(), L"");
 		m_Tools[name].m_program->Write("Ok");
 		m_Tools[name].m_opened = true;
@@ -53,8 +72,6 @@ namespace Manager
 	
 	void ToolManager::ShutdownTool(const std::string& name)
 	{
-		//WL_ASSERT(!m_Tools[name].m_program, "Tool already closed!");
-
 		m_Tools[name].m_program->EndProcess();
 		delete m_Tools[name].m_program;
 		m_Tools[name].m_program = nullptr;
@@ -64,6 +81,5 @@ namespace Manager
 	bool ToolManager::IsToolRunning(const std::string& name) const
 	{
 		return m_Tools.at(name).m_opened;
-
 	}
 }

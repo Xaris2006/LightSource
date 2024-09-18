@@ -11,8 +11,6 @@
 #include <atlstr.h>
 #include <shlobj.h>
 
-extern Manager::AppManager g_AppManager;
-
 namespace Panels {
 
 	static std::filesystem::path s_oldpath;
@@ -100,7 +98,6 @@ namespace Panels {
 				indexEnd++;
 			}
 
-
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 			if (ImGui::ImageButton((ImTextureID)m_BackArrow->GetRendererID(), { ImGui::CalcTextSize("C").y + ImGui::GetStyle().ItemSpacing.y, ImGui::CalcTextSize("C").y + ImGui::GetStyle().ItemSpacing.y })
 				&& m_CurrentDirectory.has_filename())
@@ -157,15 +154,36 @@ namespace Panels {
 			if (columnCount < 1)
 				columnCount = 1;
 
+			ImGui::PushStyleColor(ImGuiCol_Text, { 0.38, 0.67, 0, 1 });
+			ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
+
+			auto oldCursorY = ImGui::GetCursorPosY();
+			ImGui::SetCursorPosY(oldCursorY + 5);
+
+			ImGui::Text("Search");
+
+			ImGui::PopFont();
+			ImGui::PopStyleColor();
+
+			ImGui::SameLine();
+
+			ImGui::SetCursorPosY(oldCursorY);
+
+			static ImGuiTextFilter filter;
+			filter.Draw("##SearchFilter", ImGui::GetContentRegionAvail().x / 3);
+
+			ImGui::Separator();
+			ImGui::NewLine();
 
 			ImGui::Columns(columnCount, 0, false);
 
 			for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
 			{
-				ImGui::NewLine();
-
 				const auto& path = directoryEntry.path();
 				std::string filenameString = path.filename().string();
+
+				if (!filter.PassFilter(filenameString.c_str()))
+					continue;
 
 				ImGui::PushID(filenameString.c_str());
 				auto icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
@@ -185,7 +203,7 @@ namespace Panels {
 					}
 					else
 					{
-						g_AppManager.CreateApp(path.string());
+						Manager::AppManager::Get().CreateApp(path.string());
 					}
 				}
 
@@ -391,7 +409,7 @@ namespace Panels {
 
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
 
-		ImGui::SetNextItemWidth(ImGui::CalcTextSize("12345678911131415").x);
+		ImGui::SetNextItemWidth(ImGui::CalcTextSize("12345678911131517192123252729313335373941").x);
 
 		ImGui::InputText("##MergedName", &m_mergedName);
 		
@@ -500,7 +518,7 @@ namespace Panels {
 						}
 						else
 						{
-							g_AppManager.CreateApp(directoryEntry.path().string());
+							Manager::AppManager::Get().CreateApp(directoryEntry.path().string());
 						}
 					}
 					
@@ -528,7 +546,7 @@ namespace Panels {
 				}
 				else
 				{
-					g_AppManager.CreateApp(s_path.string());
+					Manager::AppManager::Get().CreateApp(s_path.string());
 				}
 
 				ImGui::CloseCurrentPopup();
@@ -571,7 +589,12 @@ namespace Panels {
 				std::filesystem::remove(s_path);
 				ImGui::CloseCurrentPopup();
 			}
-
+			if (ImGui::Selectable("Open Explorer"))
+			{
+				std::string cmd = "explorer " + s_path.parent_path().string();
+				std::system(cmd.c_str());
+				ImGui::CloseCurrentPopup();
+			}
 
 			ImGui::EndPopup();
 		}
@@ -595,13 +618,12 @@ namespace Panels {
 				s_oldpath = m_CurrentDirectory;
 				ImGui::CloseCurrentPopup();
 			}
-			//if (ImGui::Selectable("New Directory"))
-			//{
-			//	s_openPopup = true;
-			//	s_inputNName = "";
-			//	s_oldpath = m_CurrentDirectory;
-			//	ImGui::CloseCurrentPopup();
-			//}
+			if (ImGui::Selectable("Open Explorer"))
+			{
+				std::string cmd = "explorer " + m_CurrentDirectory.string();
+				std::system(cmd.c_str());
+				ImGui::CloseCurrentPopup();
+			}
 
 			ImGui::EndPopup();
 		}

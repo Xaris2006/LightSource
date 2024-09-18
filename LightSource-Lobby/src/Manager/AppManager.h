@@ -15,6 +15,11 @@ namespace Manager
 	class AppManager
 	{
 	public:
+		static AppManager& Get();
+		static void Init();
+		static void Shutdown();
+
+	public:
 		struct Command
 		{
 			std::string File = "";
@@ -22,11 +27,11 @@ namespace Manager
 			std::string Ask = "";
 		};
 
-	public:
-		AppManager();
-		~AppManager();
 
 		void CreateApp(std::string cmd);
+	
+	private:
+		AppManager() = default;
 
 	private:
 		std::vector<Process> m_Apps;
