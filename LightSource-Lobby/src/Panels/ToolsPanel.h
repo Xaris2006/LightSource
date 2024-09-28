@@ -29,6 +29,9 @@ namespace Panels
 			std::string iconId;
 			std::string iconAt;
 
+			std::string detailsId;
+			std::string detailsAt;
+
 			Web::DownLoadStatus status = Web::Nothing;
 			std::thread* thread = nullptr;
 		};
@@ -46,14 +49,12 @@ namespace Panels
 
 		std::unordered_map<std::string, std::string> m_ToolLabelNameToValue;
 
-
-
-		std::vector<std::filesystem::path> m_ToolIconsToLoad;
 		std::vector<std::shared_ptr<Walnut::Image>> m_ToolIcons;
 		
 		std::vector<bool> m_DownloadableToolExists;
 		std::vector<std::filesystem::path> m_DownloadableToolIconsToLoad;
 		std::vector<std::shared_ptr<Walnut::Image>> m_DownloadableToolIcons;
+		std::unordered_map<std::string, std::string> m_DownloadableToolLabelNameToValue;
 
 		std::shared_ptr<Walnut::Image> m_RefreshIcon;
 	};

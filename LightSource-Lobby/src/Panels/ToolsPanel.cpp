@@ -27,14 +27,21 @@ namespace Panels
 
 	void ToolsPanel::OnImGuiRender()
 	{
-		if (!m_ToolIconsToLoad.empty() && !s_toolDownloading)
+		for (int i = 0; i < m_DownloadableTools.size(); i++)
 		{
-			m_ToolIcons.clear();
+			if (m_DownloadableTools[i].thread
+				&& (m_DownloadableTools[i].status == Web::Finished || m_DownloadableTools[i].status == Web::Error))
+			{
+				m_DownloadableTools[i].thread->join();
+				delete m_DownloadableTools[i].thread;
+				m_DownloadableTools[i].thread = nullptr;
 
-			for (auto& iconPath : m_ToolIconsToLoad)
-				m_ToolIcons.emplace_back(std::make_shared<Walnut::Image>(iconPath.string()));
+				m_DownloadableTools[i].status = Web::Nothing;
 
-			m_ToolIconsToLoad.clear();
+				FindAvailableTools();
+
+				s_toolDownloading--;
+			}
 		}
 
 		if (!m_DownloadableToolIconsToLoad.empty() && !s_loadInProcess)
@@ -165,7 +172,6 @@ namespace Panels
 					std::string filenameString = m_AvailableTools[m_TargetedToolIndex].filename().string();
 
 					{
-
 						float actualSize = ImGui::CalcTextSize(filenameString.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
 						float avail = ImGui::GetContentRegionAvail().x;
 
@@ -300,7 +306,6 @@ namespace Panels
 						ef.close();
 					}
 
-
 					m_AvailableTools.erase(m_AvailableTools.begin() + m_TargetedToolIndex);
 
 					m_ToolLabelNameToValue.erase(filenameString + "Icon");
@@ -308,12 +313,6 @@ namespace Panels
 					m_ToolLabelNameToValue.erase(filenameString + "Devaloper_Details");
 
 					m_ToolIcons.erase(m_ToolIcons.begin() + m_TargetedToolIndex);
-
-					std::ofstream tools(std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools\\Tools.txt");
-					for (int i = 0; i < m_AvailableTools.size() - 1; i++)
-						tools << m_AvailableTools[i].filename().string() << '\n';
-
-					tools << m_AvailableTools[m_AvailableTools.size() - 1].filename().string();
 
 					m_TargetedToolIndex = -1;
 					unistallCurrentTool = false;
@@ -454,8 +453,6 @@ namespace Panels
 
 				ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 128, 256, "%.0f");
 
-				//--Details
-
 				ImGui::TableSetColumnIndex(1);
 
 				if (s_DownloadAvailIntex > -1)
@@ -486,16 +483,6 @@ namespace Panels
 
 					ImGui::NewLine();
 
-					if (m_DownloadableTools[s_DownloadAvailIntex].thread
-						&& (m_DownloadableTools[s_DownloadAvailIntex].status == Web::Finished || m_DownloadableTools[s_DownloadAvailIntex].status == Web::Error))
-					{
-						m_DownloadableTools[s_DownloadAvailIntex].thread->join();
-						delete m_DownloadableTools[s_DownloadAvailIntex].thread;
-						m_DownloadableTools[s_DownloadAvailIntex].thread = nullptr;
-
-						m_DownloadableTools[s_DownloadAvailIntex].status = Web::Nothing;
-					}
-
 					if (m_DownloadableToolExists[s_DownloadAvailIntex])
 					{
 						ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0.66, 0.95, 0.65 });
@@ -513,63 +500,44 @@ namespace Panels
 					{
 						if (m_DownloadableTools[s_DownloadAvailIntex].status == Web::Nothing)
 						{
+							ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0.66, 0.95, 0.65 });
+							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0, 0.66, 0.95, 0.45 });
+							ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0, 0.66, 0.95, 0.25 });
+
+							if (Walnut::UI::ButtonCentered("Download") && !m_DownloadableTools[s_DownloadAvailIntex].thread)
 							{
-								ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0.66, 0.95, 0.65 });
-								ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0, 0.66, 0.95, 0.45 });
-								ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0, 0.66, 0.95, 0.25 });
+								s_toolDownloading++;
 
-								if (Walnut::UI::ButtonCentered("Download") && !m_DownloadableTools[s_DownloadAvailIntex].thread)
-								{
-									s_toolDownloading++;
+								m_DownloadableTools[s_DownloadAvailIntex].thread = new std::thread(
+									[&](int index)
+									{
+										std::string filename = Web::DownLoadFileFromGoogleDrive(m_DownloadableTools[index].id, m_DownloadableTools[index].at, m_DownloadableTools[index].status);
 
-									m_DownloadableTools[s_DownloadAvailIntex].thread = new std::thread(
-										[&]()
+										if (m_DownloadableTools[index].status == Web::Finished)
 										{
-											std::string filename = Web::DownLoadFileFromGoogleDrive(m_DownloadableTools[s_DownloadAvailIntex].id, m_DownloadableTools[s_DownloadAvailIntex].at, m_DownloadableTools[s_DownloadAvailIntex].status);
+											std::string command = "powershell -command \"Expand-Archive -Path '";
+											command += filename;
+											command += "' -DestinationPath '";
+											command += (std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools").u8string();
+											command += "'\"";
 
-											if (m_DownloadableTools[s_DownloadAvailIntex].status == Web::Finished)
+											// Execute the command
+											system(command.c_str());
+
+											std::error_code ec;
+											std::filesystem::remove_all(filename, ec);
+											if (ec)
 											{
-												std::string command = "powershell -command \"Expand-Archive -Path '";
-												command += filename;
-												command += "' -DestinationPath '";
-												command += (std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools").string();
-												command += "'\"";
-
-												// Execute the command
-												system(command.c_str());
-
-												std::error_code ec;
-												std::filesystem::remove_all(filename, ec);
-												if (ec)
-												{
-													std::ofstream ef("ErrorFile.txt");
-													ef << "func(std::filesystem::remove_all) " << ec << "path: " << filename;
-													ef.close();
-												}
-
-
-												std::ofstream pathFile(std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools\\Tools.txt");
-
-												for (int i = 0; i < m_AvailableTools.size(); i++)
-													pathFile << m_AvailableTools[i].filename().string() << '\n';
-
-												int extensionIndex = filename.find_last_of('.');
-												if (extensionIndex != std::string::npos)
-													filename.erase(extensionIndex);
-												pathFile << filename;
-
-												pathFile.close();
-
-												FindAvailableTools();
+												std::ofstream ef("ErrorFile.txt");
+												ef << "func(std::filesystem::remove_all) " << ec << "path: " << filename;
+												ef.close();
 											}
-
-											s_toolDownloading--;
 										}
-									);
-								}
-
-								ImGui::PopStyleColor(3);
+									}
+								, s_DownloadAvailIntex);
 							}
+
+							ImGui::PopStyleColor(3);
 						}
 						else
 						{
@@ -585,6 +553,29 @@ namespace Panels
 							ImGui::PopStyleColor(3);
 						}
 					}
+
+					ImGui::NewLine();
+					ImGui::Separator();
+
+					ImGui::BeginChild("Description", ImVec2(0, ImGui::GetContentRegionAvail().y / 2), true);
+
+					Walnut::UI::TextCentered("Description");
+
+					ImGui::NewLine();
+
+					ImGui::TextWrapped(m_DownloadableToolLabelNameToValue[filenameString + "Description"].c_str());
+
+					ImGui::EndChild();
+
+					ImGui::BeginChild("Devaloper Details", ImVec2(0, ImGui::GetContentRegionAvail().y - 10), true);
+
+					Walnut::UI::TextCentered("Devaloper Details");
+
+					ImGui::NewLine();
+
+					ImGui::TextWrapped(m_DownloadableToolLabelNameToValue[filenameString + "Devaloper_Details"].c_str());
+
+					ImGui::EndChild();
 				}
 				else
 				{
@@ -630,13 +621,8 @@ namespace Panels
 	{
 		m_AvailableTools.clear();
 		m_ToolLabelNameToValue.clear();
-		//m_ToolIcons.clear();
+		m_ToolIcons.clear();
 		m_TargetedToolIndex = -1;
-
-#ifndef WL_DIST
-		if (m_ToolIconsToLoad.size())
-			__debugbreak();
-#endif // !Dist
 
 		for (auto& directoryEntry : std::filesystem::directory_iterator(std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools\\"))
 		{
@@ -698,8 +684,8 @@ namespace Panels
 			}
 
 			delete[] data;
-
-			m_ToolIconsToLoad.emplace_back(path / m_ToolLabelNameToValue[filenameString + "Icon"]);
+			
+			m_ToolIcons.emplace_back(std::make_shared<Walnut::Image>((path / m_ToolLabelNameToValue[filenameString + "Icon"]).u8string()));
 			Manager::ToolManager::Get().AddTool(path / (filenameString + ".exe"), filenameString);
 		}
 	}
@@ -728,6 +714,7 @@ namespace Panels
 				std::this_thread::sleep_for(std::chrono::milliseconds(60));
 
 				m_DownloadableTools.clear();
+				m_DownloadableToolLabelNameToValue.clear();
 
 #ifndef WL_DIST
 				if (m_DownloadableToolIconsToLoad.size())
@@ -740,9 +727,9 @@ namespace Panels
 				std::ifstream inDownFile(filename);
 				while (inDownFile.good())
 				{
-					std::string name, id, at, iid, iat;
-					inDownFile >> name >> id >> at >> iid >> iat;
-					m_DownloadableTools.emplace_back(DownloadableTool{ name, id, at, iid, iat, Web::Nothing, nullptr });
+					std::string name, id, at, iid, iat, did, dat;
+					inDownFile >> name >> id >> at >> iid >> iat >> did >> dat;
+					m_DownloadableTools.emplace_back(DownloadableTool{ name, id, at, iid, iat, did, dat, Web::Nothing, nullptr });
 				}
 				inDownFile.close();
 
@@ -795,18 +782,57 @@ namespace Panels
 
 					m_DownloadableToolIconsToLoad.emplace_back(IconPath / tool.name / filename);
 
-					bool exist = false;
+					std::string detailsfilename = Web::DownLoadFileFromGoogleDrive(tool.detailsId, tool.detailsAt, status);
 
-					for (auto& eTool : m_AvailableTools)
+					std::ifstream toolDetails(detailsfilename, std::ios::binary);
+					toolDetails.seekg(0, std::ios_base::end);
+					std::streampos maxSize = toolDetails.tellg();
+					toolDetails.seekg(0, std::ios_base::beg);
+
+					if (maxSize <= 0)
+						continue;
+
+					char* data = new char[maxSize];
+					toolDetails.read(data, maxSize);
+					toolDetails.close();
+
+					bool labelName = true;
+					std::string name = "", value = "";
+
+					for (size_t i = 0; i < maxSize; i++)
 					{
-						if (eTool.filename().string() == tool.name)
+						if (data[i] == '\n' || data[i] == '\r')
+							continue;
+						if (labelName && data[i] == ' ')
+							continue;
+
+						if (data[i] == '[')
 						{
-							exist = true;
-							break;
+							labelName = false;
+							continue;
 						}
+
+						if (data[i] == ']')
+						{
+							labelName = true;
+
+							m_DownloadableToolLabelNameToValue[tool.name + name] = value;
+
+							name.clear();
+							value.clear();
+
+							continue;
+						}
+
+						if (labelName)
+							name += data[i];
+						else
+							value += data[i];
+
 					}
 
-					m_DownloadableToolExists.emplace_back(exist);
+					delete[] data;
+
 				}
 
 				s_loadInProcess = false;
