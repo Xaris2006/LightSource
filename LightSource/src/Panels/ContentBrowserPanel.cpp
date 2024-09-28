@@ -315,11 +315,19 @@ namespace Panels {
 
 			}
 
-			int extensionIndex = filenameString.find('.');
+			int extensionIndex = filenameString.find_last_of('.');
 			if (extensionIndex != std::string::npos)
 				filenameString.erase(extensionIndex);
 
+			float actualSize = ImGui::CalcTextSize(filenameString.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+			float avail = ImGui::GetContentRegionAvail().x;
+
+			float off = (avail - actualSize) * 0.5f;
+			if (off > 0.0f)
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
 			ImGui::TextWrapped(filenameString.c_str());
+
 
 			ImGui::NextColumn();
 

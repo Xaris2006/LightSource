@@ -617,6 +617,7 @@ namespace Panels
 		ImGui::End();
 	}
 
+	//do not use it inside other threads! (opengl problems)
 	void ToolsPanel::FindAvailableTools()
 	{
 		m_AvailableTools.clear();
