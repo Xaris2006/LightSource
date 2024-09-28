@@ -442,7 +442,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		}
 	}
 
-	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().string();
+	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().u8string();
 
 #if defined(WL_DIST)
 	std::filesystem::current_path(g_AppDirectory);
@@ -450,8 +450,8 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 
 	Walnut::Application* app = new Walnut::Application(g_spec, 117 - 50);
 	
-	//app->SetMinImGuiWindowSize(370.0f);
-	//app->SetDockNodeFlags(ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
+	app->SetMinImGuiWindowSize(370.0f);
+	app->SetDockNodeFlags(ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoTabBar);
 
 	std::shared_ptr<LobbyLayer> chessLayer = std::make_shared<LobbyLayer>();
 	app->PushLayer(chessLayer);

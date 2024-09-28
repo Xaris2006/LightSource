@@ -78,6 +78,9 @@ namespace Panels {
 			TreeDirectory(userPath / "Documents");
 			ImGui::Separator();
 			
+			TreeDirectory(userPath / "Downloads");
+			ImGui::Separator();
+			
 			TreeDirectory(userPath / "Desktop");
 			ImGui::Separator();
 
@@ -140,8 +143,6 @@ namespace Panels {
 			if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
 				s_openEmptyPopup = true;
 			
-			
-
 			static float padding = 32.0f;
 			static float thumbnailSize = 128.0f;
 			static float cellSize;
@@ -180,76 +181,70 @@ namespace Panels {
 			for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
 			{
 				const auto& path = directoryEntry.path();
-				std::string filenameString = path.filename().string();
+				std::string filenameString = path.filename().u8string();
 
 				if (!filter.PassFilter(filenameString.c_str()))
 					continue;
 
 				ImGui::PushID(filenameString.c_str());
 				auto icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
-				if (directoryEntry.path().extension().string() == ".pgn")
+				if (directoryEntry.path().extension().u8string() == ".pgn")
 					icon = m_FileIconPGN;
-				if (directoryEntry.path().extension().string() == ".cob")
+				if (directoryEntry.path().extension().u8string() == ".cob")
 					icon = m_FileIconCOB;
+
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 				ImGui::ImageButton((ImTextureID)icon->GetRendererID(), { thumbnailSize, thumbnailSize });
-
-				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-				{
-					//Bug when open file it does not reset the other panels
-					if (path.extension().string() != ".pgn")
-					{
-						printf("Could not load {0} - not a chess file", path.filename().string());
-					}
-					else
-					{
-						Manager::AppManager::Get().CreateApp(path.string());
-					}
-				}
-
-
-				if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && directoryEntry.is_regular_file())
-				{
-					s_openFilePopup = true;
-					s_path = path;
-				}
-
-				if (ImGui::BeginDragDropSource())
-				{
-					std::filesystem::path relativePath(path);
-					const wchar_t* itemPath = relativePath.c_str();
-					ImGui::SetDragDropPayload("MERGE_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
-					ImGui::EndDragDropSource();
-				}
-
-				if (ImGui::BeginDragDropTarget())
-				{
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MERGE_ITEM"))
-					{
-						const wchar_t* wpath = (const wchar_t*)payload->Data;
-						std::filesystem::path spath(wpath);
-						
-						if (spath.has_extension() && spath.extension() == ".pgn" &&
-							path.has_extension() && path.extension() == ".pgn")
-						{
-							MergeFiles(path, { path, spath });
-						}
-					}
-					ImGui::EndDragDropTarget();
-				}
-
-
 				ImGui::PopStyleColor();
+
+				if (directoryEntry.is_regular_file() && path.extension().string() == ".pgn")
+				{
+
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+					{
+						Manager::AppManager::Get().CreateApp(path.u8string());
+					}
+
+					if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+					{
+						s_openFilePopup = true;
+						s_path = path;
+					}
+
+					if (ImGui::BeginDragDropSource())
+					{
+						std::filesystem::path relativePath(path);
+						const wchar_t* itemPath = relativePath.c_str();
+						ImGui::SetDragDropPayload("MERGE_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
+						ImGui::EndDragDropSource();
+					}
+
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MERGE_ITEM"))
+						{
+							const wchar_t* wpath = (const wchar_t*)payload->Data;
+							std::filesystem::path spath(wpath);
+
+							if (spath.has_extension() && path.has_extension())
+							{
+								MergeFiles(path, { path, spath });
+							}
+						}
+						ImGui::EndDragDropTarget();
+					}
+
+				}
+
 				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 				{
 					if (directoryEntry.is_directory())
 						m_CurrentDirectory /= path.filename();
-
 				}
 
 				ImGuiStyle& style = ImGui::GetStyle();
 
-				int extensionIndex = filenameString.find('.');
+				int extensionIndex = filenameString.find_last_of('.');
 				if(extensionIndex != std::string::npos)
 					filenameString.erase(extensionIndex);
 
@@ -333,15 +328,70 @@ namespace Panels {
 		ImGui::PopStyleColor();
 
 		ImGui::Separator();
-		ImGui::NewLine();
 
-		auto curPos = ImGui::GetCursorPos();
+		static int fileToRemove = 0;
 
-		static float dropYSize = ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y * 8 - ImGui::GetStyle().ItemSpacing.y * 16;
+		if (ImGui::BeginTable("Files", 4, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg,
+			ImVec2(0, ImGui::GetContentRegionAvail().y - 8 * 2 * ImGui::GetStyle().ItemSpacing.y)))
+		{
+			ImGui::TableSetupColumn("Line", ImGuiTableColumnFlags_NoHide);
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 0.0f, 1);
+			ImGui::TableSetupColumn("Full Path", ImGuiTableColumnFlags_WidthFixed, 0.0f, 1);
+			ImGui::TableSetupColumn("##Remove", ImGuiTableColumnFlags_WidthFixed, 0.0f, 1);
 
-		ImGui::InvisibleButton("##dragndrop", ImVec2(ImGui::GetWindowSize().x - 20, dropYSize));
+			ImGui::TableHeadersRow();
 
-		ImGui::SetCursorPos(curPos);
+			for (int i = 0; i < m_filesToBeMerged.size(); i++)
+			{
+				ImGui::TableNextRow();
+
+				for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
+				{
+					if (!ImGui::TableSetColumnIndex(column) && column > 0)
+						continue;
+
+					ImGui::PushID(i * ImGui::TableGetColumnCount() + column);
+
+					if (column == 0)
+						ImGui::Text("%d", i + 1);
+					else if (column == 1)
+					{
+						ImGui::Text(m_filesToBeMerged[i].filename().u8string().c_str());
+					}
+					else if (column == 2)
+					{
+						ImGui::Text(m_filesToBeMerged[i].u8string().c_str());
+					}
+					else
+					{
+						ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::GetColorU32(ImVec4(0.7f, 0.1f, 0.1f, 0.65f)));
+						ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+						ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
+
+						ImGui::SetNextItemOpen(true);
+
+						ImGui::Selectable("Remove");
+
+						ImGui::PopStyleColor(2);
+
+						if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+						{
+							fileToRemove = i + 1;
+						}
+					}
+
+					ImGui::PopID();
+				}
+			}
+
+			ImGui::EndTable();
+		}
+
+		if (fileToRemove)
+		{
+			m_filesToBeMerged.erase(m_filesToBeMerged.begin() + fileToRemove - 1);
+			fileToRemove = 0;
+		}
 
 		if (ImGui::BeginDragDropTarget())
 		{
@@ -349,11 +399,11 @@ namespace Panels {
 			{
 				const wchar_t* wpath = (const wchar_t*)payload->Data;
 				std::filesystem::path spath(wpath);
-
+				
 				bool alreadyAdded = false;
-
+				
 				if (m_filesToBeMerged.empty())
-					m_mergedName = spath.filename().string();
+					m_mergedName = spath.filename().u8string();
 				else
 				{
 					for (auto& other : m_filesToBeMerged)
@@ -365,39 +415,15 @@ namespace Panels {
 						}
 					}
 				}
-
+				
 				if (!alreadyAdded && spath.has_extension() && spath.extension() == ".pgn")
 					m_filesToBeMerged.emplace_back(spath);
 			}
 			ImGui::EndDragDropTarget();
 		}
 
-		ImGui::BeginChild("##files", ImVec2(0, dropYSize), true);
-
-		for (int i = 0; i < m_filesToBeMerged.size(); i++)
-		{
-			ImGui::PushID(i);
-
-			ImGui::Text(m_filesToBeMerged[i].string().c_str());
-
-			ImGui::SameLine();
-
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
-
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
-			if (ImGui::Button("Remove"))
-			{
-				m_filesToBeMerged.erase(m_filesToBeMerged.begin() + i);
-				i--;
-			}
-			ImGui::PopStyleColor();
-
-			ImGui::PopID();
-		}
-
-		ImGui::EndChild();
-
-		ImGui::NewLine();
+		ImGui::Separator();
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
 
@@ -412,10 +438,8 @@ namespace Panels {
 		ImGui::SetNextItemWidth(ImGui::CalcTextSize("12345678911131517192123252729313335373941").x);
 
 		ImGui::InputText("##MergedName", &m_mergedName);
-		
+
 		ImGui::Separator();
-		
-		ImGui::NewLine();
 
 		{
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
@@ -488,7 +512,7 @@ namespace Panels {
 
 		ImGui::PushStyleColor(ImGuiCol_Text, vcolor);
 		ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
-		if (ImGui::TreeNodeEx(directory.filename().string().c_str(), ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow))
+		if (ImGui::TreeNodeEx(directory.filename().u8string().c_str(), ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow))
 			openTree = true;
 		ImGui::PopFont();
 		ImGui::PopStyleColor();
@@ -509,16 +533,16 @@ namespace Panels {
 				}
 				else if(directoryEntry.is_regular_file())
 				{
-					ImGui::TreeNodeEx(directoryEntry.path().filename().string().c_str(), ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+					ImGui::TreeNodeEx(directoryEntry.path().filename().u8string().c_str(), ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
 					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 					{
 						if (directoryEntry.path().extension().string() != ".pgn")
 						{
-							printf("Could not load {0} - not a chess file", directoryEntry.path().filename().string());
+							printf("Could not load {0} - not a chess file", directoryEntry.path().filename().u8string());
 						}
 						else
 						{
-							Manager::AppManager::Get().CreateApp(directoryEntry.path().string());
+							Manager::AppManager::Get().CreateApp(directoryEntry.path().u8string());
 						}
 					}
 					
@@ -540,13 +564,13 @@ namespace Panels {
 			if (ImGui::Selectable("Open"))
 			{
 				//Bug when open file it does not reset the other panels
-				if (s_path.extension().string() != ".pgn")
+				if (s_path.extension().u8string() != ".pgn")
 				{
-					printf("Could not load {0} - not a chess file", s_path.filename().string());
+					printf("Could not load {0} - not a chess file", s_path.filename().u8string());
 				}
 				else
 				{
-					Manager::AppManager::Get().CreateApp(s_path.string());
+					Manager::AppManager::Get().CreateApp(s_path.u8string());
 				}
 
 				ImGui::CloseCurrentPopup();
@@ -555,7 +579,7 @@ namespace Panels {
 			if (ImGui::Selectable("Rename"))
 			{
 				s_openRenamePopup = true;
-				s_inputNName = s_path.filename().string();
+				s_inputNName = s_path.filename().u8string();
 				s_oldpath = s_path;
 				ImGui::CloseCurrentPopup();
 			}
@@ -565,7 +589,7 @@ namespace Panels {
 				bool alreadyAdded = false;
 
 				if (m_filesToBeMerged.empty())
-					m_mergedName = s_path.filename().string();
+					m_mergedName = s_path.filename().u8string();
 				else
 				{
 					for (auto& other : m_filesToBeMerged)
@@ -586,12 +610,20 @@ namespace Panels {
 
 			if (ImGui::Selectable("Delete"))
 			{
-				std::filesystem::remove(s_path);
+				std::error_code ec;
+				std::filesystem::remove(s_path, ec);
+				if (ec)
+				{
+					std::ofstream ef("ErrorFile.txt");
+					ef << "func(std::filesystem::remove) " << ec << "path: " << s_path;
+					ef.close();
+				}
+				
 				ImGui::CloseCurrentPopup();
 			}
 			if (ImGui::Selectable("Open Explorer"))
 			{
-				std::string cmd = "explorer " + s_path.parent_path().string();
+				std::string cmd = "explorer " + s_path.parent_path().u8string();
 				std::system(cmd.c_str());
 				ImGui::CloseCurrentPopup();
 			}
@@ -620,7 +652,7 @@ namespace Panels {
 			}
 			if (ImGui::Selectable("Open Explorer"))
 			{
-				std::string cmd = "explorer " + m_CurrentDirectory.string();
+				std::string cmd = "explorer " + m_CurrentDirectory.u8string();
 				std::system(cmd.c_str());
 				ImGui::CloseCurrentPopup();
 			}
@@ -644,8 +676,16 @@ namespace Panels {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 			if (ImGui::Button("Rename"))
 			{
-				std::string fileNpath = s_oldpath.string().substr(0, s_oldpath.string().size() - s_oldpath.filename().string().size() - 1) + '\\' + s_inputNName;
-				std::filesystem::rename(s_oldpath, fileNpath);
+				std::string fileNpath = s_oldpath.u8string().substr(0, s_oldpath.string().size() - s_oldpath.filename().u8string().size() - 1) + '\\' + s_inputNName;
+				
+				std::error_code ec;
+				std::filesystem::rename(s_oldpath, fileNpath, ec);
+				if (ec)
+				{
+					std::ofstream ef("ErrorFile.txt");
+					ef << "func(std::filesystem::rename) " << ec << "path: " << s_oldpath << " to: " << fileNpath;
+					ef.close();
+				}
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::PopStyleColor(3);
@@ -678,11 +718,20 @@ namespace Panels {
 				std::filesystem::path nPath = std::filesystem::path() / s_oldpath / s_inputNName;
 				if (!nPath.extension().empty())
 				{
-					std::ofstream filepath(nPath.string());
+					std::ofstream filepath(nPath.u8string());
 					filepath.close();
 				}
 				else
-					std::filesystem::create_directory(nPath);
+				{
+					std::error_code ec;
+					std::filesystem::create_directory(nPath, ec);
+					if (ec)
+					{
+						std::ofstream ef("ErrorFile.txt");
+						ef << "func(std::filesystem::create_directory) " << ec << "path: " << nPath;
+						ef.close();
+					}
+				}
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::PopStyleColor(3);
