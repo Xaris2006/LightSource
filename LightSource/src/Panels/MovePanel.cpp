@@ -241,10 +241,57 @@ namespace Panels
 					{
 						ChessAPI::DeleteVariation(pathmove);
 					}
+
+					ImGui::BeginDisabled(pathmove.size() == 1);
+
 					if (ImGui::Selectable("Promote Variation"))
 					{
-						ChessAPI::PromoteVariation(pathmove);\
+						//auto intMovePath = ChessAPI::GetMoveIntFormat();
+						//std::vector<std::string> goMoveStr;
+						//
+						//chess::Pgn_Game::ChessMovesPath StrMovePath;
+						//ChessAPI::GetMovesPgnFormat(StrMovePath);
+						//chess::Pgn_Game::ChessMovesPath* StrMovePathPtr = &StrMovePath;
+						//
+						//for (int i1 = 0; i1 < intMovePath.size(); i1++)
+						//{
+						//	bool last = false;
+						//	if (i1 + 1 == intMovePath.size())
+						//		last = true;
+						//
+						//	int childMove = 0;
+						//
+						//	if (!last)
+						//		childMove = 1 + intMovePath[i1 + 1];
+						//
+						//	for (int j = 0; j < intMovePath[i1] - childMove; j++)
+						//	{
+						//		goMoveStr.emplace_back(StrMovePathPtr->move[j]);
+						//	}
+						//
+						//	if (last && StrMovePathPtr->move[intMovePath[i1]].find("c") == std::string::npos)
+						//		goMoveStr.emplace_back(StrMovePathPtr->move[intMovePath[i1]]);
+						//	else
+						//	{
+						//		i1++;
+						//		
+						//		StrMovePathPtr = &StrMovePathPtr->children[intMovePath[i1]];
+						//	}
+						//}
+
+						ChessAPI::PromoteVariation(pathmove);
+
+						//for (int i2 = 0; i2 < goMoveStr.size(); i2++)
+						//{
+						//	auto index = goMoveStr[i2].find(' ');
+						//	if (index != std::string::npos)
+						//		ChessAPI::GoMoveByStr(std::string(goMoveStr[i2].begin() + index + 1, goMoveStr[i2].end()));
+						//	else
+						//		ChessAPI::GoMoveByStr(goMoveStr[i2]);
+						//}
 					}
+
+					ImGui::EndDisabled();
 
 					ImGui::EndPopup();
 				}

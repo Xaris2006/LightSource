@@ -18,13 +18,10 @@ namespace Panels {
 
 		void OnImGuiRender();
 		
-		void CreateCOBfile(const std::string& pgnfilepath);
 		void OpenCOBfile(const std::string& filepath);
 		bool CloseCOBfile();
 		std::vector<chess::OpeningBook::MoveOB>& GetOpeningBookMoves(const chess::OpeningBook::PositionID& posID);
-
-		int IsReadyCreateThread();
-
+		
 		bool& IsPanelOpen();
 
 	private:
@@ -39,10 +36,5 @@ namespace Panels {
 
 		std::thread* m_PlayThread = nullptr;
 		std::atomic<bool> m_EndPlayThreadJob = true;
-
-		std::thread* m_CreateThread = nullptr;
-		std::atomic<bool> m_IsCreateThreadEnd = true;
-		std::atomic<bool> m_EndCreateThreadJob = true;
-		int m_Status = 0;
 	};
 }

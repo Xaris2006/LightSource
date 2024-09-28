@@ -371,7 +371,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		}
 	}
 
-	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().string();
+	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().u8string();
 
 #if defined(WL_DIST)
 	std::filesystem::current_path(g_AppDirectory);
@@ -457,7 +457,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			}
 			if (ImGui::MenuItem("Show Possible Moves", 0, &chessLayer->ShowPossibleMoves())) {}
 			if (ImGui::MenuItem("Show Tags", 0, &chessLayer->ShowTags())) {}
-			if (ImGui::MenuItem("Show Arrows", 0, &chessLayer->ShowArrows())) {}
+			if (ImGui::MenuItem("Show Arrows \"Buggy :(\"", 0, &chessLayer->ShowArrows())) {}
 			
 			ImGui::EndMenu();
 		}

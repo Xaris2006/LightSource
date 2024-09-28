@@ -1679,7 +1679,7 @@ void ImGuiBoard::EditorPopup()
 
 			ImGui::PushID("in");
 
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("Close").x - 8);
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("Close").x - 12);
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
 			if (ImGui::Button("Close"))
 			{

@@ -15,7 +15,6 @@ namespace Panels
 		if (m_PlayThread)
 			m_PlayThread->join();
 
-		delete m_CreateThread;
 		delete m_PlayThread;
 		delete m_OpeningBook;
 	}
@@ -30,74 +29,7 @@ namespace Panels
 		}
 
 		ImGui::Begin("Opening Book", &m_viewPanel);
-
-
-		if (IsReadyCreateThread())
-		{
-			ImGui::Text("Create New Opening Book");
-			ImGui::NewLine();
-			ImGui::PushID("Create");
-			ImGui::Button("Place Here Pgn File");
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-				{
-					const wchar_t* path = (const wchar_t*)payload->Data;
-					std::wstring wstr(path);
-					std::string str(wstr.begin(), wstr.end());
-					if (std::filesystem::path(str).extension() == ".pgn")
-						CreateCOBfile(str);
-				}
-				else if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Database"))
-				{
-					ChessAPI::GetPgnFile()->operator[]((int)*(int*)payload->Data);
-				}
-				ImGui::EndDragDropTarget();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("..."))
-			{
-				std::string path = Windows::Utils::OpenFile("Portable Game Notation (*.pgn)\0*.pgn\0");
-				if (!path.empty())
-					CreateCOBfile(path);
-			}
-			ImGui::PopID();
-		}
-		else
-		{
-			ImGui::Text("A cob file is currently being created");
-
-			//ImGui::SliderInt("Status", &m_Status, 0, 100, "%d%%", ImGuiSliderFlags_NoInput);
 			
-			auto ycursor = ImGui::GetCursorPosY();
-			auto xcursor = ImGui::GetCursorPosX();
-
-			float availx = 0.6*ImGui::GetContentRegionAvail().x;
-			ImGui::Button("##end", ImVec2(availx, 0));
-			
-			ImGui::SameLine();
-			ImGui::Text("Status");
-
-			ImGui::SetCursorPosY(ycursor);
-			ImGui::SetCursorPosX(xcursor);
-
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
-
-			ImGui::Button((std::to_string(m_Status)+'%').c_str(), ImVec2(availx * m_Status / 100, 0));
-			
-			ImGui::PopStyleColor(3);
-
-			//ImGui::ProgressBar((float)m_Status/100.0f, ImVec2(0.0f, 0.0f));
-			//ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-			//ImGui::Text("Status");
-		}
-
-		ImGui::Separator();
-
-		ImGui::NewLine();
-
 		ImGui::PushID("Play");
 		
 		ImGui::Text("Open An Opening Book");
@@ -227,21 +159,6 @@ namespace Panels
 		ImGui::End();
 	}
 
-
-	void OpeningBookPanel::CreateCOBfile(const std::string& pgnfilepath)
-	{
-		m_Status = 0;
-		m_IsCreateThreadEnd = false;
-
-		m_CreateThread = new std::thread(
-			[this, pgnfilepath]()
-			{
-				chess::OpeningBook::CreateCOBByPGN(pgnfilepath, m_Status);
-				m_IsCreateThreadEnd = true;
-			}
-		);
-	}
-
 	void OpeningBookPanel::OpenCOBfile(const std::string& filepath)
 	{
 		if (filepath == m_cobPath) { return; }
@@ -274,6 +191,7 @@ namespace Panels
 			}
 		);
 	}
+
 	bool OpeningBookPanel::CloseCOBfile()
 	{
 		if (!m_EndPlayThreadJob)
@@ -301,21 +219,6 @@ namespace Panels
 		if (!m_OpeningBook) { return m_Moves; }
 		m_CurPosition = posID;
 		return m_Moves;
-	}
-
-	int OpeningBookPanel::IsReadyCreateThread()
-	{
-		if (m_IsCreateThreadEnd)
-		{
-			if (m_CreateThread)
-			{
-				m_CreateThread->join();
-				delete m_CreateThread;
-				m_CreateThread = nullptr;
-			}
-			return true;
-		}
-		return false;
 	}
 
 	bool& OpeningBookPanel::IsPanelOpen()

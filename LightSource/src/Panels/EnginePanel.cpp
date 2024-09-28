@@ -5,7 +5,7 @@
 #include "imgui.h"
 #include "../Source/Walnut/Application.h"
 
-#include "mutex"
+#include <mutex>
 #include <thread>
 #include <string>
 #include <fstream>
@@ -15,6 +15,8 @@
 #include "../windowsMain.h"
 
 static std::mutex s_vectorMutex;
+static std::mutex s_moveMutex;
+
 static Walnut::Timer s_time;
 
 static int FindLastOf(const std::string& source, const std::string& target)
@@ -132,17 +134,6 @@ namespace Panels
 
 			}
 
-			bool changed = ImGui::InputInt("Lines", &m_lines, 1, 1);
-			if (m_lines < 1) { m_lines = 1; }
-			if (m_lines > m_maxLines) { m_lines = m_maxLines; }
-
-			if (changed)
-			{
-				CommandChessEngine("stop");
-				CommandChessEngine("setoption name MultiPV value " + std::to_string(m_lines));
-				CommandChessEngine("go infinite");
-			}
-
 			ImGui::TreePop();
 		}
 		ImGui::Separator();
@@ -190,9 +181,6 @@ namespace Panels
 		if (!m_running && ImGui::ImageButton((ImTextureID)m_IconPlay->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0, ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f)))
 		{
 			m_running = true;
-			//m_chess->engine.CommandChessEngine("setoption name Threads value " + mtcs::trans_str(m_threadCount));
-			//m_chess->engine.CommandChessEngine("setoption name Hash value " + mtcs::trans_str(m_hashMb));
-			//m_chess->engine.CommandChessEngine("ucinewgame");
 			CommandChessEngine(std::string("position fen ") + ChessAPI::GetFEN());
 			CommandChessEngine("go infinite");
 		}
@@ -212,7 +200,8 @@ namespace Panels
 
 			CommandChessEngine("stop");
 			CommandChessEngine("setoption name MultiPV value " + std::to_string(m_lines));
-			CommandChessEngine("go infinite");
+			if(m_running)
+				CommandChessEngine("go infinite");
 
 		}
 
@@ -225,7 +214,8 @@ namespace Panels
 
 			CommandChessEngine("stop");
 			CommandChessEngine("setoption name MultiPV value " + std::to_string(m_lines));
-			CommandChessEngine("go infinite");
+			if(m_running)
+				CommandChessEngine("go infinite");
 		}
 		ImGui::PopFont();
 
@@ -253,11 +243,14 @@ namespace Panels
 
 			ImGui::PopStyleColor();
 
-			auto EngineMoves = GetBestMoveStr(i);
+			std::vector<std::string> EngineMoves = GetBestMoveStr(i);
 			int index = 0;
 			for (int j = 0; j < EngineMoves.size() && m_running; j++)
 			{
 				ImGui::SameLine();
+
+				//if (EngineMoves[j].empty())
+				//	__debugbreak();
 
 				ImGui::PushID((EngineMoves[j] + std::to_string(i*10 + j)).c_str());
 
@@ -359,8 +352,8 @@ namespace Panels
 					return;
 				}
 
-				EngineApp.Write("setoption name Threads value 2");
-				EngineApp.Write("setoption name Hash value 256");
+				EngineApp.Write("setoption name Threads value " + std::to_string(m_threadCount));
+				EngineApp.Write("setoption name Hash value " + std::to_string(m_hashMb));
 
 				bool fenUpdated = true;
 				std::string overall;
@@ -417,7 +410,7 @@ namespace Panels
 						{
 							cur_fen = fen;
 
-							std::scoped_lock(s_vectorMutex);
+							std::scoped_lock(s_moveMutex);
 							for (int list = 0; list < 5; list++)
 							{
 								m_Moves[list].clear();
@@ -537,20 +530,23 @@ namespace Panels
 							index += 4;
 							int MoveIntex = 0;
 
-							m_Moves[list].clear();
-							m_Moves[list].emplace_back("");
+							std::vector<std::string> helperVector;
+							helperVector.emplace_back("");
 							for (int j = index; j < overall.size(); j++)
 							{
 								if (overall[j] == '\n')
 									break;
 								if (overall[j] == ' ')
 								{
-									m_Moves[list].emplace_back("");
+									if (helperVector.size() == 15)
+										break;
+									helperVector.emplace_back("");
 									MoveIntex += 1;
 									continue;
 								}
-								m_Moves[list][MoveIntex] += overall[j];
+								helperVector[MoveIntex] += overall[j];
 							}
+
 
 							pgngame->clear();
 							(*pgngame)["FEN"] = cur_fen;
@@ -558,16 +554,11 @@ namespace Panels
 							//std::cout << cur_fen << " while \n";
 
 							int indexhere = 0;
-							for (auto& move : m_Moves[list])
+							for (auto& move : helperVector)
 							{
 								if (move.empty())
 								{
-									m_Moves[list].resize(indexhere);
-									break;
-								}
-								if (indexhere == 15)
-								{
-									m_Moves[list].resize(15);
+									helperVector.resize(indexhere);
 									break;
 								}
 								if ((int)move.find('\r') + 1)
@@ -589,7 +580,15 @@ namespace Panels
 								indexhere++;
 							}
 							game.Go_Start_Position();
+							
+							s_moveMutex.lock();
+							
+							m_Moves[list].clear();
+							m_Moves[list] = helperVector;
+							
+							s_moveMutex.unlock();
 						}
+						
 					}
 				}
 			}
@@ -643,7 +642,14 @@ namespace Panels
 	{
 		if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_RightArrow))
 			return std::vector<std::string>();
-		return m_Moves[list];
+
+		s_moveMutex.lock();
+
+		std::vector<std::string> rv = m_Moves[list];
+
+		s_moveMutex.unlock();
+
+		return rv;
 	}
 
 	int EnginePanel::GetDepth() const

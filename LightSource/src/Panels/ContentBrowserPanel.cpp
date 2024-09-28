@@ -55,7 +55,7 @@ namespace Panels {
 			}
 			if (ImGui::Selectable("Open Explorer"))
 			{
-				std::string cmd = "explorer " + m_CurrentDirectory.string();
+				std::string cmd = "explorer " + m_CurrentDirectory.u8string();
 				std::system(cmd.c_str());
 				ImGui::CloseCurrentPopup();
 			}
@@ -92,11 +92,20 @@ namespace Panels {
 				std::filesystem::path nPath = std::filesystem::path() / s_oldpath / s_inputNName;
 				if (!nPath.extension().empty())
 				{
-					std::ofstream filepath(nPath.string());
+					std::ofstream filepath(nPath.u8string());
 					filepath.close();
 				}
 				else
-					std::filesystem::create_directory(nPath);
+				{
+					std::error_code ec;
+					std::filesystem::create_directory(nPath, ec);
+					if (ec)
+					{
+						std::ofstream ef("ErrorFile.txt");
+						ef << "func(std::filesystem::create_directory) " << ec << "path: " << nPath;
+						ef.close();
+					}
+				}
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::PopStyleColor(3);
@@ -132,23 +141,24 @@ namespace Panels {
 		for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
 			const auto& path = directoryEntry.path();
-			std::string filenameString = path.filename().string();
+			std::string filenameString = path.filename().u8string();
 
 			ImGui::PushID(filenameString.c_str());
 			auto icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
-			if (directoryEntry.path().extension().string() == ".pgn")
+			if (directoryEntry.path().extension().u8string() == ".pgn")
 				icon = m_FileIconPGN;
-			if (directoryEntry.path().extension().string() == ".cob")
+			if (directoryEntry.path().extension().u8string() == ".cob")
 				icon = m_FileIconCOB;
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 			ImGui::ImageButton((ImTextureID)icon->GetRendererID(), { thumbnailSize, thumbnailSize });
+			ImGui::PopStyleColor();
 
 			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
 				//Bug when open file it does not reset the other panels
-				if (path.extension().string() != ".pgn")
+				if (path.extension().u8string() != ".pgn")
 				{
-					printf("Could not load %c - not a chess file", path.filename().string().c_str());
+					printf("Could not load %s - not a chess file", path.filename().u8string().c_str());
 				}
 				else
 				{
@@ -175,9 +185,9 @@ namespace Panels {
 				if (ImGui::Selectable("Open"))
 				{
 					//Bug when open file it does not reset the other panels
-					if (path.extension().string() != ".pgn")
+					if (path.extension().u8string() != ".pgn")
 					{
-						printf("Could not load %s - not a chess file", path.filename().string());
+						printf("Could not load %s - not a chess file", path.filename().u8string());
 					}
 					else
 					{
@@ -185,7 +195,7 @@ namespace Panels {
 
 						if (anwser)
 						{
-							ChessAPI::OpenChessFile(path.string());
+							ChessAPI::OpenChessFile(path.u8string());
 							AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 						}
 						else
@@ -199,9 +209,9 @@ namespace Panels {
 				if (ImGui::Selectable("Open in window"))
 				{
 					//Bug when open file it does not reset the other panels
-					if (path.extension().string() != ".pgn")
+					if (path.extension().u8string() != ".pgn")
 					{
-						printf("Could not load %s - not a chess file", path.filename().string());
+						printf("Could not load %s - not a chess file", path.filename().u8string());
 					}
 					else
 					{
@@ -221,19 +231,26 @@ namespace Panels {
 				}
 				if (ImGui::Selectable("Delete"))
 				{
-					std::filesystem::remove(path);
+					std::error_code ec;
+					std::filesystem::remove(path, ec);
+					if (ec)
+					{
+						std::ofstream ef("ErrorFile.txt");
+						ef << "func(std::filesystem::remove) " << ec << "path: " << path;
+						ef.close();
+					}
 					ImGui::CloseCurrentPopup();
 				}
 				if (ImGui::Selectable("Rename"))
 				{
 					s_openPopup = true;
-					s_inputNName = path.filename().string();
+					s_inputNName = path.filename().u8string();
 					s_oldpath = path;
 					ImGui::CloseCurrentPopup();
 				}
 				if (ImGui::Selectable("Open Explorer"))
 				{
-					std::string cmd = "explorer " + m_CurrentDirectory.string();
+					std::string cmd = "explorer " + m_CurrentDirectory.u8string();
 					std::system(cmd.c_str());
 					ImGui::CloseCurrentPopup();
 				}
@@ -260,8 +277,16 @@ namespace Panels {
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 				if (ImGui::Button("Rename"))
 				{
-					std::string fileNpath = s_oldpath.string().substr(0, s_oldpath.string().size() - s_oldpath.filename().string().size() - 1) + '\\' + s_inputNName;
+					std::string fileNpath = s_oldpath.u8string().substr(0, s_oldpath.string().size() - s_oldpath.filename().u8string().size() - 1) + '\\' + s_inputNName;
+					
+					std::error_code ec;
 					std::filesystem::rename(s_oldpath, fileNpath);
+					if (ec)
+					{
+						std::ofstream ef("ErrorFile.txt");
+						ef << "func(std::filesystem::rename) " << ec << "path: " << s_oldpath << " to: " << fileNpath;
+						ef.close();
+					}
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::PopStyleColor(3);
@@ -283,7 +308,6 @@ namespace Panels {
 				ImGui::EndDragDropSource();
 			}
 
-			ImGui::PopStyleColor();
 			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
 				if (directoryEntry.is_directory())
