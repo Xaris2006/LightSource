@@ -77,6 +77,21 @@ namespace chess
 
 		using PositionID = std::vector<uint8_t>;
 
+		struct PositionID_Hash
+		{
+			size_t operator() (const PositionID& pos) const
+			{
+				std::size_t hash = 0;
+				std::hash<uint8_t> hasher;
+				for (uint8_t byte : pos)
+				{
+					// Combine the hash values (simple XOR + shift approach)
+					hash ^= hasher(byte) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+				}
+				return hash;
+			}
+		};
+
 		enum SortingType
 		{
 			RAW = 0,

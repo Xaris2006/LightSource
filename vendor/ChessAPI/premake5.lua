@@ -1,7 +1,7 @@
 project "ChessAPI"
 	kind "StaticLib"
 	language "C++"
-    staticruntime "off"
+	cppdialect "C++17"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -14,22 +14,23 @@ project "ChessAPI"
 
 	filter "system:windows"
 		systemversion "latest"
-		cppdialect "C++17"
 
 	filter "system:linux"
 		pic "On"
 		systemversion "latest"
-		cppdialect "C++17"
 
 	filter "configurations:Debug"
 		runtime "Debug"
+		staticruntime "off"
 		symbols "on"
 
 	filter "configurations:Release"
 		runtime "Release"
+		staticruntime "off"
 		optimize "on"
 
     filter "configurations:Dist"
 		runtime "Release"
+		staticruntime "on"
 		optimize "on"
         symbols "off"

@@ -114,7 +114,8 @@ namespace Web
 		std::string contentdisposition = res->get_header_value("content-disposition");
 		std::string filename(contentdisposition.begin() + contentdisposition.find("=") + 2, contentdisposition.end() - 1);
 
-		std::filesystem::rename("download" + id, filename);
+		std::error_code ec;
+		std::filesystem::rename("download" + id, filename, ec);
 
 		return filename;
 	}
