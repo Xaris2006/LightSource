@@ -3,7 +3,6 @@ project "Tool"
    language "C++"
    cppdialect "C++17"
    targetdir "bin/%{cfg.buildcfg}"
-   staticruntime "off"
 
    files { "src/**.h", "src/**.cpp" }
 
@@ -41,11 +40,13 @@ project "Tool"
    filter "configurations:Debug"
       defines { "WL_DEBUG" }
       runtime "Debug"
+      staticruntime "off"
       symbols "On"
 
    filter "configurations:Release"
       defines { "WL_RELEASE" }
       runtime "Release"
+      staticruntime "off"
       optimize "On"
       symbols "On"
 
@@ -53,5 +54,6 @@ project "Tool"
       kind "WindowedApp"
       defines { "WL_DIST" }
       runtime "Release"
+      staticruntime "on"
       optimize "On"
       symbols "Off"

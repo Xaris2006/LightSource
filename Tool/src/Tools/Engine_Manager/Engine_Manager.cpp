@@ -55,6 +55,19 @@ namespace Tools::EngineManager
 
 	void Layer::OnUIRender()
 	{
+		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
+		{
+			if (ImGui::IsKeyPressed(ImGuiKey_A))
+			{
+				AddEngine();
+			}
+		}
+
+		if (ImGui::IsKeyPressed(ImGuiKey_F4) && (ImGui::IsKeyDown(ImGuiKey_LeftAlt) || ImGui::IsKeyDown(ImGuiKey_RightAlt)))
+		{
+			Walnut::Application::Get().Close();
+		}
+
 		ImGui::Begin("Main");
 
 		ImGui::BeginTabBar("ProfileMenu");
@@ -437,7 +450,7 @@ namespace Tools::EngineManager
 
 						m_DownloadableEngines[s_DownloadAvailIntex].status = Web::Nothing;
 					}
-
+					
 					if (m_DownloadableEngines[s_DownloadAvailIntex].status == Web::Nothing)
 					{
 						{
@@ -456,8 +469,22 @@ namespace Tools::EngineManager
 
 										if (m_DownloadableEngines[s_DownloadAvailIntex].status == Web::Finished)
 										{
-											std::filesystem::copy(filename, s_PathToEngines / std::filesystem::path(filename).filename(), std::filesystem::copy_options::overwrite_existing);
+											std::error_code ec;
+											std::filesystem::copy(filename, s_PathToEngines / std::filesystem::path(filename).filename(), std::filesystem::copy_options::overwrite_existing, ec);
+											if (ec)
+											{
+												std::ofstream ef("ErrorFile.txt");
+												ef << "func(std::filesystem::copy) " << ec << "path: " << filename << " to: " << s_PathToEngines / std::filesystem::path(filename).filename();
+												ef.close();
+											}
+
 											std::filesystem::remove_all(filename);
+											if (ec)
+											{
+												std::ofstream ef("ErrorFile.txt");
+												ef << "func(std::filesystem::remove_all) " << ec << "path: " << filename;
+												ef.close();
+											}
 											
 											FindAvailEngines();
 										}
@@ -703,7 +730,14 @@ namespace Tools::EngineManager
 
 		if (!filepath.empty())
 		{
-			std::filesystem::copy(filepath, s_PathToEngines / std::filesystem::path(filepath).filename(), std::filesystem::copy_options::overwrite_existing);
+			std::error_code ec;
+			std::filesystem::copy(filepath, s_PathToEngines / std::filesystem::path(filepath).filename(), std::filesystem::copy_options::overwrite_existing, ec);
+			if (ec)
+			{
+				std::ofstream ef("ErrorFile.txt");
+				ef << "func(std::filesystem::copy) " << ec << "path: " << filepath << " to: " << s_PathToEngines / std::filesystem::path(filepath).filename();
+				ef.close();
+			}
 			FindAvailEngines();
 		}
 	}
@@ -800,7 +834,16 @@ namespace Tools::EngineManager
 			if (ImGui::Button("Rename"))
 			{
 				std::string fileNpath = s_oldpath.string().substr(0, s_oldpath.string().size() - s_oldpath.filename().string().size() - 1) + '\\' + s_inputNName;
-				std::filesystem::rename(s_oldpath, fileNpath);
+				std::error_code ec;
+				std::filesystem::rename(s_oldpath, fileNpath, ec); 
+				if (ec)
+				{
+					std::ofstream ef("ErrorFile.txt");
+					ef << "func(std::filesystem::rename) " << ec << "path: " << s_oldpath << " to: " << fileNpath;
+					ef.close();
+				}
+				
+				
 				
 				if (m_AvailableEngines[m_TargetedEngineIndex].string() == m_DefaultEngine)
 					m_DefaultEngine = s_inputNName;
@@ -890,7 +933,7 @@ namespace Tools::EngineManager
 			}
 		}
 
-		g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().string();
+		g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().u8string();
 
 #if defined(WL_DIST)
 		std::filesystem::current_path(g_AppDirectory);
@@ -907,12 +950,18 @@ namespace Tools::EngineManager
 		app->PushLayer(EMLayer);
 		app->SetMenubarCallback([app, EMLayer]()
 			{
-				if (ImGui::BeginMenu("Engines"))
+				if (ImGui::BeginMenu("Menu"))
 				{
-					if (ImGui::MenuItem("Add", "Ctr+a"))
+					if (ImGui::MenuItem("Add Engine", "Ctr+A"))
 					{
 						EMLayer->AddEngine();
 					}
+
+					if (ImGui::MenuItem("Exit", "Alt+F4"))
+					{
+						Walnut::Application::Get().Close();
+					}
+
 					ImGui::EndMenu();
 				}
 
