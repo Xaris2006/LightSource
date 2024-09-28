@@ -144,11 +144,15 @@ namespace Panels {
 			std::string filenameString = path.filename().u8string();
 
 			ImGui::PushID(filenameString.c_str());
-			auto icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
-			if (directoryEntry.path().extension().u8string() == ".pgn")
+			
+			auto icon = m_FileIcon;
+			if (directoryEntry.is_directory())
+				icon = m_DirectoryIcon;
+			else if (directoryEntry.path().extension().u8string() == ".pgn")
 				icon = m_FileIconPGN;
-			if (directoryEntry.path().extension().u8string() == ".cob")
+			else if (directoryEntry.path().extension().u8string() == ".cob")
 				icon = m_FileIconCOB;
+
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 			ImGui::ImageButton((ImTextureID)icon->GetRendererID(), { thumbnailSize, thumbnailSize });
 			ImGui::PopStyleColor();
