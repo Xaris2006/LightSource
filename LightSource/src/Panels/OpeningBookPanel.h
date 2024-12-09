@@ -20,16 +20,16 @@ namespace Panels {
 		
 		void OpenCOBfile(const std::string& filepath);
 		bool CloseCOBfile();
-		std::vector<chess::OpeningBook::MoveOB>& GetOpeningBookMoves(const chess::OpeningBook::PositionID& posID);
+		std::vector<Chess::OpeningBook::MoveOB>& GetOpeningBookMoves(const Chess::OpeningBook::PositionID& posID);
 		
 		bool& IsPanelOpen();
 
 	private:
 		bool m_viewPanel = true;
 
-		chess::OpeningBook* m_OpeningBook = nullptr;
-		chess::OpeningBook::PositionID m_CurPosition;
-		std::vector<chess::OpeningBook::MoveOB> m_Moves;
+		Chess::OpeningBook* m_OpeningBook = nullptr;
+		Chess::OpeningBook::PositionID m_CurPosition;
+		std::vector<Chess::OpeningBook::MoveOB> m_Moves;
 
 		std::string m_cobPath = "";
 		std::string m_cobFilename = "";

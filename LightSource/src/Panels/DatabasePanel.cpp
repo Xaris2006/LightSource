@@ -43,7 +43,7 @@ namespace Panels
 			m_filePath = ChessAPI::GetPgnFilePath();
 		}
 
-		chess::Pgn_File* pgnfile = ChessAPI::GetPgnFile();
+		Chess::Pgn_File* pgnfile = ChessAPI::GetPgnFile();
 		if (pgnfile)
 		{
 			ImGui::Begin("Database");

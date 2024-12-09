@@ -4,7 +4,7 @@
 #include <array>
 #include <fstream>
 
-namespace chess
+namespace Chess
 {
 	bool IsFileValidFormat(std::string filepath, std::string format)
 	{

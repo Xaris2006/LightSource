@@ -1,8 +1,5 @@
 #pragma once
 
-#include "ChessAPI.h"
-#include "ChessCore/pgn/Pgn.h"
-
 #include "Walnut/Image.h"
 
 #include <filesystem>

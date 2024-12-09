@@ -39,7 +39,7 @@ namespace Panels {
 
 		std::vector<uint8_t> m_oldBoard;
 
-		int m_lines = 1;
+		int m_lines = 2;
 		int m_maxLines = 5;
 			
 		int m_threadCount = 2;

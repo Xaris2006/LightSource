@@ -1,8 +1,8 @@
 #include "ImGuiBoard.h"
 
 #include "ChessAPI.h"
-#include "ChessCore/chess_board.h"
-#include "ChessCore/chess_entry.h"
+#include "ChessCore/Board.h"
+#include "ChessCore/GameManager.h"
 
 #include "AppManagerChild.h"
 
@@ -798,10 +798,10 @@ void ImGuiBoard::OnUIRender()
 			if (MousePos.x > -1 && MousePos.y > -1
 				&& MousePos.x < 8 && MousePos.y < 8)
 			{
-				m_CapturedPieceIndex = m_block[MousePos.y][MousePos.x];
+				m_CapturedPieceIndex = m_block[MousePos.x][MousePos.y];
 				m_oldNumX = MousePos.x;
 				m_oldNumY = MousePos.y;
-				m_block[MousePos.y][MousePos.x] = 0;
+				m_block[MousePos.x][MousePos.y] = 0;
 			}
 		}
 		else if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && m_CapturedPieceIndex)
@@ -814,22 +814,46 @@ void ImGuiBoard::OnUIRender()
 			if (MousePos.x > -1 && MousePos.y > -1
 				&& MousePos.x < 8 && MousePos.y < 8)
 			{
-				m_block[MousePos.y][MousePos.x] = m_CapturedPieceIndex;
+				m_block[MousePos.x][MousePos.y] = m_CapturedPieceIndex;
 				m_CapturedPieceIndex = 0;
 
-				if (glm::vec2{ m_oldNumX, m_oldNumY } != glm::vec2{ MousePos.x , MousePos.y })
+				//checking for new variation
+				Chess::Pgn_Game::ChessMovesPath PgnMoves;
+				Chess::Pgn_Game::ChessMovesPath* PtrPgnMoves;
+				int childAmount = 0;
+				auto moveKey = ChessAPI::GetMoveIntFormat();
+
 				{
-					if (!m_reverse)
-						ChessAPI::IsMoveValid({ m_oldNumX, 7 - m_oldNumY }, { MousePos.x , 7 - MousePos.y });
-					else
-						ChessAPI::IsMoveValid({ 7 - m_oldNumX, m_oldNumY }, { 7 - MousePos.x , MousePos.y });
+					ChessAPI::GetMovesPgnFormat(PgnMoves);
+					PtrPgnMoves = &PgnMoves;
+
+					for (int i = 1; i < moveKey.size(); i += 2)
+						PtrPgnMoves = &PtrPgnMoves->children[moveKey[i]];
+
+					childAmount = PtrPgnMoves->children.size();
+				}
+
+				ChessAPI::MakeMove({ m_oldNumX, m_oldNumY }, { MousePos.x , MousePos.y });
+
+				{
+					ChessAPI::GetMovesPgnFormat(PgnMoves);
+					PtrPgnMoves = &PgnMoves;
+
+					for (int i = 1; i < moveKey.size(); i += 2)
+						PtrPgnMoves = &PtrPgnMoves->children[moveKey[i]];
+
+					if (childAmount != PtrPgnMoves->children.size())
+					{
+						ImGui::OpenPopup("New_Variant");
+						ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+					}
 				}
 
 				UpdateBoardValues();
 			}
 			else
 			{
-				m_block[m_oldNumY][m_oldNumX] = m_CapturedPieceIndex;
+				m_block[m_oldNumX][m_oldNumY] = m_CapturedPieceIndex;
 				m_CapturedPieceIndex = 0;
 			}
 		}
@@ -843,9 +867,9 @@ void ImGuiBoard::OnUIRender()
 	{
 		std::vector<int> movePath = ChessAPI::GetMoveIntFormat();
 
-		chess::Pgn_Game::ChessMovesPath curMovesRef;
+		Chess::Pgn_Game::ChessMovesPath curMovesRef;
 		ChessAPI::GetMovesPgnFormat(curMovesRef);
-		chess::Pgn_Game::ChessMovesPath* curMoves = &curMovesRef;
+		Chess::Pgn_Game::ChessMovesPath* curMoves = &curMovesRef;
 
 		for (int i = 1; i < movePath.size(); i++)
 			if (i % 2 == 1)
@@ -913,13 +937,6 @@ void ImGuiBoard::OnUIRender()
 		m_NextMove = false;
 	}
 
-	//check if there multible variations
-	if (ChessAPI::IsNewVariationAdded())
-	{
-		ImGui::OpenPopup("New_Variant");
-		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	}
-
 	//check if a pawn is ready to be promoted
 	if (ChessAPI::IsWaitingForNewType() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
 		ImGui::OpenPopup("New_Piece");
@@ -959,29 +976,57 @@ void ImGuiBoard::RenderPieces()
 
 	float xposition = blockSize;
 	float yposition = blockSize;
-	
-	for (int i = 0; i < 8; i++)
+	if (!m_reverse)
 	{
-		for (int j = 0; j < 8; j++)
+		for (int j = 7; j > -1; --j)
 		{
-			if (m_block[i][j])
+			for (int i = 0; i < 8; ++i)
 			{
-				ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
-				ImGui::Image((ImTextureID)m_pieces[m_block[i][j] - 1]->GetRendererID(), bsize);
-			}
+				if (m_block[i][j])
+				{
+					ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
+					ImGui::Image((ImTextureID)m_pieces[m_block[i][j] - 1]->GetRendererID(), bsize);
+				}
 
-			if (i == m_oldNumY && j == m_oldNumX && m_CapturedPieceIndex != 0)
-			{
-				ImGui::SetCursorPos(
-					ImVec2(xposition - bsize.x / 2 + m_startCursor.x + bsize.x / 2.5f / 2.0f + bsize.x/2.0f - bsize.x / 2.5f
-						, yposition - bsize.y / 2 + m_startCursor.y + bsize.y / 2.5f / 2.0f + bsize.y / 2.0f - bsize.y / 2.5f));
-				ImGui::Image((ImTextureID)m_circleFromStart->GetRendererID(), { bsize.x / 2.5f, bsize.y / 2.5f });
-			}
+				if (i == m_oldNumX && j == m_oldNumY && m_CapturedPieceIndex)
+				{
+					ImGui::SetCursorPos(
+						ImVec2(xposition - bsize.x / 2 + m_startCursor.x + bsize.x / 2.5f / 2.0f + bsize.x / 2.0f - bsize.x / 2.5f
+							, yposition - bsize.y / 2 + m_startCursor.y + bsize.y / 2.5f / 2.0f + bsize.y / 2.0f - bsize.y / 2.5f));
+					ImGui::Image((ImTextureID)m_circleFromStart->GetRendererID(), { bsize.x / 2.5f, bsize.y / 2.5f });
+				}
 
-			xposition += blockSize;
+				xposition += blockSize;
+			}
+			xposition = blockSize;
+			yposition += blockSize;
 		}
-		xposition = blockSize;
-		yposition += blockSize;
+	}
+	else
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			for (int i = 7; i > -1; --i)
+			{
+				if (m_block[i][j])
+				{
+					ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
+					ImGui::Image((ImTextureID)m_pieces[m_block[i][j] - 1]->GetRendererID(), bsize);
+				}
+
+				if (i == m_oldNumX && j == m_oldNumY && m_CapturedPieceIndex)
+				{
+					ImGui::SetCursorPos(
+						ImVec2(xposition - bsize.x / 2 + m_startCursor.x + bsize.x / 2.5f / 2.0f + bsize.x / 2.0f - bsize.x / 2.5f
+							, yposition - bsize.y / 2 + m_startCursor.y + bsize.y / 2.5f / 2.0f + bsize.y / 2.0f - bsize.y / 2.5f));
+					ImGui::Image((ImTextureID)m_circleFromStart->GetRendererID(), { bsize.x / 2.5f, bsize.y / 2.5f });
+				}
+
+				xposition += blockSize;
+			}
+			xposition = blockSize;
+			yposition += blockSize;
+		}
 	}
 }
 
@@ -1072,8 +1117,6 @@ void ImGuiBoard::RenderArrows()
 	}
 }
 
-
-
 void ImGuiBoard::RenderCirclesAtPossibleMoves()
 {
 	ImVec2 bsize = { m_size / 10, m_size / 10 };
@@ -1082,22 +1125,20 @@ void ImGuiBoard::RenderCirclesAtPossibleMoves()
 	float xposition = blockSize;
 	float yposition = blockSize;
 
-	std::vector<vec2<float>> possibleMoves;
-	if (!m_reverse)
-		possibleMoves = ChessAPI::GetPossibleDirections({ m_oldNumX, 7 - m_oldNumY });
-	else
-		possibleMoves = ChessAPI::GetPossibleDirections({ 7 - m_oldNumX, m_oldNumY });
+	std::vector<Chess::Board::Move> possibleMoves;
+	ChessAPI::GetPossibleDirections(m_oldNumX + m_oldNumY * 8, possibleMoves);
+
 	for (auto& move : possibleMoves)
 	{
 		if (!m_reverse)
 		{
-			xposition = (move.x() + m_oldNumX + 1) * blockSize;
-			yposition = (9 -(move.y() +7- m_oldNumY + 1)) * blockSize;
+			xposition = ((move.move + move.index) % 8 + 1) * blockSize;
+			yposition = (8 - (move.move + move.index) / 8) * blockSize;
 		}
 		else
 		{
-			xposition = (9-(move.x() +7 - m_oldNumX + 1)) * blockSize;
-			yposition = (move.y() + m_oldNumY + 1) * blockSize;
+			xposition = (8 - (move.move + move.index) % 8) * blockSize;
+			yposition = ((move.move + move.index) / 8 + 1) * blockSize;
 		}
 
 		ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
@@ -1119,34 +1160,18 @@ ImVec2 ImGuiBoard::FindMousePos()
 	if (ImGui::GetMousePos().y - m_startCursor.y - ImGui::GetWindowPos().y - blockSize / 2 < 0)
 		numY = -1;
 
-	return ImVec2(numX, numY);
+	if (!m_reverse)
+		return ImVec2(numX, 7 - numY);
+
+	return ImVec2(7 - numX, numY);
 }
 
 void ImGuiBoard::UpdateBoardValues()
 {
-	if (!m_reverse)
+	for (int i = 0; i < 8; i++)
 	{
-		int indexID = 0;
-		for (int i = 7; i > -1; i--)
-		{
-			for (int j = 0; j < 8; j++)
-			{
-				m_block[i][j] = ChessAPI::GetBlockID(indexID);
-				indexID++;
-			}
-		}
-	}
-	else
-	{
-		int indexID = 0;
-		for (int i = 0; i < 8; i++)
-		{
-			for (int j = 7; j > -1; j--)
-			{
-				m_block[i][j] = ChessAPI::GetBlockID(indexID);
-				indexID++;
-			}
-		}
+		for (int j = 0; j < 8; j++)
+			m_block[i][j] = ChessAPI::GetBlockID(i + 8 * j);
 	}
 }
 
@@ -1307,12 +1332,12 @@ void ImGuiBoard::EditorPopup()
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		ImVec2 ViewportSize = { viewportPanelSize.x, viewportPanelSize.x };
-		
-		auto editorSize = ImGui::GetWindowWidth() - ImGui::GetCursorPosX() -6 * ImGui::GetStyle().ItemSpacing.x;
+
+		auto editorSize = ImGui::GetWindowWidth() - ImGui::GetCursorPosX() - 6 * ImGui::GetStyle().ItemSpacing.x;
 
 		ImVec2 bsize = { editorSize / 10, editorSize / 10 };
 		float blockSize = editorSize / 9;
-		
+
 		ImVec2 editorStartCursor;
 		editorStartCursor.y = ImGui::GetCursorPosY();
 		editorStartCursor.x = ImGui::GetWindowContentRegionWidth() / 2 - editorSize / 2;
@@ -1328,9 +1353,9 @@ void ImGuiBoard::EditorPopup()
 		float xposition = blockSize;
 		float yposition = blockSize;
 
-		for (int i = 0; i < 8; i++)
+		for (int j = 7; j > -1; --j)
 		{
-			for (int j = 0; j < 8; j++)
+			for (int i = 0; i < 8; ++i)
 			{
 				if (m_Editorblock[i][j])
 				{
@@ -1397,22 +1422,22 @@ void ImGuiBoard::EditorPopup()
 		if (ImGui::GetMousePos().y - editorStartCursor.y - ImGui::GetWindowPos().y - blockSize / 2 < 0)
 			numY = -1;
 
-		ImVec2 MousePos = { (float)numX, (float)numY };
-		
+		ImVec2 MousePos = { (float)numX, 7 - (float)numY };
+
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			if (MousePos.x > -1 && MousePos.y > -1
 				&& MousePos.x < 8 && MousePos.y < 8)
 			{
-				if (pointIndex + 1 == m_Editorblock[MousePos.y][MousePos.x])
-					m_Editorblock[MousePos.y][MousePos.x] = 0;
+				if (pointIndex + 1 == m_Editorblock[MousePos.x][MousePos.y])
+					m_Editorblock[MousePos.x][MousePos.y] = 0;
 				else
-					m_Editorblock[MousePos.y][MousePos.x] = pointIndex + 1;
+					m_Editorblock[MousePos.x][MousePos.y] = pointIndex + 1;
 			}
 		}
 
 		ImGui::SetCursorPos(cursorEnd);
-		
+
 		//ImGui::SeparatorText("Settings");
 		ImGui::Separator();
 		ImGui::Text("Settings:");
@@ -1452,17 +1477,19 @@ void ImGuiBoard::EditorPopup()
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 		if (ImGui::Button("New"))
 		{
-			chess::Pgn_Game gamePgn;
-			chess::chess_entry gameNew(gamePgn);
-			gameNew.run();
-			
-			int indexID = 0;
-			for (int i = 7; i > -1; i--)
+			Chess::Pgn_Game gamePgn;
+			Chess::GameManager gameNew;
+			gameNew.InitPgnGame(gamePgn);
+
+			for (int i = 0; i < 8; i++)
 			{
 				for (int j = 0; j < 8; j++)
 				{
-					m_Editorblock[i][j] = gameNew.get_blockID(vec2<float>(indexID - 8 * (int)(indexID / 8), (int)(indexID / 8)));
-					indexID++;
+					auto id = gameNew.GetPieceID(i + 8 * j);
+
+					int ret = (int)id.type + (id.color == Chess::WHITE ? 0 : 1) * 6 + 1;
+
+					m_Editorblock[i][j] = (id.type != Chess::NONE ? ret : 0);
 				}
 			}
 		}
@@ -1492,13 +1519,13 @@ void ImGuiBoard::EditorPopup()
 				std::string values = " PNBRQKpnbrqk";
 				int boardValue[64];
 
-				int indexBoard = 63;
+				int indexBoard = 0;
 				for (int i = 0; i < 8; i++)
 				{
-					for (int j = 7; j > -1; j--)
+					for (int j = 0; j < 8; j++)
 					{
-						boardValue[indexBoard] = m_Editorblock[i][j];
-						indexBoard--;
+						boardValue[indexBoard] = m_Editorblock[j][i];
+						indexBoard++;
 					}
 				}
 
@@ -1564,15 +1591,13 @@ void ImGuiBoard::EditorPopup()
 				fen += ' ';
 				fen += '1';
 
-				chess_core::board edGame;
-				edGame.set_position(fen);
-
-				return !edGame.ERROR_EXIT;
+				Chess::Board edBoard;
+				return edBoard.NewPosition(fen);
 			};
 
 		static std::string currentFEN;
 		CheckBoard(currentFEN);
-		
+
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.58f, 0.97f, 1.0f));
 
 		ImGui::Text("FEN");
@@ -1597,15 +1622,14 @@ void ImGuiBoard::EditorPopup()
 		if (ImGui::Button("Paste"))
 		{
 			currentFEN = ImGui::GetClipboardText();
-			chess_core::board edGame;
-			edGame.set_position(currentFEN);
+			Chess::Board edBoard;
 
-			if(!edGame.ERROR_EXIT)
+			if (edBoard.NewPosition(currentFEN))
 				OpenEditor(currentFEN);
 			else
 				ImGui::OpenPopup("Error");
 		}
-		
+
 		ImGui::PopStyleColor(3);
 
 		ImGui::Separator();
@@ -1697,22 +1721,22 @@ void ImGuiBoard::EditorPopup()
 		{
 			static std::string s_inputNName = "NewFile.pgn";
 			ImGui::InputText("Name", &s_inputNName);
-		
+
 			ImGui::NewLine();
-		
+
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 			if (ImGui::Button("Create"))
 			{
-				std::filesystem::path nPath = std::filesystem::path()/ "chess_working_directory" / s_inputNName;
+				std::filesystem::path nPath = std::filesystem::path() / "chess_working_directory" / s_inputNName;
 				nPath.replace_extension(".pgn");
-				
+
 				std::string strNPath = nPath.string();
-				
+
 				bool anwser = AppManagerChild::IsChessFileAvail(strNPath);
 
 				if (anwser)
 				{
-					chess::Pgn_File NPgnFile;
+					Chess::Pgn_File NPgnFile;
 					NPgnFile.CreateGame();
 					NPgnFile[0]["FEN"] = s_fen;
 					std::ofstream outfile(strNPath);
@@ -1762,14 +1786,10 @@ void ImGuiBoard::OpenEditor()
 {
 	m_ToOpenEditor = true;
 
-	int indexID = 0;
-	for (int i = 7; i > -1; i--)
+	for (int i = 0; i < 8; i++)
 	{
 		for (int j = 0; j < 8; j++)
-		{
-			m_Editorblock[i][j] = ChessAPI::GetBlockID(indexID);
-			indexID++;
-		}
+			m_Editorblock[i][j] = ChessAPI::GetBlockID(i + 8 * j);
 	}
 }
 
@@ -1777,19 +1797,21 @@ void ImGuiBoard::OpenEditor(const std::string& newFEN)
 {
 	m_ToOpenEditor = true;
 
-	chess::Pgn_Game pgngame;
+	Chess::Pgn_Game pgngame;
 	pgngame["FEN"] = newFEN;
 
-	chess::chess_entry game(pgngame);
-	game.run();
+	Chess::GameManager game;
+	game.InitPgnGame(pgngame);
 
-	int indexID = 0;
-	for (int i = 7; i > -1; i--)
+	for (int i = 0; i < 8; i++)
 	{
 		for (int j = 0; j < 8; j++)
 		{
-			m_Editorblock[i][j] = game.get_blockID(vec2<float>(indexID - 8 * (int)(indexID / 8), (int)(indexID / 8)));
-			indexID++;
+			auto id = game.GetPieceID(i + 8 * j);
+
+			int ret = (int)id.type + (id.color == Chess::WHITE ? 0 : 1) * 6 + 1;
+
+			m_Editorblock[i][j] = (id.type != Chess::NONE ? ret : 0);
 		}
 	}
 }

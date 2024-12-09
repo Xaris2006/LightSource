@@ -54,16 +54,16 @@ public:
 			return;
 		}
 
-		Process s_startProcess(L"start.exe", L"");
+		Process startProcess(L"start.exe", L"");
 		
 		Manager::AppManager::Init();
 		Manager::ToolManager::Init();
 
 		using namespace std::chrono_literals;
 
-		//std::this_thread::sleep_for(2s);
+		std::this_thread::sleep_for(2s);
 
-		s_startProcess.EndProcess();
+		startProcess.EndProcess();
 
 		std::this_thread::sleep_for(200ms);
 

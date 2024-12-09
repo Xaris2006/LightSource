@@ -521,8 +521,39 @@ namespace Panels
 											command += (std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools").u8string();
 											command += "'\"";
 
-											// Execute the command
-											system(command.c_str());
+											STARTUPINFO si = { sizeof(STARTUPINFO) };
+											PROCESS_INFORMATION pi;
+											si.dwFlags = STARTF_USESHOWWINDOW;
+											si.wShowWindow = SW_HIDE;  // This hides the window
+
+											// Create the process
+											if (!CreateProcess(
+												NULL,           // cmd executable
+												(wchar_t*)std::wstring(command.begin(), command.end()).c_str(), // Command line (including arguments)
+												NULL,                        // Process handle not inheritable
+												NULL,                        // Thread handle not inheritable
+												FALSE,                       // Set handle inheritance to FALSE
+												CREATE_NO_WINDOW,            // Do not create a console window
+												NULL,                        // Use parent's environment block
+												NULL,                        // Use parent's starting directory 
+												&si,                         // Pointer to STARTUPINFO structure
+												&pi)                         // Pointer to PROCESS_INFORMATION structure
+												) 
+											{
+												std::cerr << "CreateProcess failed (" << GetLastError() << ").\n";
+												return -1;
+											}
+
+											// Wait until the process completes
+											WaitForSingleObject(pi.hProcess, INFINITE);
+
+											// Close process and thread handles
+											CloseHandle(pi.hProcess);
+											CloseHandle(pi.hThread);
+
+											std::cout << "Command executed successfully." << std::endl;
+
+											return 0;
 
 											std::error_code ec;
 											std::filesystem::remove_all(filename, ec);

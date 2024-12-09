@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <string>
 
-namespace chess
+namespace Chess
 {
 	bool IsFileValidFormat(std::string filepath, std::string format);
 

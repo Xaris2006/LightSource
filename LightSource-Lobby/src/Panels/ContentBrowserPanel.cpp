@@ -8,6 +8,8 @@
 #include <imgui.h>
 #include "misc/cpp/imgui_stdlib.h"
 
+#include "ChessCore/pgn/Pgn.h"
+
 #include <atlstr.h>
 #include <shlobj.h>
 
@@ -486,7 +488,7 @@ namespace Panels {
 
 		for (auto& path : paths)
 		{
-			chess::Pgn_File pgnFile;
+			Chess::Pgn_File pgnFile;
 			
 			std::ifstream infile(path, std::ios::binary);
 			infile >> pgnFile;

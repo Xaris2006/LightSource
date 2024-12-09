@@ -54,7 +54,7 @@
 
 
 
-namespace chess
+namespace Chess
 {
 	class OpeningBook
 	{

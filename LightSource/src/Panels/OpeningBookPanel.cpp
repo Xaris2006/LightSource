@@ -32,9 +32,40 @@ namespace Panels
 			
 		ImGui::PushID("Play");
 		
-		ImGui::Text("Open An Opening Book");
-		ImGui::NewLine();
-		ImGui::Button("Place Here Cob File");
+		ImVec2 textSize = ImGui::CalcTextSize("Load Chess Opening Book (.cob)");
+
+		{
+			float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
+			float availX = ImGui::GetContentRegionAvail().x;
+
+			float offX = (availX - actualSizeX) * 0.5f;
+			if (offX > 0.0f)
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
+		}
+
+		{
+			float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+			float availY = ImGui::GetContentRegionAvail().y;
+
+			float offY = (availY - actualSizeY) * 0.5f;
+			if (offY > 0.0f)
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
+		}
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+
+		if (ImGui::Button("Load Chess Opening Book (.cob)"))
+		{
+			CloseCOBfile();
+			std::string path = Windows::Utils::OpenFile("Chess Opening Book (*.cob)\0*.cob\0");
+			if (!path.empty())
+				OpenCOBfile(path);
+		}
+
+		ImGui::PopID();
+
+		ImGui::PopStyleColor();
+		
 		if (ImGui::BeginDragDropTarget())
 		{
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
@@ -47,16 +78,7 @@ namespace Panels
 			}
 			ImGui::EndDragDropTarget();
 		}
-		ImGui::SameLine();
-		if (ImGui::Button("..."))
-		{
-			CloseCOBfile();
-			std::string path = Windows::Utils::OpenFile("Chess Opening Book (*.cob)\0*.cob\0");
-			if (!path.empty())
-				OpenCOBfile(path);
-		}
-		ImGui::PopID();
-
+				
 		if (!m_cobPath.empty())
 		{
 			ImGui::TextWrapped(m_cobFilename.c_str());
@@ -104,7 +126,7 @@ namespace Panels
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, white);
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, white);
 
-					if (persentage[0] >= 8) { move = mtcs::trans_str(persentage[0]) + "%"; }
+					if (persentage[0] >= 8) { move = std::to_string(persentage[0]) + "%"; }
 					else
 						move = "##1";
 					ImGui::Button(move.c_str(), ImVec2(availx * persentage[0] / 100, 0));
@@ -115,7 +137,7 @@ namespace Panels
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, draw);
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, draw);
 
-					if (persentage[1] >= 8) { move = mtcs::trans_str(persentage[1]) + "%"; }
+					if (persentage[1] >= 8) { move = std::to_string(persentage[1]) + "%"; }
 					else
 						move = "##2";
 					if (persentage[1])
@@ -131,7 +153,7 @@ namespace Panels
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, black);
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, black);
 
-					if (persentage[2] >= 8) { move = mtcs::trans_str(persentage[2]) + "%"; }
+					if (persentage[2] >= 8) { move = std::to_string(persentage[2]) + "%"; }
 					else
 						move = "##3";
 					if (persentage[2])
@@ -148,7 +170,7 @@ namespace Panels
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3, 0.4, 0.5, 1));
 
 					ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - availx);
-					ImGui::Button(("Played " + mtcs::trans_str(moveob.played) + " Times").c_str(), ImVec2(availx, 0));
+					ImGui::Button(("Played " + std::to_string(moveob.played) + " Times").c_str(), ImVec2(availx, 0));
 
 					ImGui::PopStyleColor(3);
 				}
@@ -174,7 +196,7 @@ namespace Panels
 		m_PlayThread = new std::thread(
 			[this, filepath]()
 			{
-				m_OpeningBook = new chess::OpeningBook(filepath);
+				m_OpeningBook = new Chess::OpeningBook(filepath);
 
 				while (true)
 				{
@@ -186,7 +208,7 @@ namespace Panels
 
 					if (m_CurPosition.empty())
 						continue;
-					m_Moves = m_OpeningBook->GetMovesByPosition(m_CurPosition, chess::OpeningBook::MOSTPLAYED);
+					m_Moves = m_OpeningBook->GetMovesByPosition(m_CurPosition, Chess::OpeningBook::MOSTPLAYED);
 				}
 			}
 		);
@@ -214,7 +236,7 @@ namespace Panels
 		return false;
 	}
 
-	std::vector<chess::OpeningBook::MoveOB>& OpeningBookPanel::GetOpeningBookMoves(const chess::OpeningBook::PositionID& posID)
+	std::vector<Chess::OpeningBook::MoveOB>& OpeningBookPanel::GetOpeningBookMoves(const Chess::OpeningBook::PositionID& posID)
 	{
 		if (!m_OpeningBook) { return m_Moves; }
 		m_CurPosition = posID;

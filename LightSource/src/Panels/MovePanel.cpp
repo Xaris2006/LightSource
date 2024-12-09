@@ -99,16 +99,22 @@ namespace Panels
 		{
 			if (ImGui::BeginTabItem("Raw"))
 			{
-				ImGui::NewLine();
+				//ImGui::NewLine();
+
+				//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.7f, 0.7f, 0.7f, 0.6));
+
 				ImGui::BeginChild("##DrawMoves");
 				WriteMove(m_moves, pathmove, 0);
 				ImGui::EndChild();
+				
+				//ImGui::PopStyleColor();
+
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Training"))
 			{
 				auto& curMovePath = ChessAPI::GetMoveIntFormat();
-				chess::Pgn_Game::ChessMovesPath* ptrpgnMovePath = &m_moves;
+				Chess::Pgn_Game::ChessMovesPath* ptrpgnMovePath = &m_moves;
 				for (int i = 1; i < curMovePath.size(); i += 2)
 				{
 					ptrpgnMovePath = &ptrpgnMovePath->children[curMovePath[i]];
@@ -129,7 +135,7 @@ namespace Panels
 		return m_viewPanel;
 	}
 
-	void MovePanel::WriteMove(const chess::Pgn_Game::ChessMovesPath& par, std::vector<int>& pathmove, float extrain)
+	void MovePanel::WriteMove(const Chess::Pgn_Game::ChessMovesPath& par, std::vector<int>& pathmove, float extrain)
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
 		size_t index = 0;
@@ -205,7 +211,16 @@ namespace Panels
 					font = Walnut::Application::GetFont("Bold");
 
 				ImGui::PushFont(font);
-				ImGui::PushID((par.move[i] + mtcs::trans_str(pathmove.size())).c_str());
+
+				std::string id = "";
+
+				for (auto& i : pathmove)
+				{
+					id += std::to_string(i);
+					id += '.';
+				}
+
+				ImGui::PushID(id.c_str());
 
 				ImGui::SameLine();
 				ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 6);
@@ -234,62 +249,15 @@ namespace Panels
 				if (ImGui::BeginPopup(PopupID.c_str()))
 				{
 					if (ImGui::Selectable("Delete Move"))
-					{
 						ChessAPI::DeleteMove(pathmove);
-					}
+
 					if (ImGui::Selectable("Delete Variation"))
-					{
 						ChessAPI::DeleteVariation(pathmove);
-					}
 
 					ImGui::BeginDisabled(pathmove.size() == 1);
 
 					if (ImGui::Selectable("Promote Variation"))
-					{
-						//auto intMovePath = ChessAPI::GetMoveIntFormat();
-						//std::vector<std::string> goMoveStr;
-						//
-						//chess::Pgn_Game::ChessMovesPath StrMovePath;
-						//ChessAPI::GetMovesPgnFormat(StrMovePath);
-						//chess::Pgn_Game::ChessMovesPath* StrMovePathPtr = &StrMovePath;
-						//
-						//for (int i1 = 0; i1 < intMovePath.size(); i1++)
-						//{
-						//	bool last = false;
-						//	if (i1 + 1 == intMovePath.size())
-						//		last = true;
-						//
-						//	int childMove = 0;
-						//
-						//	if (!last)
-						//		childMove = 1 + intMovePath[i1 + 1];
-						//
-						//	for (int j = 0; j < intMovePath[i1] - childMove; j++)
-						//	{
-						//		goMoveStr.emplace_back(StrMovePathPtr->move[j]);
-						//	}
-						//
-						//	if (last && StrMovePathPtr->move[intMovePath[i1]].find("c") == std::string::npos)
-						//		goMoveStr.emplace_back(StrMovePathPtr->move[intMovePath[i1]]);
-						//	else
-						//	{
-						//		i1++;
-						//		
-						//		StrMovePathPtr = &StrMovePathPtr->children[intMovePath[i1]];
-						//	}
-						//}
-
 						ChessAPI::PromoteVariation(pathmove);
-
-						//for (int i2 = 0; i2 < goMoveStr.size(); i2++)
-						//{
-						//	auto index = goMoveStr[i2].find(' ');
-						//	if (index != std::string::npos)
-						//		ChessAPI::GoMoveByStr(std::string(goMoveStr[i2].begin() + index + 1, goMoveStr[i2].end()));
-						//	else
-						//		ChessAPI::GoMoveByStr(goMoveStr[i2]);
-						//}
-					}
 
 					ImGui::EndDisabled();
 

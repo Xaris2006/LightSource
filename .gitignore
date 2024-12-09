@@ -30,3 +30,7 @@
 /bin/Debug-windows-x86_64/Tool/Tool.exe
 /bin/Dist-windows-x86_64/Tool/Tool.exe
 /bin/Release-windows-x86_64/Tool/Tool.exe
+/bin/Dist-windows-x86_64/Tool
+/bin-int
+/vendor/ChessAPI/bin-int
+/vendor/Web/bin-int

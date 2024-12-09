@@ -4,7 +4,7 @@
 
 #include "../../Walnut/vendor/glm/glm/glm.hpp"
 
-#include "ChessCore/vec2/vec2_lib.h"
+#include "ChessCore/GameManager.h"
 #include "ChessCore/pgn/Pgn.h"
 #include "ChessCore/Opening_Book/OpeningBook.h"
 
@@ -16,24 +16,24 @@ namespace ChessAPI
 	std::vector<int>& GetOpenGames();
 	void CloseOpenGame(int index);
 
-	chess::Pgn_File* GetPgnFile();
-	chess::Pgn_Game* GetPgnGame();
+	Chess::Pgn_File* GetPgnFile();
+	Chess::Pgn_Game* GetPgnGame();
 	std::string& GetPgnFilePath();
 	std::string& GetPgnFileName();
 
-	std::vector<std::string>	GetCurPgnLabelNames();
-	std::string&				GetCurPgnLabelValue(const std::string& name);
-	void						GetMovesPgnFormat(chess::Pgn_Game::ChessMovesPath& moves);
-	std::vector<int>&			GetMoveIntFormat();
-	std::string&				GetNote(const std::vector<int>& pathmove);
+	std::vector<std::string>		GetCurPgnLabelNames();
+	std::string&					GetCurPgnLabelValue(const std::string& name);
+	void							GetMovesPgnFormat(Chess::Pgn_Game::ChessMovesPath& moves);
+	std::vector<int>&				GetMoveIntFormat();
+	std::string&					GetNote(const std::vector<int>& pathmove);
 	
 	std::string						GetPieceName(int type);
 	int								GetBlockID(int BlockIndex);
 	
 	bool							GetPlayerColor();
-	std::vector<vec2<float>>		GetPossibleDirections(const vec2<float>& pos);
+	void							GetPossibleDirections(int pos, std::vector<Chess::Board::Move>& moves);
 	std::string						GetFEN();
-	chess::OpeningBook::PositionID	GetFormatedPosition();
+	Chess::OpeningBook::PositionID	GetFormatedPosition();
 
 
 
@@ -51,8 +51,8 @@ namespace ChessAPI
 	void PreviousSavedMove();
 
 	bool IsMoveValid(glm::vec2 pos, glm::vec2 dir);
+	bool MakeMove(glm::vec2 pos, glm::vec2 dir);
 	bool IsBoardChanged();
-	bool IsNewVariationAdded();
 
 	void DeleteMove(std::vector<int>& movepath);
 	void DeleteVariation(std::vector<int>& movepath);
@@ -60,8 +60,4 @@ namespace ChessAPI
 
 	void SetNewPieceType(int type);
 	bool IsWaitingForNewType();
-
-	//void ReverseBoard();
-	//bool GetReverseBoardType();
-
 }

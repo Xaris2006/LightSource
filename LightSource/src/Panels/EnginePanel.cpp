@@ -1,7 +1,7 @@
 #include "EnginePanel.h"
 
 #include "ChessAPI.h"
-#include "ChessCore/chess_entry.h"
+#include "ChessCore/GameManager.h"
 #include "imgui.h"
 #include "../Source/Walnut/Application.h"
 
@@ -118,7 +118,7 @@ namespace Panels
 				CommandChessEngine("stop");
 				CommandChessEngine("setoption name Threads value " + std::to_string(m_threadCount));
 				CommandChessEngine("setoption name Hash value " + std::to_string(m_hashMb));
-				CommandChessEngine("ucinewgame");
+				//CommandChessEngine("ucinewgame");
 
 			}
 			if (ImGui::InputInt("Hash amount", &m_hashMb, 1, 1))
@@ -130,7 +130,7 @@ namespace Panels
 				CommandChessEngine("stop");
 				CommandChessEngine("setoption name Threads value " + std::to_string(m_threadCount));
 				CommandChessEngine("setoption name Hash value " + std::to_string(m_hashMb));
-				CommandChessEngine("ucinewgame");
+				//CommandChessEngine("ucinewgame");
 
 			}
 
@@ -210,7 +210,7 @@ namespace Panels
 		if (ImGui::Button("-", ImVec2(size, size)))
 		{
 			m_lines--;
-			if (m_lines < 1) { m_lines = 1; }
+			if (m_lines < 2) { m_lines = 2; }
 
 			CommandChessEngine("stop");
 			CommandChessEngine("setoption name MultiPV value " + std::to_string(m_lines));
@@ -355,11 +355,11 @@ namespace Panels
 				EngineApp.Write("setoption name Threads value " + std::to_string(m_threadCount));
 				EngineApp.Write("setoption name Hash value " + std::to_string(m_hashMb));
 
-				bool fenUpdated = true;
+				//bool fenUpdated = true;
 				std::string overall;
-				chess::Pgn_Game* pgngame = new chess::Pgn_Game();
-				chess::chess_entry game(*pgngame);
-				game.run();
+				Chess::Pgn_Game* pgngame = new Chess::Pgn_Game();
+				Chess::GameManager game;
+				game.InitPgnGame(*pgngame);
 				while (true)
 				{
 					if (m_EndThread)
@@ -369,58 +369,65 @@ namespace Panels
 						return;
 					}
 
+					//EngineApp.Write("isready");
+
 					overall.clear();
 
-					EngineApp.Write("isready");
+					std::string cur_fen = game.GetFen();
 
 					s_vectorMutex.lock();
+
 					for (auto& command : m_write)
 					{
 						EngineApp.Write(command);
-						if (command.find("position") + 1)
-							fenUpdated = false;
+						int indexFen = command.find("position");
+						if (indexFen != std::string::npos)
+						{
+							cur_fen = std::string(command.begin() + indexFen + 13, command.end());
+							overall.clear();
+							//fenUpdated = false;
+						}
 					}
-					EngineApp.Write("d");
+					//EngineApp.Write("d");
 
 					m_write.clear();
 					s_vectorMutex.unlock();
 
-					std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
+					std::this_thread::sleep_for(std::chrono::milliseconds(500));
 					overall += EngineApp.Read();
+					
+					//std::cout << overall;
 
-					std::string cur_fen = game.GetFEN();
-
-					int indexFen = FindLastOf(overall, "Fen: ");
+					//int indexFen = FindLastOf(overall, "Fen: ");
 					int indexOff = 0;
-					if (!fenUpdated)
-						indexOff = indexFen;
+					//if (!fenUpdated)
+					//	indexOff = indexFen;
 
-					if (indexFen + 5 < overall.size() && indexFen >= 0)
-					{
-						indexFen += 5;
-						std::string fen;
-						for (int j = indexFen; j < overall.size(); j++)
-						{
-							if (overall[j] == '\n' || overall[j] == '\r')
-								break;
-							fen += overall[j];
-						}
-						if (fen != cur_fen)
-						{
-							cur_fen = fen;
-
-							std::scoped_lock(s_moveMutex);
-							for (int list = 0; list < 5; list++)
-							{
-								m_Moves[list].clear();
-								m_Score[list] = 0;
-							}
-
-							//std::cout << fen << " update \n";
-						}
-						fenUpdated = true;
-					}
+					//if (indexFen + 5 < overall.size() && indexFen >= 0)
+					//{
+					//	indexFen += 5;
+					//	std::string fen;
+					//	for (int j = indexFen; j < overall.size(); j++)
+					//	{
+					//		if (overall[j] == '\n' || overall[j] == '\r')
+					//			break;
+					//		fen += overall[j];
+					//	}
+					//	if (fen != cur_fen)
+					//	{
+					//		cur_fen = fen;
+					//
+					//		std::scoped_lock(s_moveMutex);
+					//		for (int list = 0; list < 5; list++)
+					//		{
+					//			m_Moves[list].clear();
+					//			m_Score[list] = 0;
+					//		}
+					//
+					//		//std::cout << fen << " update \n";
+					//	}
+					//	fenUpdated = true;
+					//}
 
 					std::vector<std::string> StockMoveStreams;
 
@@ -524,7 +531,7 @@ namespace Panels
 						}
 
 						index = FindLastOf(overall, " pv ");
-						if (index + 4 < overall.size() && index >= 0 && fenUpdated)
+						if (index + 4 < overall.size() && index >= 0)// && fenUpdated)
 						{
 							//std::cout << index << "  ||  " << indexFen << '\n';
 							index += 4;
@@ -547,10 +554,9 @@ namespace Panels
 								helperVector[MoveIntex] += overall[j];
 							}
 
-
 							pgngame->clear();
 							(*pgngame)["FEN"] = cur_fen;
-							game.rerun(*pgngame);
+							game.InitPgnGame(*pgngame);
 							//std::cout << cur_fen << " while \n";
 
 							int indexhere = 0;
@@ -564,7 +570,7 @@ namespace Panels
 								if ((int)move.find('\r') + 1)
 									move.erase(move.find('\r'));
 
-								vec2<float> pos(move[0] - 'a', move[1] - '1'), dir(move[2] - 'a', move[3] - '1');
+								glm::vec2 pos(move[0] - 'a', move[1] - '1'), dir(move[2] - 'a', move[3] - '1');
 								int n_type = 0;
 								if (move.size() == 5)
 								{
@@ -573,13 +579,15 @@ namespace Panels
 									if (n_type == -1)
 										n_type = 0;
 								}
+
 								//std::cout << game.GetFEN() << '\n';
-								move = game.GetMoveByUCI(move);
-								game.make_new_move(pos, dir - pos);
-								game.SetNewPawnType((chess_core::piece_type_identifier)n_type);
+
+								move = game.ConvertUCIStringToString(move);
+								game.MakeMove(move);
+								
 								indexhere++;
 							}
-							game.Go_Start_Position();
+							game.GoInitialPosition();
 							
 							s_moveMutex.lock();
 							
@@ -588,7 +596,6 @@ namespace Panels
 							
 							s_moveMutex.unlock();
 						}
-						
 					}
 				}
 			}

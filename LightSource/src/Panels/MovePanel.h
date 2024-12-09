@@ -20,12 +20,12 @@ namespace Panels {
 		bool& IsPanelOpen();
 
 	private:
-		void WriteMove(const chess::Pgn_Game::ChessMovesPath& par, std::vector<int>& pathmove, float extrain = 0);
+		void WriteMove(const Chess::Pgn_Game::ChessMovesPath& par, std::vector<int>& pathmove, float extrain = 0);
 
 
 	private:
 		bool m_viewPanel = true;
 
-		chess::Pgn_Game::ChessMovesPath m_moves;
+		Chess::Pgn_Game::ChessMovesPath m_moves;
 	};
 }

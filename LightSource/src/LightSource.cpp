@@ -46,7 +46,7 @@ public:
 
 		if (s_arg.size() > 1)
 		{
-			if (chess::IsFileValidFormat(s_arg[1], ".pgn"))
+			if (Chess::IsFileValidFormat(s_arg[1], ".pgn"))
 			{
 				ChessAPI::OpenChessFile(s_arg[1]);
 				AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
@@ -377,7 +377,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	std::filesystem::current_path(g_AppDirectory);
 #endif
 
-	Walnut::Application* app = new Walnut::Application(g_spec, 237);
+	Walnut::Application* app = new Walnut::Application(g_spec, 237 + 60);
 	std::shared_ptr<ChessLayer> chessLayer = std::make_shared<ChessLayer>();
 	app->PushLayer(chessLayer);
 	app->SetMenubarCallback([app, chessLayer]()
@@ -498,6 +498,9 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			}
 			ImGui::EndMenu();
 		}
+		static int e =1;
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+		ImGui::RadioButton("Board View", &e, 0);
 	});
 	return app;
 }

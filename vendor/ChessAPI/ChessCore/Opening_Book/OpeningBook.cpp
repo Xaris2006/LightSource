@@ -1,13 +1,13 @@
 #include "OpeningBook.h"
 
 #include "../pgn/Pgn.h"
-#include "../chess_entry.h"
+#include "../GameManager.h"
 
 #include <fstream>
 
 
 
-namespace chess
+namespace Chess
 {
 	void OpeningBook::CreateCOBByPGN(const std::string& pgnfilepath, int& status)
 	{
@@ -37,8 +37,8 @@ namespace chess
 		for (int x = 0; x < format_version.size(); x++)
 			buffer.push_back(format_version[x]);
 
-		chess_entry game(pgnfile[0]);
-		game.run();
+		GameManager game;
+		game.InitPgnGame(pgnfile[0]);
 
 		for (int i = 0; i < pgnfile.GetSize(); i++)
 		{
@@ -53,8 +53,7 @@ namespace chess
 			if (pgnfile[i]["FEN"] != "?" && pgnfile[i]["FEN"] != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 				continue;
 
-			
-			game.rerun(pgnfile[i]);
+			game.InitPgnGame(pgnfile[i]);
 			std::string move = "";
 			auto& movestr = game.GetPgnGame().GetMovePathbyRef();
 
@@ -62,13 +61,13 @@ namespace chess
 
 			for (int j = 0; j < movestr.move.size() && j < maxMoves; j++)
 			{
-				game.Go_move_Next();
+				game.GoNextMove();
 			}
 			for (int j = movestr.move.size() - 1 < maxMoves -1 ? movestr.move.size() - 1 : maxMoves-1; j >= 0; j--)
 			{
 				if (movestr.move[j] == "child")
 					continue;
-				pos = game.GetFormatedCurrentPosition();
+				pos = game.GetFormatedFEN();
 				if (move != "")
 				{
 					auto& mapelement = PositionMoveMap[pos];
@@ -96,9 +95,9 @@ namespace chess
 				}
 				strindex = movestr.move[j].find(' ');
 				move = movestr.move[j].substr(strindex + 1, movestr.move[j].size() - strindex + 1);
-				game.Go_move_Back();
+				game.GoPreviusMove();
 			}
-			pos = game.GetFormatedCurrentPosition();
+			pos = game.GetFormatedFEN();
 			if (move != "")
 			{
 				auto& mapelement = PositionMoveMap[pos];
@@ -126,7 +125,7 @@ namespace chess
 		std::string name = pgnfilepath.substr(0, pointformatstart);
 		name += ".cob";
 		
-		for (auto& it = PositionMoveMap.begin(); it != PositionMoveMap.end(); it++)
+		for (std::map<PositionID, std::vector<MoveOB>>::iterator it = PositionMoveMap.begin(); it != PositionMoveMap.end(); ++it)
 		{
 			for (int j = 0; j < it->first.size(); j++)
 			{

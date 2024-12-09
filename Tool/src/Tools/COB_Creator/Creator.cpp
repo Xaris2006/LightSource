@@ -2,7 +2,7 @@
 
 #include "ChessCore/Opening_Book/OpeningBook.h"
 #include "ChessCore/pgn/Pgn.h"
-#include "ChessCore/chess_entry.h"
+#include "ChessCore/GameManager.h"
 
 #include <fstream>
 
@@ -58,8 +58,7 @@ namespace Tools::COBCreator
 		if (founded)
 			return;
 
-		m_files.emplace_back(path);
-		chess::Pgn_File pgnfile;
+		Chess::Pgn_File pgnfile;
 		std::ifstream infile(path, std::ios::binary);
 		infile >> pgnfile;
 		infile.close();
@@ -67,6 +66,7 @@ namespace Tools::COBCreator
 		if (pgnfile.GetSize() == 0)
 			return;
 
+		m_files.emplace_back(path);
 		m_Sizes.emplace_back(pgnfile.GetSize());
 		m_allSize += pgnfile.GetSize();
 	}
@@ -120,7 +120,7 @@ namespace Tools::COBCreator
 		m_buildThread = new std::thread(
 			[&]()
 			{
-				std::unordered_map<chess::OpeningBook::PositionID, std::vector<chess::OpeningBook::MoveOB>, chess::OpeningBook::PositionID_Hash> PositionMoveMap;
+				std::unordered_map<Chess::OpeningBook::PositionID, std::vector<Chess::OpeningBook::MoveOB>, Chess::OpeningBook::PositionID_Hash> PositionMoveMap;
 
 				PositionMoveMap.reserve(m_allSize / 100);
 
@@ -130,19 +130,19 @@ namespace Tools::COBCreator
 
 				for (auto& path : m_files)
 				{
-					chess::Pgn_File pgnfile;
+					Chess::Pgn_File pgnfile;
 					std::ifstream infile(path, std::ios::binary);
 					infile >> pgnfile;
 					infile.close();
 
 					if (!pgnfile.GetSize()) { continue; }
 
-					chess::OpeningBook::PositionID pos;
+					Chess::OpeningBook::PositionID pos;
 					int moveIndex = -1;
 					int strindex;
 
-					chess::chess_entry game(pgnfile[0]);
-					game.run();
+					Chess::GameManager game;
+					game.InitPgnGame(pgnfile[0]);
 
 					for (int i = 0; i < pgnfile.GetSize(); i++)
 					{
@@ -173,22 +173,22 @@ namespace Tools::COBCreator
 						if (pgnfile[i]["FEN"] != "?" && pgnfile[i]["FEN"] != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 							continue;
 
-						game.rerun(pgnfile[i]);
+						game.InitPgnGame(pgnfile[i]);
 						std::string move = "";
 						auto& movestr = game.GetPgnGame().GetMovePathbyRef();
 
-						if (game.GetMovesByData().moves.empty())
+						if (game.GetMovesByStr().move.empty())
 							continue;
 
 						for (int j = 0; j < movestr.move.size() && j < m_maxMoves; j++)
 						{
-							game.Go_move_Next();
+							game.GoNextMove();
 						}
 						for (int j = movestr.move.size() - 1 < m_maxMoves - 1 ? movestr.move.size() - 1 : m_maxMoves - 1; j >= 0; j--)
 						{
 							if (movestr.move[j] == "child")
 								continue;
-							pos = game.GetFormatedCurrentPosition();
+							pos = game.GetFormatedFEN();
 							if (move != "")
 							{
 								auto& mapelement = PositionMoveMap[pos];
@@ -216,9 +216,9 @@ namespace Tools::COBCreator
 							}
 							strindex = movestr.move[j].find(' ');
 							move = movestr.move[j].substr(strindex + 1, movestr.move[j].size() - strindex + 1);
-							game.Go_move_Back();
+							game.GoPreviusMove();
 						}
-						pos = game.GetFormatedCurrentPosition();
+						pos = game.GetFormatedFEN();
 						if (move != "")
 						{
 							auto& mapelement = PositionMoveMap[pos];
