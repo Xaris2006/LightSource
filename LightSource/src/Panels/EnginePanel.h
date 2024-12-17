@@ -28,7 +28,7 @@ namespace Panels {
 	private:
 		void CommandChessEngine(const std::string& command);
 
-		std::vector<std::string> GetBestMoveStr(int list) const;
+		void GetBestMoveStr(int list, std::vector<std::string>& moves) const;
 		int						 GetDepth() const;
 		int						 GetNodesPerSecond() const;
 		std::string				 GetName();

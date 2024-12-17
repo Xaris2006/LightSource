@@ -214,7 +214,11 @@ namespace ChessAPI
 		s_Games[s_ActiveGame] = Chess::GameManager();
 
 		s_Games[s_ActiveGame].InitPgnGame(s_PngFile.operator[](s_ActiveGame));
-		s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
+
+		if(alreadyOpen)
+			GoMoveByIntFormat(s_MovePathIntFormat[s_ActiveGame]);
+		else
+			s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
 	}
 
 	void OverWriteChessFile(const std::string& filepath)
@@ -331,7 +335,6 @@ namespace ChessAPI
 	{
 		s_movePromotion.index = -1;
 
-		s_Games[s_ActiveGame].GoInitialPosition();
 		s_Games[s_ActiveGame].GoToPositionByKey(pathmoves);
 		s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
 	}

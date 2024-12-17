@@ -14,6 +14,8 @@
 #include "../../Walnut/Source/Walnut/Application.h"
 
 extern bool g_AlreadyOpenedModalOpen;
+extern float g_ChessEngineValue;
+extern bool g_ChessEngineOpen;
 
 static std::string s_fen;
 static bool cross = true;
@@ -64,6 +66,7 @@ void ImGuiBoard::OnAttach()
 {
 	m_board[0] = std::make_shared<Walnut::Image>("Resources\\Board\\board.png");
 	m_board[1] = std::make_shared<Walnut::Image>("Resources\\Board\\boardRev.png");
+	m_bar = std::make_shared<Walnut::Image>("Resources\\ChessBar.png");
 
 	m_pieces[0] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_pawn.png");
 	m_pieces[1] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_knight.png");
@@ -771,6 +774,9 @@ void ImGuiBoard::OnUIRender()
 		ImGui::EndDragDropTarget();
 	}
 
+	if (g_ChessEngineOpen)
+		RenderBar();
+
 	if(ShowTags)
 		RenderTags();
 	
@@ -1144,6 +1150,38 @@ void ImGuiBoard::RenderCirclesAtPossibleMoves()
 		ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
 		ImGui::Image((ImTextureID)m_circleToEnd->GetRendererID(), bsize);
 	}
+}
+
+void ImGuiBoard::RenderBar()
+{
+	float barSize = m_size / 1.3f;
+	float boxSize = barSize / 10.0f;
+
+	float zero = barSize / 2.0f - barSize * 0.076f;
+
+	float plusOne = zero / 5.0f;
+
+	static float barValue = zero;
+
+	barValue += ((zero + std::max(-5.0f, std::min(g_ChessEngineValue, 5.0f)) * plusOne - barValue) / ImGui::GetIO().Framerate);
+
+	ImVec2 bottomRight = ImVec2(ImGui::GetWindowPos().x + m_startCursor.x - m_size / (14.0f * 2.0f),
+		ImGui::GetWindowPos().y + m_startCursor.y + barSize + barSize * 0.076f);
+
+	ImVec2 topLeft = ImVec2(bottomRight.x - boxSize, bottomRight.y - barValue);
+
+	//white bar
+	{
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		ImU32 color = IM_COL32(185, 185, 185, 255);
+		draw_list->AddRectFilled(topLeft, bottomRight, color);
+	}
+
+	ImGui::SetCursorPos(
+		ImVec2(m_startCursor.x - barSize / 2.0f - m_size / 14.0f,
+			m_startCursor.y + (m_size - barSize) / 2.0f));
+
+	ImGui::Image((ImTextureID)m_bar->GetRendererID(), { barSize, barSize });
 }
 
 ImVec2 ImGuiBoard::FindMousePos()
@@ -1642,10 +1680,16 @@ void ImGuiBoard::EditorPopup()
 			std::string fen;
 			if (CheckBoard(fen))
 			{
+				std::vector<int> startPosition = { -1 };
+				ChessAPI::GoMoveByIntFormat(startPosition);
+
 				auto& PgnGame = *ChessAPI::GetPgnGame();
 				PgnGame.clear();
 				PgnGame["FEN"] = fen;
-				ChessAPI::OverWriteChessFile("");
+
+				//ChessAPI::OverWriteChessFile("");
+
+				ChessAPI::OpenChessGameInFile(ChessAPI::GetActiveGame());
 
 				ImGui::CloseCurrentPopup();
 				ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = false;
@@ -1666,7 +1710,10 @@ void ImGuiBoard::EditorPopup()
 				auto& PgnGame = *ChessAPI::GetPgnGame();
 				PgnGame.clear();
 				PgnGame["FEN"] = fen;
-				ChessAPI::OverWriteChessFile("");
+				
+				//ChessAPI::OverWriteChessFile("");
+
+				ChessAPI::OpenChessGameInFile(ChessAPI::GetActiveGame());
 
 				ImGui::CloseCurrentPopup();
 				ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = false;

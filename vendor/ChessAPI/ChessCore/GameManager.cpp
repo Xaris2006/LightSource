@@ -53,7 +53,7 @@ namespace Chess
 	{
 		if (moveKey.size() == 1 && moveKey[0] == -1)
 			return m_pgnGame->GetFirstNote();
-
+			
 		auto currentPath = &m_pgnGame->GetMovePathbyRef();
 
 		for (int i = 1; i < moveKey.size(); i += 2)
@@ -94,6 +94,9 @@ namespace Chess
 		MoveData moveD;
 		ConvertMoveToMoveData(move, moveD, promotedType);
 
+		if(moveD.pieceToMove == NONE)
+			return Board::ERROR;
+
 		std::string strmove;
 		ConvertMoveDataToString(moveD, strmove);
 
@@ -107,10 +110,13 @@ namespace Chess
 
 	Board::MakeMoveStatus GameManager::MakeMove(const std::string& move)
 	{
+		if(move.empty())
+			return Board::ERROR;
+
 		MoveData moveD;
 		ConvertStringToMoveData(move, moveD);
 
-		if (!m_Board.IsMoveValid(moveD.move))
+		if (!m_Board.IsMoveValid(moveD.move) || moveD.pieceToMove == NONE)
 			return Board::ERROR;
 		
 		auto ret = m_Board.MakeMove(moveD.move, moveD.piecePromote);
@@ -504,6 +510,9 @@ namespace Chess
 					if (pi / 8 == move.move.index / 8)
 						showIndexX = true;
 				}
+
+				if (!showIndexX && !showIndexY)
+					showIndexX = true;
 			}
 
 			if (showIndexX)
@@ -529,6 +538,9 @@ namespace Chess
 			strmove += '+';
 		else if(kingSecurity == Board::CHECKED)
 			strmove += '#';
+
+		if (move.pieceToMove == NONE)
+			strmove = "";
 	}
 
 	void GameManager::ConvertStringToMoveData(const std::string& strmove, MoveData& move) const
@@ -603,7 +615,7 @@ namespace Chess
 
 		if (possibleIndexMoves.size() != 1)
 		{
-			int strHelperIndex = typeToMove == PAWN ? 0 : 1;
+			int strHelperIndex = (typeToMove == PAWN ? 0 : 1) + startIndex;
 			int helperIndexX = -1;
 			int helperIndexY = -1;
 
@@ -658,6 +670,7 @@ namespace Chess
 		if (possibleIndexMoves.empty())
 		{
 			//something bad happened
+			move.pieceToMove = NONE;
 			return;
 		}
 

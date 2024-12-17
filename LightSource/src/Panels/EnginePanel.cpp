@@ -14,6 +14,10 @@
 
 #include "../windowsMain.h"
 
+//for Bar
+float g_ChessEngineValue;
+bool g_ChessEngineOpen;
+
 static std::mutex s_vectorMutex;
 static std::mutex s_moveMutex;
 
@@ -89,9 +93,9 @@ namespace Panels
 		}
 
 		m_viewPanel = IsEngineOpen();
+		g_ChessEngineOpen = m_viewPanel;
 		if (!m_viewPanel)
 			return;
-
 
 		ImGui::Begin("Chess Engine", &m_viewPanel);
 		
@@ -172,6 +176,9 @@ namespace Panels
 		else
 			ImGui::TextWrapped("%.2f", m_Score[0]);
 
+		if (!ImGui::IsKeyDown(ImGuiKey_LeftArrow) && !ImGui::IsKeyDown(ImGuiKey_RightArrow))
+			g_ChessEngineValue = m_Score[0];
+
 		ImGui::PopFont();
 		ImGui::PopStyleColor();
 
@@ -243,14 +250,16 @@ namespace Panels
 
 			ImGui::PopStyleColor();
 
-			std::vector<std::string> EngineMoves = GetBestMoveStr(i);
+			std::vector<std::string> EngineMoves;
+			GetBestMoveStr(i, EngineMoves);
+			
 			int index = 0;
 			for (int j = 0; j < EngineMoves.size() && m_running; j++)
 			{
 				ImGui::SameLine();
 
-				//if (EngineMoves[j].empty())
-				//	__debugbreak();
+				if (EngineMoves[j].empty())
+					break;
 
 				ImGui::PushID((EngineMoves[j] + std::to_string(i*10 + j)).c_str());
 
@@ -369,12 +378,12 @@ namespace Panels
 						return;
 					}
 
-					//EngineApp.Write("isready");
-
 					overall.clear();
 
 					std::string cur_fen = game.GetFen();
 
+					EngineApp.Write("isready");
+					
 					s_vectorMutex.lock();
 
 					for (auto& command : m_write)
@@ -385,49 +394,16 @@ namespace Panels
 						{
 							cur_fen = std::string(command.begin() + indexFen + 13, command.end());
 							overall.clear();
-							//fenUpdated = false;
 						}
 					}
-					//EngineApp.Write("d");
 
 					m_write.clear();
 					s_vectorMutex.unlock();
 
-					std::this_thread::sleep_for(std::chrono::milliseconds(500));
+					std::this_thread::sleep_for(std::chrono::milliseconds(250));
 					overall += EngineApp.Read();
 					
-					//std::cout << overall;
-
-					//int indexFen = FindLastOf(overall, "Fen: ");
 					int indexOff = 0;
-					//if (!fenUpdated)
-					//	indexOff = indexFen;
-
-					//if (indexFen + 5 < overall.size() && indexFen >= 0)
-					//{
-					//	indexFen += 5;
-					//	std::string fen;
-					//	for (int j = indexFen; j < overall.size(); j++)
-					//	{
-					//		if (overall[j] == '\n' || overall[j] == '\r')
-					//			break;
-					//		fen += overall[j];
-					//	}
-					//	if (fen != cur_fen)
-					//	{
-					//		cur_fen = fen;
-					//
-					//		std::scoped_lock(s_moveMutex);
-					//		for (int list = 0; list < 5; list++)
-					//		{
-					//			m_Moves[list].clear();
-					//			m_Score[list] = 0;
-					//		}
-					//
-					//		//std::cout << fen << " update \n";
-					//	}
-					//	fenUpdated = true;
-					//}
 
 					std::vector<std::string> StockMoveStreams;
 
@@ -531,9 +507,8 @@ namespace Panels
 						}
 
 						index = FindLastOf(overall, " pv ");
-						if (index + 4 < overall.size() && index >= 0)// && fenUpdated)
+						if (index + 4 < overall.size() && index >= 0)
 						{
-							//std::cout << index << "  ||  " << indexFen << '\n';
 							index += 4;
 							int MoveIntex = 0;
 
@@ -557,7 +532,6 @@ namespace Panels
 							pgngame->clear();
 							(*pgngame)["FEN"] = cur_fen;
 							game.InitPgnGame(*pgngame);
-							//std::cout << cur_fen << " while \n";
 
 							int indexhere = 0;
 							for (auto& move : helperVector)
@@ -580,11 +554,15 @@ namespace Panels
 										n_type = 0;
 								}
 
-								//std::cout << game.GetFEN() << '\n';
-
 								move = game.ConvertUCIStringToString(move);
-								game.MakeMove(move);
-								
+			
+#undef ERROR
+								if (game.MakeMove(move) == Chess::Board::ERROR)
+								{
+									helperVector.resize(indexhere);
+									break;
+								}
+
 								indexhere++;
 							}
 							game.GoInitialPosition();
@@ -645,18 +623,18 @@ namespace Panels
 		return (bool)m_processThread;
 	}
 
-	std::vector<std::string> EnginePanel::GetBestMoveStr(int list) const
+	void EnginePanel::GetBestMoveStr(int list, std::vector<std::string>& moves) const
 	{
-		if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_RightArrow))
-			return std::vector<std::string>();
+		moves.clear();
+
+		if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_RightArrow))			
+			return;
 
 		s_moveMutex.lock();
-
-		std::vector<std::string> rv = m_Moves[list];
-
+		
+		moves = m_Moves[list];
+		
 		s_moveMutex.unlock();
-
-		return rv;
 	}
 
 	int EnginePanel::GetDepth() const

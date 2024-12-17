@@ -27,12 +27,12 @@ public:
 	bool ShowArrows = true;
 
 private:
-
 	void RenderBoard();
 	void RenderPieces();
 	void RenderTags();
 	void RenderArrows();
 	void RenderCirclesAtPossibleMoves();
+	void RenderBar();
 
 	ImVec2 FindMousePos();
 	void  UpdateBoardValues();
@@ -53,6 +53,8 @@ private:
 	bool m_reverse = false;
 	std::shared_ptr<Walnut::Image> m_board[2];
 	std::shared_ptr<Walnut::Image> m_pieces[12];
+	std::shared_ptr<Walnut::Image> m_bar;
+
 	
 	std::shared_ptr<Walnut::Image> m_circleFromStart;
 	std::shared_ptr<Walnut::Image> m_circleToEnd;
