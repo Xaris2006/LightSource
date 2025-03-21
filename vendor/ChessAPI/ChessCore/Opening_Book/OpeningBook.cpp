@@ -12,7 +12,7 @@ namespace Chess
 	void OpeningBook::CreateCOBByPGN(const std::string& pgnfilepath, int& status)
 	{
 		if (!IsFileValidFormat(pgnfilepath, ".pgn")) { return; }
-		Pgn_File pgnfile;
+		PgnFile pgnfile;
 		std::ifstream infile(pgnfilepath, std::ios::binary);
 		infile >> pgnfile;
 		infile.close();
@@ -47,13 +47,15 @@ namespace Chess
 			if (status < 1)
 				status = 1;
 
-			if (pgnfile[i].GetResault() == "*")
+			auto& pgnGame = pgnfile[i];
+
+			if (pgnGame.GetResault() == "*")
 				continue;
 
-			if (pgnfile[i]["FEN"] != "?" && pgnfile[i]["FEN"] != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+			if (pgnGame["FEN"] != "?" && pgnGame["FEN"] != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 				continue;
 
-			game.InitPgnGame(pgnfile[i]);
+			game.InitPgnGame(pgnGame);
 			std::string move = "";
 			auto& movestr = game.GetPgnGame().GetMovePathbyRef();
 
@@ -87,9 +89,9 @@ namespace Chess
 
 					auto& cur_move = mapelement[moveIndex];
 					cur_move.played += 1;
-					if (pgnfile[i].GetResault() == "1-0")
+					if (pgnGame.GetResault() == "1-0")
 						cur_move.whitewins += 1;
-					else if (pgnfile[i].GetResault() == "0-1")
+					else if (pgnGame.GetResault() == "0-1")
 						cur_move.blackwins += 1;
 					moveIndex = -1;
 				}
@@ -113,9 +115,9 @@ namespace Chess
 
 				auto& cur_move = mapelement[moveIndex];
 				cur_move.played += 1;
-				if (pgnfile[i].GetResault() == "1-0")
+				if (pgnGame.GetResault() == "1-0")
 					cur_move.whitewins += 1;
-				else if (pgnfile[i].GetResault() == "0-1")
+				else if (pgnGame.GetResault() == "0-1")
 					cur_move.blackwins += 1;
 				moveIndex = -1;
 			}

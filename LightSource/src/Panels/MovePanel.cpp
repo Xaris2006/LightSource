@@ -94,6 +94,8 @@ namespace Panels
 		std::vector<int> pathmove;
 		pathmove.push_back(-1);
 
+		if (!ImGui::IsAnyItemHovered())
+			m_HoveredMove.clear();
 
 		if (ImGui::BeginTabBar("movebar"))
 		{
@@ -104,7 +106,13 @@ namespace Panels
 				//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.7f, 0.7f, 0.7f, 0.6));
 
 				ImGui::BeginChild("##DrawMoves");
+
+				//style.FrameRounding = 0.0f;
+				//style.GrabRounding = 0.0f;
 				WriteMove(m_moves, pathmove, 0);
+				//style.FrameRounding = 6.0f;
+				//style.GrabRounding = 6.0f;
+				
 				ImGui::EndChild();
 				
 				//ImGui::PopStyleColor();
@@ -114,7 +122,7 @@ namespace Panels
 			if (ImGui::BeginTabItem("Training"))
 			{
 				auto& curMovePath = ChessAPI::GetMoveIntFormat();
-				Chess::Pgn_Game::ChessMovesPath* ptrpgnMovePath = &m_moves;
+				Chess::PgnGame::ChessMovesPath* ptrpgnMovePath = &m_moves;
 				for (int i = 1; i < curMovePath.size(); i += 2)
 				{
 					ptrpgnMovePath = &ptrpgnMovePath->children[curMovePath[i]];
@@ -126,6 +134,10 @@ namespace Panels
 			ImGui::EndTabBar();
 		}
 
+		//for (auto& i : m_HoveredMove)
+		//	std::cout << i << ' ';
+		//std::cout << '\n';
+
 		ImGui::End();
 		
 	}
@@ -135,7 +147,7 @@ namespace Panels
 		return m_viewPanel;
 	}
 
-	void MovePanel::WriteMove(const Chess::Pgn_Game::ChessMovesPath& par, std::vector<int>& pathmove, float extrain)
+	void MovePanel::WriteMove(const Chess::PgnGame::ChessMovesPath& par, std::vector<int>& pathmove, float extrain)
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
 		size_t index = 0;
@@ -158,13 +170,33 @@ namespace Panels
 				ImGui::NewLine();
 				ImGui::SameLine();
 
+				bool IsBlue = false;
+				auto hovered = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+				if (hovered.x == 0.2)
+				{
+					IsBlue = true;
+					ImGui::PopStyleColor();
+				}
+
 				ImGui::Text("[ ");
+				
+				if (!IsBlue)
+				{
+					if (ImGui::IsItemHovered())
+						hovered = ImVec4(0.2, 0.3, 0.8, 1);
+					ImGui::PushStyleColor(ImGuiCol_Text, hovered);
+				}
 
 				WriteMove(par.children[index], pathmove, extrain + 20);
 
 				ImGui::SameLine();
 
 				ImGui::Text("] ");
+
+				if(IsBlue)
+					ImGui::PushStyleColor(ImGuiCol_Text, hovered);
+				else
+					ImGui::PopStyleColor();
 
 				ImGui::SetCursorPosX(prevCursotPosX + extrain);
 				ImGui::NewLine();
@@ -192,9 +224,9 @@ namespace Panels
 
 				if (extrain)
 				{
-					red = 1 * (1 - extrain / 100);
-					green = 1 * (1 - extrain / 100);
-					blue = 224 / 256 * (1 - extrain / 100);
+					red = 1 * (1 - 20 / 100);
+					green = 1 * (1 - 20 / 100);
+					blue = 224 / 256 * (1 - 20 / 100);
 					alfa = 0.4;
 				}
 
@@ -204,12 +236,17 @@ namespace Panels
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(red, green, blue, alfa));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(red, green, blue, 0));
 
+				auto hovered = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+				if (pathmove == m_HoveredMove)
+					hovered = ImVec4(0.2, 0.3, 0.8, 1);
+				
+				ImGui::PushStyleColor(ImGuiCol_Text, hovered);
 
 				auto io = ImGui::GetIO();
 				ImFont* font = io.FontDefault;
 				if (!par.parent)
 					font = Walnut::Application::GetFont("Bold");
-
+				
 				ImGui::PushFont(font);
 
 				std::string id = "";
@@ -231,13 +268,14 @@ namespace Panels
 				}
 				if(pathmove == ChessAPI::GetMoveIntFormat() && ChessAPI::IsBoardChanged() == true)
 					ImGui::SetScrollHereY();
-					
+				if (ImGui::IsItemHovered())
+					m_HoveredMove = pathmove;
 
 				totalsize += ImGui::GetItemRectSize().x + 5;
 
 				ImGui::PopID();
 				ImGui::PopFont();
-				ImGui::PopStyleColor(3);
+				ImGui::PopStyleColor(4);
 				
 				std::string PopupID = "MovePopup";
 				for (auto& i : pathmove)

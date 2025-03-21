@@ -27,7 +27,6 @@ namespace Manager
 			std::string Ask = "";
 		};
 
-
 		void CreateApp(std::string cmd);
 	
 	private:
@@ -38,7 +37,8 @@ namespace Manager
 		std::thread* m_CheckingThread = nullptr;
 		std::atomic<bool> m_EndThread = false;
 
-		std::unordered_map<int, std::filesystem::path> m_OpenedPaths;
+		std::unordered_map<int, size_t> m_OpenedPaths;
+		//std::unordered_map<int, std::filesystem::path> m_OpenedPaths;
 		std::vector<Command> m_Commands;
 
 		bool m_AddApp = false;

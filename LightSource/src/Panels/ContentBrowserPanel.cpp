@@ -223,7 +223,7 @@ namespace Panels {
 
 						if (anwser)
 						{
-							AppManagerChild::OpenChessFile(path);
+							AppManagerChild::OpenChessFileInOtherApp(path);
 						}
 						else
 						{

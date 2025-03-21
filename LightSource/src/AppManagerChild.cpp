@@ -7,6 +7,10 @@
 #include <iostream>
 #include <chrono>
 
+#include "ChessCore/pgn/PgnFile.h"
+
+static Chess::PgnFile::PgnPath_Hash s_Hasher;
+
 namespace AppManagerChild
 {
 	void Init()
@@ -80,7 +84,7 @@ namespace AppManagerChild
 
 #endif // !WL_DIST
 
-		std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << path << ":Path \n";
+		std::cerr << "App: " << std::this_thread::get_id() << " - *Ask Path:" << s_Hasher(path) << ":Path \n";
 		std::string anwser;
 		std::cin >> anwser;
 		if (anwser == "Accept")
@@ -91,9 +95,9 @@ namespace AppManagerChild
 		return false;
 	}
 
-	void OpenChessFile(const std::filesystem::path& path)
+	void OpenChessFileInOtherApp(const std::filesystem::path& path)
 	{
-
+		std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << path.u8string() << ":Path \n";
 #ifndef WL_DIST
 
 		return;
@@ -107,7 +111,7 @@ namespace AppManagerChild
 			return;
 		}
 
-		std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << path << ":Path \n";
+		std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << s_Hasher(path) << ":Path \n";
 	}
 
 	void OwnChessFile(const std::filesystem::path& path)
@@ -119,6 +123,6 @@ namespace AppManagerChild
 
 #endif // !WL_DIST
 
-		std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << path << ":Path \n";
+		std::cerr << "App: " << std::this_thread::get_id() << " - *File Path:" << s_Hasher(path) << ":Path \n";
 	}
 }

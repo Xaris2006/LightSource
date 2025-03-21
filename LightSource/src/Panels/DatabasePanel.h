@@ -13,6 +13,7 @@ namespace Panels {
 	{
 	public:
 		DatabasePanel();
+		~DatabasePanel() { delete m_searchSetting; m_searchSetting = nullptr; }
 
 		void Reset();
 
@@ -23,15 +24,16 @@ namespace Panels {
 		std::string m_filePath;
 
 		std::array<std::pair<float, float>, 7> m_columnsSettings;
-		std::map<std::string, std::string> m_searchSetting;
+		std::map<std::string, std::string>* m_searchSetting = nullptr;
 		bool m_name_white = true;
 		bool m_name_black = true;
 		std::string m_name_to_search;
 		std::string m_eco_to_search;
 		std::vector<std::string> m_ecoItems;
 		std::string m_date_to_search;
-		std::vector<int> m_search_resualt;
 		int m_lastPointedRow = 0;
+
+		std::vector<bool*> m_IsOpened;
 
 		std::vector<std::string> m_important_prop = {
 			"White",    "Black",

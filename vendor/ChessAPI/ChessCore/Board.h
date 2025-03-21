@@ -23,7 +23,7 @@ namespace Chess
 
 		enum MakeMoveStatus
 		{
-			ERROR = 0,
+			MOVEERROR = 0,
 			SUCCESS,
 			PROMOTION
 		};
@@ -64,7 +64,7 @@ namespace Chess
 		Color GetPieceColor(int indexX, int indexY) const;
 		Color GetPlayerToPlayColor() const { return m_PlayerToPlay; }
 
-		KingStatus GetKingStatus(Color playerColor) const;
+		KingStatus GetKingStatus() const;
 
 		MakeMoveStatus MakeMove(Move move, Piece piecePromotion = NONE);
 		bool IsMoveValid(Move move) const;

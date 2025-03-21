@@ -58,10 +58,8 @@ namespace Tools::COBCreator
 		if (founded)
 			return;
 
-		Chess::Pgn_File pgnfile;
-		std::ifstream infile(path, std::ios::binary);
-		infile >> pgnfile;
-		infile.close();
+		Chess::PgnFile pgnfile;
+		pgnfile.OpenFile(path);
 
 		if (pgnfile.GetSize() == 0)
 			return;
@@ -112,7 +110,6 @@ namespace Tools::COBCreator
 		if (m_buildThread)
 			return;
 
-
 		m_controrThread = 0;
 		m_status = Status::Building;
 		m_threadEnded = false;
@@ -130,10 +127,8 @@ namespace Tools::COBCreator
 
 				for (auto& path : m_files)
 				{
-					Chess::Pgn_File pgnfile;
-					std::ifstream infile(path, std::ios::binary);
-					infile >> pgnfile;
-					infile.close();
+					Chess::PgnFile pgnfile;
+					pgnfile.OpenFile(path);
 
 					if (!pgnfile.GetSize()) { continue; }
 

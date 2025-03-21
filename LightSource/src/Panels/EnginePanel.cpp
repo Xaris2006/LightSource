@@ -93,7 +93,6 @@ namespace Panels
 		}
 
 		m_viewPanel = IsEngineOpen();
-		g_ChessEngineOpen = m_viewPanel;
 		if (!m_viewPanel)
 			return;
 
@@ -109,6 +108,10 @@ namespace Panels
 		//End-Title
 
 		//Settings
+
+		static bool barCheckBox = false;
+		barCheckBox = g_ChessEngineOpen;
+
 		if (ImGui::TreeNode("Settings"))
 		{
 			ImGui::NewLine();
@@ -137,10 +140,15 @@ namespace Panels
 				//CommandChessEngine("ucinewgame");
 
 			}
+			
+			ImGui::Checkbox("Evaluation Bar", &barCheckBox);
 
 			ImGui::TreePop();
 		}
 		ImGui::Separator();
+
+		g_ChessEngineOpen = barCheckBox;
+
 		//End-Settings
 
 
@@ -217,7 +225,7 @@ namespace Panels
 		if (ImGui::Button("-", ImVec2(size, size)))
 		{
 			m_lines--;
-			if (m_lines < 2) { m_lines = 2; }
+			if (m_lines < 1) { m_lines = 1; }
 
 			CommandChessEngine("stop");
 			CommandChessEngine("setoption name MultiPV value " + std::to_string(m_lines));
@@ -331,6 +339,7 @@ namespace Panels
 		if (IsEngineOpen())
 			CloseEngine();
 
+		g_ChessEngineOpen = true;
 		m_running = true;
 
 		m_processThread = new std::thread(
@@ -364,17 +373,18 @@ namespace Panels
 				EngineApp.Write("setoption name Threads value " + std::to_string(m_threadCount));
 				EngineApp.Write("setoption name Hash value " + std::to_string(m_hashMb));
 
+				std::vector<std::string> StockMoveStreams;
+
 				//bool fenUpdated = true;
 				std::string overall;
-				Chess::Pgn_Game* pgngame = new Chess::Pgn_Game();
+				Chess::PgnGame pgngame;
 				Chess::GameManager game;
-				game.InitPgnGame(*pgngame);
+				game.InitPgnGame(pgngame);
 				while (true)
 				{
 					if (m_EndThread)
 					{
 						EngineApp.Write("quit");
-						delete pgngame;
 						return;
 					}
 
@@ -405,7 +415,7 @@ namespace Panels
 					
 					int indexOff = 0;
 
-					std::vector<std::string> StockMoveStreams;
+					StockMoveStreams.clear();
 
 					while (indexOff != std::string::npos && indexOff < overall.size())
 					{
@@ -418,8 +428,8 @@ namespace Panels
 
 						std::string stream = overall.substr(indexStart, indexEnd - indexStart);
 						
-						if(stream.find("multipv") != std::string::npos)
-							StockMoveStreams.push_back(stream);
+						if(stream.find("score") != std::string::npos)
+							StockMoveStreams.emplace_back(stream);
 
 						indexOff = indexEnd;
 					}
@@ -432,8 +442,15 @@ namespace Panels
 
 					for (int i = 0; i < StockMoveStreams.size(); i++)
 					{
-						int indexList = StockMoveStreams[i].find("multipv") + 8;
-						m_FinalStreams[int(StockMoveStreams[i][indexList]) - 49] = i;
+						int indexList = StockMoveStreams[i].find("multipv");
+
+						if (indexList == std::string::npos)
+						{
+							m_FinalStreams[0] = i;
+							continue;
+						}
+
+						m_FinalStreams[int(StockMoveStreams[i][indexList + 8]) - 49] = i;
 					}
 
 					for(int list = 0; list < 5; list++)
@@ -529,9 +546,9 @@ namespace Panels
 								helperVector[MoveIntex] += overall[j];
 							}
 
-							pgngame->clear();
-							(*pgngame)["FEN"] = cur_fen;
-							game.InitPgnGame(*pgngame);
+							pgngame.Clear();
+							pgngame["FEN"] = cur_fen;
+							game.InitPgnGame(pgngame);
 
 							int indexhere = 0;
 							for (auto& move : helperVector)
@@ -556,8 +573,7 @@ namespace Panels
 
 								move = game.ConvertUCIStringToString(move);
 			
-#undef ERROR
-								if (game.MakeMove(move) == Chess::Board::ERROR)
+								if (game.MakeMove(move) == Chess::Board::MOVEERROR)
 								{
 									helperVector.resize(indexhere);
 									break;
@@ -585,6 +601,7 @@ namespace Panels
 		if (!IsEngineOpen())
 			return;
 
+		g_ChessEngineOpen = false;
 		m_EndThread = true;
 		m_processThread->join();
 		delete m_processThread;

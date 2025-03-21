@@ -144,7 +144,8 @@ void ImGuiBoard::OnUIRender()
 			if (opened.size() == 1)
 				crossAddress = nullptr;
 
-			if (ImGui::BeginTabItem((std::to_string(opened[n] + 1) + ": " + ChessAPI::GetPgnFile()->operator[](opened[n])["White"] + " - " + ChessAPI::GetPgnFile()->operator[](opened[n])["Black"]).c_str(),
+			//rewrite
+			if (ImGui::BeginTabItem((std::to_string(opened[n] + 1) + ": " + (*ChessAPI::GetPgnFile())[opened[n]]["White"] + " - " + (*ChessAPI::GetPgnFile())[opened[n]]["Black"]).c_str(),
 				crossAddress, ImGuiTabItemFlags_None))
 				activeTab = true;
 			
@@ -173,8 +174,9 @@ void ImGuiBoard::OnUIRender()
 	if (tabRemove != -1)
 	{
 		if (ChessAPI::GetActiveGame() == opened[tabRemove])
-			ChessAPI::OpenChessGameInFile(opened[0]);
-		opened.erase(opened.begin() + tabRemove);
+			ChessAPI::OpenChessGameInFile(opened[(0 == tabRemove ? 1 : 0)]);
+	
+		ChessAPI::CloseOpenGame(tabRemove);
 		tabRemove = -1;
 	}
 
@@ -824,8 +826,8 @@ void ImGuiBoard::OnUIRender()
 				m_CapturedPieceIndex = 0;
 
 				//checking for new variation
-				Chess::Pgn_Game::ChessMovesPath PgnMoves;
-				Chess::Pgn_Game::ChessMovesPath* PtrPgnMoves;
+				Chess::PgnGame::ChessMovesPath PgnMoves;
+				Chess::PgnGame::ChessMovesPath* PtrPgnMoves;
 				int childAmount = 0;
 				auto moveKey = ChessAPI::GetMoveIntFormat();
 
@@ -873,9 +875,9 @@ void ImGuiBoard::OnUIRender()
 	{
 		std::vector<int> movePath = ChessAPI::GetMoveIntFormat();
 
-		Chess::Pgn_Game::ChessMovesPath curMovesRef;
+		Chess::PgnGame::ChessMovesPath curMovesRef;
 		ChessAPI::GetMovesPgnFormat(curMovesRef);
-		Chess::Pgn_Game::ChessMovesPath* curMoves = &curMovesRef;
+		Chess::PgnGame::ChessMovesPath* curMoves = &curMovesRef;
 
 		for (int i = 1; i < movePath.size(); i++)
 			if (i % 2 == 1)
@@ -1515,7 +1517,7 @@ void ImGuiBoard::EditorPopup()
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1, 0.7, 0.1, 0.65));
 		if (ImGui::Button("New"))
 		{
-			Chess::Pgn_Game gamePgn;
+			Chess::PgnGame gamePgn;
 			Chess::GameManager gameNew;
 			gameNew.InitPgnGame(gamePgn);
 
@@ -1684,7 +1686,7 @@ void ImGuiBoard::EditorPopup()
 				ChessAPI::GoMoveByIntFormat(startPosition);
 
 				auto& PgnGame = *ChessAPI::GetPgnGame();
-				PgnGame.clear();
+				PgnGame.Clear();
 				PgnGame["FEN"] = fen;
 
 				//ChessAPI::OverWriteChessFile("");
@@ -1708,7 +1710,7 @@ void ImGuiBoard::EditorPopup()
 			{
 				ChessAPI::NewGameInFile();
 				auto& PgnGame = *ChessAPI::GetPgnGame();
-				PgnGame.clear();
+				PgnGame.Clear();
 				PgnGame["FEN"] = fen;
 				
 				//ChessAPI::OverWriteChessFile("");
@@ -1783,14 +1785,12 @@ void ImGuiBoard::EditorPopup()
 
 				if (anwser)
 				{
-					Chess::Pgn_File NPgnFile;
+					Chess::PgnFile NPgnFile;
 					NPgnFile.CreateGame();
 					NPgnFile[0]["FEN"] = s_fen;
-					std::ofstream outfile(strNPath);
-					outfile << NPgnFile;
-					outfile.close();
+					NPgnFile.SaveFile(strNPath);
 
-					AppManagerChild::OpenChessFile(strNPath);
+					AppManagerChild::OpenChessFileInOtherApp(strNPath);
 					ImGui::ClosePopupToLevel(0, true);
 				}
 				else
@@ -1844,7 +1844,7 @@ void ImGuiBoard::OpenEditor(const std::string& newFEN)
 {
 	m_ToOpenEditor = true;
 
-	Chess::Pgn_Game pgngame;
+	Chess::PgnGame pgngame;
 	pgngame["FEN"] = newFEN;
 
 	Chess::GameManager game;

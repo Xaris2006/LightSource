@@ -484,26 +484,14 @@ namespace Panels {
 
 	void ContentBrowserPanel::MergeFiles(const std::filesystem::path& dpath, const std::vector<std::filesystem::path>& paths)
 	{
-		std::ofstream osource("helper.pgn");
-
+		std::ofstream dFile(dpath, std::ios::binary);
 		for (auto& path : paths)
 		{
-			Chess::Pgn_File pgnFile;
-			
 			std::ifstream infile(path, std::ios::binary);
-			infile >> pgnFile;
+			if(infile.is_open())
+				dFile << infile.rdbuf();
 			infile.close();
-			
-			osource << pgnFile;
 		}
-		osource.close();
-
-		std::ifstream isource("helper.pgn", std::ios::binary);
-		std::ofstream dFile(dpath, std::ios::binary);
-		
-		dFile << isource.rdbuf();
-		
-		isource.close();
 		dFile.close();
 	}
 

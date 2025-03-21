@@ -40,6 +40,7 @@ public:
 		glfwFocusWindow(Walnut::Application::Get().GetWindowHandle());
 
 		AppManagerChild::Init();
+		Chess::PgnManager::Init();
 		ChessAPI::Init();
 
 		m_ChessBoard.OnAttach();
@@ -75,6 +76,7 @@ public:
 
 	virtual void OnDetach() override
 	{
+		Chess::PgnManager::Shutdown();
 		AppManagerChild::ShutDown();
 	}
 
@@ -140,6 +142,7 @@ public:
 		
 		UI_DrawAboutModal();
 		AlreadyOpenedModal();
+
 		//ImGui::ShowDemoWindow();
 		//ImGui::ShowMetricsWindow();
 	}
@@ -178,12 +181,12 @@ public:
 	{
 		if (!g_AlreadyOpenedModalOpen)
 			return;
-		ImGui::OpenPopup("Error-File Is Already Opened");
+		ImGui::OpenPopup("Error! File Is Already Opened");
 
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 		
-		g_AlreadyOpenedModalOpen = ImGui::BeginPopupModal("Error-File Is Already Opened", 0, ImGuiWindowFlags_NoResize);
+		g_AlreadyOpenedModalOpen = ImGui::BeginPopupModal("Error! File Is Already Opened", 0);
 		
 		if (g_AlreadyOpenedModalOpen)
 		{
@@ -355,7 +358,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	g_spec.HoveredIconPath = "Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
 		{
-			AppManagerChild::OpenChessFile();
+			AppManagerChild::OpenChessFileInOtherApp();
 		};
 
 	//fix arg
@@ -498,9 +501,27 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			}
 			ImGui::EndMenu();
 		}
-		static int e =1;
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
-		ImGui::RadioButton("Board View", &e, 0);
+
+		ImGui::Spacing();
+
+		static bool RB = false;
+
+		ImGui::GetStyle().FramePadding.y *= 0.4f;
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2 * ImGui::GetStyle().FramePadding.y);
+		if (ImGui::RadioButton("##Mode", RB))
+		{
+			RB = !RB;
+			if (RB)
+				ImGui::GetIO().IniFilename = "imgui2.ini";
+			else
+				ImGui::GetIO().IniFilename = "imgui.ini";
+			ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
+		}
+		ImGui::GetStyle().FramePadding.y *= 2.5f;
+		
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 0.5f * ImGui::GetStyle().FramePadding.y);
+		ImGui::Text((RB == true ? "Board" : "DataBase"));
+
 	});
 	return app;
 }

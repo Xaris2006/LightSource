@@ -19,8 +19,8 @@ project "Web"
 
 	links
     {
-		 "%{Library.OpenSSL_Crypto}",
-		 "%{Library.OpenSSL_Ssl}"
+		"%{Library.OpenSSL_Crypto}",
+		"%{Library.OpenSSL_Ssl}"
 	}
 
 	filter "system:windows"

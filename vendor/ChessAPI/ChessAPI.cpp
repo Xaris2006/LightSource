@@ -2,14 +2,14 @@
 
 #include "fstream"
 
-static Chess::Pgn_File s_PngFile;
+static Chess::PgnFile* s_PngFile;
 static std::string s_PngPath;
 static std::string s_PngName;
 
-static std::unordered_map<int, Chess::GameManager> s_Games;
-static std::unordered_map<int, std::vector<int>> s_MovePathIntFormat;
+static std::unordered_map<size_t, Chess::GameManager> s_Games;
+static std::unordered_map<size_t, std::vector<int>> s_MovePathIntFormat;
 
-static int s_ActiveGame = 0;
+static size_t s_ActiveGame = 0;
 static std::vector<int> s_OpenGames;
 
 
@@ -34,16 +34,16 @@ namespace ChessAPI
 		s_PieceName[5] = "Q";
 		s_PieceName[6] = "K";
 
-		s_PngFile.CreateGame();
+		s_PngFile = new Chess::PgnFile();
+		s_PngFile->CreateGame();
 
 		s_PngPath = "";
 		s_PngName = "New Game";
 
 		s_ActiveGame = 0;
 		s_OpenGames.push_back(0);
-		s_Games[0] = Chess::GameManager();
 
-		s_Games[0].InitPgnGame(s_PngFile.operator[](0));
+		s_Games[0].InitPgnGame(s_PngFile->operator[](0));
 		s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
 	}
 
@@ -57,16 +57,24 @@ namespace ChessAPI
 		return s_OpenGames;
 	}
 
+	bool IsGameOpen(size_t index)
+	{
+		return s_Games.contains(index);
+	}
+
 	void CloseOpenGame(int index)
 	{
+		s_Games.erase(s_OpenGames[index]);
+		s_MovePathIntFormat.erase(s_OpenGames[index]);
+
 		s_OpenGames.erase(s_OpenGames.begin() + index);
 	}
 
-	Chess::Pgn_File* GetPgnFile()
+	Chess::PgnFile* GetPgnFile()
 	{
-		return &s_PngFile;
+		return s_PngFile;
 	}
-	Chess::Pgn_Game* GetPgnGame()
+	Chess::PgnGame* GetPgnGame()
 	{
 		return &s_Games[s_ActiveGame].GetPgnGame();
 	}
@@ -83,7 +91,7 @@ namespace ChessAPI
 	{
 		return s_PngPath;
 	}
-	void GetMovesPgnFormat(Chess::Pgn_Game::ChessMovesPath& moves)
+	void GetMovesPgnFormat(Chess::PgnGame::ChessMovesPath& moves)
 	{
 		moves = s_Games[s_ActiveGame].GetMovesByStr();
 	}
@@ -157,8 +165,8 @@ namespace ChessAPI
 		if (path == "")
 		{
 			//empty game
-			s_PngFile = Chess::Pgn_File();
-			s_PngFile.CreateGame();
+			s_PngFile->Clear();
+			s_PngFile->CreateGame();
 
 			s_PngPath = "";
 			s_PngName = "New Game";
@@ -166,38 +174,39 @@ namespace ChessAPI
 			s_ActiveGame = 0;
 			s_OpenGames.emplace_back(0);
 
-			s_Games[0] = Chess::GameManager();
+			s_Games[0].Clear();
 
-			s_Games[0].InitPgnGame(s_PngFile.operator[](0));
+			s_Games[0].InitPgnGame(s_PngFile->operator[](0));
 			s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
 			return;
 		}
 
-		s_PngFile = Chess::Pgn_File();
+		s_PngFile->Clear();
 
 		s_PngPath = path;
-		std::ifstream infile(path, std::ios::binary);
-		infile >> s_PngFile;
-		infile.close();
+		//std::ifstream infile(path, std::ios::binary);
+		//infile >> s_PngFile;
+		//infile.close();
+		s_PngFile->OpenFile(s_PngPath);
 
 		size_t index = path.find_last_of("\\") + 1;
 		s_PngName = path.substr(index);
 
-		if (!s_PngFile.GetSize())
-			s_PngFile.CreateGame();
+		if (!s_PngFile->GetSize())
+			s_PngFile->CreateGame();
 
 		s_ActiveGame = 0;
 		s_OpenGames.emplace_back(0);
 
-		s_Games[0] = Chess::GameManager();
+		s_Games[0].Clear();
 
-		s_Games[0].InitPgnGame(s_PngFile.operator[](0));
+		s_Games[0].InitPgnGame(s_PngFile->operator[](0));
 		s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
 	}
 
 	void OpenChessGameInFile(int index)
 	{
-		if (index >= s_PngFile.GetSize() || index < 0)
+		if (index >= s_PngFile->GetSize() || index < 0)
 			return;
 
 		s_movePromotion.index = -1;
@@ -211,9 +220,9 @@ namespace ChessAPI
 		}
 		if(!alreadyOpen)
 			s_OpenGames.emplace_back(index);
-		s_Games[s_ActiveGame] = Chess::GameManager();
+		s_Games[s_ActiveGame].Clear();
 
-		s_Games[s_ActiveGame].InitPgnGame(s_PngFile.operator[](s_ActiveGame));
+		s_Games[s_ActiveGame].InitPgnGame(s_PngFile->operator[](s_ActiveGame));
 
 		if(alreadyOpen)
 			GoMoveByIntFormat(s_MovePathIntFormat[s_ActiveGame]);
@@ -232,33 +241,40 @@ namespace ChessAPI
 				auto& pgngame = s_Games[0].GetPgnGame();
 				s_Games.clear();
 				s_MovePathIntFormat.clear();
-				s_Games[0] = Chess::GameManager();
-				s_Games[0].InitPgnGame(pgngame);
+				s_Games[0].Clear();
+				//s_Games[0].InitPgnGame(pgngame);
 				s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
 				return;
 			}
-			std::ofstream outfile(s_PngPath);
-			outfile << s_PngFile;
-			outfile.close();
+
+			s_PngFile->SaveFile(s_PngPath);
+
+			//std::ofstream outfile(s_PngPath);
+			//outfile << s_PngFile;
+			//outfile.close();
 
 			return;
 		}
-		std::ofstream outfile(filepath);
-		outfile << s_PngFile;
+
 		s_PngPath = filepath;
-		outfile.close();
+
+		s_PngFile->SaveFile(s_PngPath);
+
+		//std::ofstream outfile(filepath);
+		//outfile << s_PngFile;
+		//outfile.close();
 	}
 
 	void NewGameInFile()
 	{
 		s_movePromotion.index = -1;
 
-		s_PngFile.CreateGame();
-		s_ActiveGame = s_PngFile.GetSize() - 1;
+		s_PngFile->CreateGame();
+		s_ActiveGame = s_PngFile->GetSize() - 1;
 		s_OpenGames.emplace_back(s_ActiveGame);
-		s_Games[s_ActiveGame] = Chess::GameManager();
+		s_Games[s_ActiveGame].Clear();
 
-		s_Games[s_ActiveGame].InitPgnGame(s_PngFile.operator[](s_ActiveGame));
+		s_Games[s_ActiveGame].InitPgnGame(s_PngFile->operator[](s_ActiveGame));
 		s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
 		
 	}
@@ -267,7 +283,7 @@ namespace ChessAPI
 	{
 		s_movePromotion.index = -1;
 
-		s_PngFile.DeleteGame(index);
+		s_PngFile->DeleteGame(index);
 
 		s_Games.erase(index);
 		s_MovePathIntFormat.erase(index);
@@ -281,15 +297,15 @@ namespace ChessAPI
 			}
 		}
 
-		if (!s_PngFile.GetSize())
+		if (!s_PngFile->GetSize())
 		{
-			s_PngFile.CreateGame();
+			s_PngFile->CreateGame();
 
 			s_ActiveGame = 0;
 			s_OpenGames.emplace_back(0);
 			
-			s_Games[0] = Chess::GameManager();
-			s_Games[0].InitPgnGame(s_PngFile.operator[](0));
+			s_Games[0].Clear();
+			s_Games[0].InitPgnGame(s_PngFile->operator[](0));
 			s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
 
 			return;
@@ -300,8 +316,8 @@ namespace ChessAPI
 			s_ActiveGame = 0;
 			s_OpenGames.emplace_back(0);
 
-			s_Games[0] = Chess::GameManager();
-			s_Games[0].InitPgnGame(s_PngFile.operator[](0));
+			s_Games[0].Clear();
+			s_Games[0].InitPgnGame(s_PngFile->operator[](0));
 			s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
 
 			return;
@@ -319,8 +335,8 @@ namespace ChessAPI
 		{
 			s_ActiveGame = s_OpenGames[0];
 
-			s_Games[s_ActiveGame] = Chess::GameManager();
-			s_Games[s_ActiveGame].InitPgnGame(s_PngFile.operator[](s_ActiveGame));
+			s_Games[s_ActiveGame].Clear();
+			s_Games[s_ActiveGame].InitPgnGame(s_PngFile->operator[](s_ActiveGame));
 			s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
 		}
 	}

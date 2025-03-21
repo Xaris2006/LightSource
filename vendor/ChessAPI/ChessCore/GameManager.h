@@ -70,9 +70,12 @@ namespace Chess
 
 	public:
 		GameManager() = default;
-		~GameManager() = default;
+		~GameManager();
 
-		void InitPgnGame(Pgn_Game& pgnGame);
+		void InitPgnGame(PgnGame& pgnGame);
+		
+		GameManager& operator=(const GameManager& other) = delete;
+		void Clear();
 
 		void GetFen(std::string& fen) const;
 		std::string GetFen() const;
@@ -88,7 +91,7 @@ namespace Chess
 		std::string& GetNote(const MoveKey& moveKey);
 		//PropOfMovesPath GetMovesByData() const;
 
-		Pgn_Game::ChessMovesPath GetMovesByStr() const;
+		PgnGame::ChessMovesPath GetMovesByStr() const;
 		MoveKey GetLastMoveKey() const;
 		
 		void GetAvailableMoves(std::vector<Board::Move>& moves) const;
@@ -106,7 +109,7 @@ namespace Chess
 		void EditVariation(const MoveKey& moveKey, VariationEdit editType);
 		void DeleteMove(const MoveKey& moveKey); //or the whole variation if moveKey.last == 0
 
-		Pgn_Game& GetPgnGame() { return *m_pgnGame; }
+		PgnGame& GetPgnGame() { return *m_pgnGame; }
 
 		std::string ConvertUCIStringToString(const std::string& uciMove) const;
 
@@ -115,14 +118,14 @@ namespace Chess
 		void ConvertStringToMoveData(const std::string& strmove, MoveData& move) const;
 		void ConvertMoveToMoveData(const Board::Move& move, MoveData& moveData, Piece promotedType = NONE) const;
 
-		void GetCurrentPgnMovePath(Pgn_Game::ChessMovesPath*& path) const;
+		void GetCurrentPgnMovePath(PgnGame::ChessMovesPath*& path) const;
 
 		void AddMove(const std::string& strmove, const MoveData& move);
 
 	private:
 		Board m_Board;
 
-		Pgn_Game* m_pgnGame;
+		PgnGame* m_pgnGame = nullptr;
 		std::unordered_map<MoveKey, MoveData, MoveKey_Hash> m_mapMoves;
 		MoveKey m_lastMoveKey;
 	};

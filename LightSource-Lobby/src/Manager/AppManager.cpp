@@ -5,35 +5,12 @@
 #include <unordered_map>
 #include <filesystem>
 
+#include "ChessCore/pgn/Pgn.h"
+
 static std::mutex addMutex;
 extern bool g_AlreadyOpenedModalOpen;
 
 static Manager::AppManager* s_AppManager = nullptr;
-
-static void fixPath(std::string& strpath)
-{
-	if (strpath.empty())
-		return;
-
-	if (strpath[0] == '\"')
-		strpath.erase(0, 1);
-
-	for (int i = 1; i < strpath.size(); i++)
-	{
-		if (strpath[i] == '\\' && strpath[i - 1] == '\\')
-		{
-			strpath.erase(i, 1);
-			i--;
-			continue;
-		}
-		if (strpath[i] == '\"')
-		{
-			strpath.erase(i, 1);
-			i--;
-			continue;
-		}
-	}
-}
 
 namespace Manager
 {
@@ -44,6 +21,8 @@ namespace Manager
 		s_AppManager->m_CheckingThread = new std::thread(
 			[]()
 			{
+				Chess::PgnFile::PgnPath_Hash hasher;
+
 				while (true)
 				{
 					if (s_AppManager->m_EndThread)
@@ -58,7 +37,7 @@ namespace Manager
 					s_AppManager->m_Commands.clear();
 					//m_OpenedPaths.clear();
 					std::vector<int> endApps;
-					std::unordered_map<int, std::filesystem::path> AskForNewFilePath;
+					std::unordered_map<int, size_t> AskForNewFilePath;
 
 					s_AppManager->m_Commands.resize(s_AppManager->m_Apps.size());
 
@@ -123,12 +102,8 @@ namespace Manager
 							if (IndexPath != std::string::npos)
 								path = std::string(s_AppManager->m_Commands[i].File.begin() + IndexPath + 5, s_AppManager->m_Commands[i].File.begin() + s_AppManager->m_Commands[i].File.find(":Path"));
 
-							fixPath(path);
-
 							if (!path.empty())
-							{
-								s_AppManager->m_OpenedPaths[i] = path;
-							}
+								s_AppManager->m_OpenedPaths[i] = std::stoull(path);
 						}
 
 						if (s_AppManager->m_Commands[i].Open.size())
@@ -137,9 +112,7 @@ namespace Manager
 							size_t IndexPath = s_AppManager->m_Commands[i].Open.find("Path:");
 							if (IndexPath != std::string::npos)
 								path = std::string(s_AppManager->m_Commands[i].Open.begin() + IndexPath + 5, s_AppManager->m_Commands[i].Open.begin() + s_AppManager->m_Commands[i].Open.find(":Path"));
-
-							fixPath(path);
-
+							//here
 							s_AppManager->CreateApp(path);
 						}
 
@@ -150,25 +123,19 @@ namespace Manager
 							if (IndexPath != std::string::npos)
 								path = std::string(s_AppManager->m_Commands[i].Ask.begin() + IndexPath + 5, s_AppManager->m_Commands[i].Ask.begin() + s_AppManager->m_Commands[i].Ask.find(":Path"));
 
-							fixPath(path);
-
 							if (path.empty())
 								s_AppManager->m_Apps[i].Write("Accept\n");
 							else
-								AskForNewFilePath[i] = path;
+								AskForNewFilePath[i] = std::stoull(path);
 						}
 					}
-
+					
 					for (auto& [key, value] : AskForNewFilePath)
 					{
 						bool alreadyOpened = false;
 						for (auto& [otherKey, otherValue] : s_AppManager->m_OpenedPaths)
 						{
-							std::filesystem::path completeValue = std::filesystem::path(value);
-							if (std::filesystem::path(value).is_relative())
-								completeValue = std::filesystem::current_path() / "LightSourceApp" / value;
-
-							if (std::filesystem::path(otherValue) == completeValue)
+							if (otherValue == value)
 							{
 								alreadyOpened = true;
 								break;
@@ -181,6 +148,8 @@ namespace Manager
 							s_AppManager->m_Apps[key].Write("Accept\n");
 					}
 
+					addMutex.lock();
+					
 					if (s_AppManager->m_AddApp)
 					{
 						s_AppManager->m_AddApp = false;
@@ -190,7 +159,7 @@ namespace Manager
 
 						for (auto& [key, other] : s_AppManager->m_OpenedPaths)
 						{
-							if (other == npath)
+							if (other == hasher(npath))
 							{
 								alreadyOpened = true;
 								g_AlreadyOpenedModalOpen = true;
@@ -200,14 +169,13 @@ namespace Manager
 
 						if (!alreadyOpened)
 						{
-							addMutex.lock();
-
-							s_AppManager->m_Apps.emplace_back(L"LightSourceApp\\LightSource.exe", std::wstring(s_AppManager->m_cmd.begin(), s_AppManager->m_cmd.end()));
+							auto pathToAdd = std::filesystem::canonical(npath).wstring();
+							s_AppManager->m_Apps.emplace_back(L"LightSourceApp\\LightSource.exe", pathToAdd);
 							s_AppManager->m_Apps[s_AppManager->m_Apps.size() - 1].Write("Ok");
-
-							addMutex.unlock();
 						}
 					}
+
+					addMutex.unlock();
 
 					using namespace std::chrono_literals;
 					std::this_thread::sleep_for(300ms);

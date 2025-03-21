@@ -11,6 +11,16 @@ project "ChessAPI"
 		"**.h",
 		"**.cpp"
 	}
+	
+	includedirs
+	{
+		"%{IncludeDir.OpenSSL}"
+	}
+
+	links
+    {
+		"%{Library.OpenSSL_Crypto}"
+	}
 
 	filter "system:windows"
 		systemversion "latest"

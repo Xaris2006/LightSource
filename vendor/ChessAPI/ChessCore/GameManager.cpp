@@ -7,8 +7,18 @@ static std::string s_strMoveIndexY = "12345678";
 
 namespace Chess
 {
-	void GameManager::InitPgnGame(Pgn_Game& pgnGame)
+	GameManager::~GameManager()
 	{
+		if (m_pgnGame)
+			m_pgnGame->RemoveReference();
+	}
+
+	void GameManager::InitPgnGame(PgnGame& pgnGame)
+	{
+		if (m_pgnGame)
+			m_pgnGame->RemoveReference();
+
+		pgnGame.AddReference();
 		m_pgnGame = &pgnGame;
 
 		m_Board.NewPosition((*m_pgnGame)["FEN"]);
@@ -17,6 +27,18 @@ namespace Chess
 		m_lastMoveKey.clear();
 
 		m_lastMoveKey.emplace_back(-1);
+	}
+
+	void GameManager::Clear()
+	{
+		if (m_pgnGame)
+			m_pgnGame->RemoveReference();
+
+		m_Board.NewPosition();
+
+		m_pgnGame = nullptr;
+		m_mapMoves.clear();
+		m_lastMoveKey.clear();
 	}
 
 	void GameManager::GetFen(std::string& fen) const
@@ -64,10 +86,10 @@ namespace Chess
 		return currentPath->details[moveKey[moveKey.size() - 1]];
 	}
 
-	Pgn_Game::ChessMovesPath GameManager::GetMovesByStr() const
+	PgnGame::ChessMovesPath GameManager::GetMovesByStr() const
 	{
 		if(m_pgnGame)
-			return (*m_pgnGame).GetMovePathbyCopy();
+			return m_pgnGame->GetMovePathbyCopy();
 		return {};
 	}
 
@@ -89,13 +111,13 @@ namespace Chess
 	Board::MakeMoveStatus GameManager::MakeMove(Board::Move move, Piece	promotedType)
 	{
 		if (!m_Board.IsMoveValid(move))
-			return Board::ERROR;
+			return Board::MOVEERROR;
 
 		MoveData moveD;
 		ConvertMoveToMoveData(move, moveD, promotedType);
 
 		if(moveD.pieceToMove == NONE)
-			return Board::ERROR;
+			return Board::MOVEERROR;
 
 		std::string strmove;
 		ConvertMoveDataToString(moveD, strmove);
@@ -111,13 +133,13 @@ namespace Chess
 	Board::MakeMoveStatus GameManager::MakeMove(const std::string& move)
 	{
 		if(move.empty())
-			return Board::ERROR;
+			return Board::MOVEERROR;
 
 		MoveData moveD;
 		ConvertStringToMoveData(move, moveD);
 
 		if (!m_Board.IsMoveValid(moveD.move) || moveD.pieceToMove == NONE)
-			return Board::ERROR;
+			return Board::MOVEERROR;
 		
 		auto ret = m_Board.MakeMove(moveD.move, moveD.piecePromote);
 
@@ -129,7 +151,7 @@ namespace Chess
 
 	void GameManager::GoNextMove()
 	{
-		Pgn_Game::ChessMovesPath* currentPath = nullptr;
+		PgnGame::ChessMovesPath* currentPath = nullptr;
 		GetCurrentPgnMovePath(currentPath);
 
 		bool nextExists = false;
@@ -205,7 +227,7 @@ namespace Chess
 			m_Board.AddPiece(ROOK, m_Board.GetPlayerToPlayColor(), moveD.move.index + (moveD.move.move > 0 ? +3 : -4));
 		}
 
-		Pgn_Game::ChessMovesPath* currentPath = nullptr;
+		PgnGame::ChessMovesPath* currentPath = nullptr;
 		GetCurrentPgnMovePath(currentPath);
 
 		do
@@ -250,7 +272,7 @@ namespace Chess
 	{
 		GoInitialPosition();
 		
-		Pgn_Game::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
+		PgnGame::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
 
 		for (int i = 0; i < moveKey.size(); i++)
 		{
@@ -279,7 +301,7 @@ namespace Chess
 		GoInitialPosition();
 		m_mapMoves.clear();
 
-		Pgn_Game::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
+		PgnGame::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
 
 		for (int i = 1; i < moveKey.size(); i += 2)
 		{
@@ -295,7 +317,7 @@ namespace Chess
 
 			std::unordered_map<int, std::string> detailsNew;
 			std::vector<std::string> moveNew;
-			std::vector<Pgn_Game::ChessMovesPath> childrenNew;
+			std::vector<PgnGame::ChessMovesPath> childrenNew;
 
 			int amountOfChildrenInside = 0;
 			int oldParentChildrenStay = 0;
@@ -410,7 +432,7 @@ namespace Chess
 	{
 		GoInitialPosition();
 
-		Pgn_Game::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
+		PgnGame::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
 
 		for (int i = 1; i < moveKey.size(); i += 2)
 		{
@@ -501,7 +523,7 @@ namespace Chess
 
 			bool showIndexX = false, showIndexY = false;
 
-			if (!possibleIndex.empty())
+			if (!possibleIndex.empty() && move.pieceToMove != PAWN)
 			{
 				for (auto& pi : possibleIndex)
 				{
@@ -532,11 +554,11 @@ namespace Chess
 			strmove += s_strMoveTypes[(int)move.piecePromote];
 		}
 
-		auto kingSecurity = m_Board.GetKingStatus(m_Board.GetPlayerToPlayColor() == WHITE ? BLACK : WHITE);
+		auto kingSecurity = m_Board.GetKingStatus();
 
 		if (kingSecurity == Board::CHECKED)
 			strmove += '+';
-		else if(kingSecurity == Board::CHECKED)
+		else if(kingSecurity == Board::MATED)
 			strmove += '#';
 
 		if (move.pieceToMove == NONE)
@@ -697,7 +719,7 @@ namespace Chess
 			moveData.pieceOnDirection = PAWN;
 	}
 
-	void GameManager::GetCurrentPgnMovePath(Pgn_Game::ChessMovesPath*& path) const
+	void GameManager::GetCurrentPgnMovePath(PgnGame::ChessMovesPath*& path) const
 	{
 		path = &m_pgnGame->GetMovePathbyRef();
 
@@ -709,7 +731,7 @@ namespace Chess
 
 	void GameManager::AddMove(const std::string& strmove, const MoveData& move)
 	{
-		Pgn_Game::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
+		PgnGame::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
 		
 		for (int i = 1; i < m_lastMoveKey.size(); i += 2)
 		{
@@ -782,7 +804,7 @@ namespace Chess
 		}
 
 		currentPath->move.insert(currentPath->move.begin() + nextIndex + 1, "child");
-		currentPath->children.insert(currentPath->children.begin() + childIndex + childAmount, Pgn_Game::ChessMovesPath());
+		currentPath->children.insert(currentPath->children.begin() + childIndex + childAmount, PgnGame::ChessMovesPath());
 		currentPath->children[childIndex + childAmount].move.emplace_back(strmove);
 		currentPath->children[childIndex + childAmount].parent = currentPath;
 

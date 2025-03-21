@@ -3,11 +3,15 @@
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include "ChessCore/pgn/SearchWork.h"
+
+static bool s_searched = false;
 
 namespace Panels
 {
 	DatabasePanel::DatabasePanel()
 	{
+		m_searchSetting = new std::map<std::string, std::string>();
 		m_ecoItems.reserve(500);
 		for (int i = 0; i < 5; i++)
 		{
@@ -24,14 +28,14 @@ namespace Panels
 
 	void DatabasePanel::Reset()
 	{
-		m_searchSetting.clear();
+		m_searchSetting->clear();
 		m_name_white = true;
 		m_name_black = true;
 		m_name_to_search.clear();
 		m_eco_to_search.clear();
 		m_ecoItems.clear();
 		m_date_to_search.clear();
-		m_search_resualt.clear();
+		s_searched = false;
 		m_lastPointedRow = 0;
 	}
 
@@ -43,7 +47,7 @@ namespace Panels
 			m_filePath = ChessAPI::GetPgnFilePath();
 		}
 
-		Chess::Pgn_File* pgnfile = ChessAPI::GetPgnFile();
+		Chess::PgnFile* pgnfile = ChessAPI::GetPgnFile();
 		if (pgnfile)
 		{
 			ImGui::Begin("Database");
@@ -70,36 +74,38 @@ namespace Panels
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
+
+			static Chess::SearchWork work;
+
 			if (ImGui::Button("Search"))
 			{
-				m_search_resualt.clear();
+				s_searched = true;
 				m_lastPointedRow = 0;
-				int a;
 				if (m_name_white || !m_name_black)
 				{
-					m_searchSetting.clear();
+					m_searchSetting->clear();
 
 					if (m_name_to_search != "")
-						m_searchSetting["White"] = m_name_to_search;
+						(*m_searchSetting)["White"] = m_name_to_search;
 					if (m_eco_to_search != "")
-						m_searchSetting["ECO"] = m_eco_to_search;
+						(*m_searchSetting)["ECO"] = m_eco_to_search;
 					if (m_date_to_search != "")
-						m_searchSetting["Date"] = m_date_to_search;
+						(*m_searchSetting)["Date"] = m_date_to_search;
 
-					pgnfile->SearchLabel(m_search_resualt, a, m_searchSetting);
+					work.SearchLabel(pgnfile->GetID(), *m_searchSetting);
 				}
 				if (m_name_black || !m_name_white)
 				{
-					m_searchSetting.clear();
+					m_searchSetting->clear();
 
 					if (m_name_to_search != "")
-						m_searchSetting["Black"] = m_name_to_search;
+						(*m_searchSetting)["Black"] = m_name_to_search;
 					if (m_eco_to_search != "")
-						m_searchSetting["ECO"] = m_eco_to_search;
+						(*m_searchSetting)["ECO"] = m_eco_to_search;
 					if (m_date_to_search != "")
-						m_searchSetting["Date"] = m_date_to_search;
+						(*m_searchSetting)["Date"] = m_date_to_search;
 
-					pgnfile->SearchLabel(m_search_resualt, a, m_searchSetting);
+					work.SearchLabel(pgnfile->GetID(), *m_searchSetting);
 				}
 			}
 			ImGui::PopStyleColor(3);
@@ -111,7 +117,8 @@ namespace Panels
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 			if (ImGui::Button("Clear"))
 			{
-				m_search_resualt.clear();
+				work.Clear();
+				s_searched = false;
 				m_name_to_search = "";
 				m_eco_to_search = "";
 			}
@@ -141,16 +148,12 @@ namespace Panels
 			ImGui::Separator();
 
 			int all = pgnfile->GetSize();
-			int showed = 1000;
-			float maxscrollpos;
-			float scrollpos;
-			int start;
 
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4());
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4());
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4());
 
-			if (ImGui::BeginTable("table_scrollx", 9, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable))
+			if (ImGui::BeginTable("table_scrollx", 9, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_RowBg))
 			{
 				ImGui::TableSetupScrollFreeze(1, 1);
 				ImGui::TableSetupColumn("Line #", ImGuiTableColumnFlags_NoHide); // Make the first column not hideable to match our use of TableSetupScrollFreeze()
@@ -171,92 +174,115 @@ namespace Panels
 				//	}
 				//}
 
-				maxscrollpos = ImGui::GetScrollMaxY();
-				scrollpos = ImGui::GetScrollY();
+				m_IsOpened.clear();//clipper.DisplayEnd - clipper.DisplayStart
 
-				if (m_search_resualt.empty())
+				if (!s_searched)
 				{
-					start = all * (scrollpos / maxscrollpos) - showed;
-					if (start < 0)
-						start = 0;
-					for (int row = start; row < start + showed && row < all; row++)
+					ImGuiListClipper clipper;
+					clipper.Begin(all);
+					while (clipper.Step())
 					{
-						ImGui::TableNextRow();
-
-						if (ChessAPI::GetActiveGame() == m_lastPointedRow && row == m_lastPointedRow)
-							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 80, 80, 255));
-						else if (row == m_lastPointedRow)
-							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
-						else if (row == ChessAPI::GetActiveGame())
-							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 110, 50, 255));
-
-						for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
+						for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
 						{
-							if (!ImGui::TableSetColumnIndex(column) && column > 0)
-								continue;
-							if (column == 0)
-								ImGui::Text("Line %d", row + 1);
-							else
-							{
-								ImGui::PushID(row * ImGui::TableGetColumnCount() + column);
-								if (ImGui::Selectable(pgnfile->operator[](row)[m_important_prop[column - 1]].c_str()))
-								{
-									ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
-									m_lastPointedRow = row;
-								}
-								if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-									ChessAPI::OpenChessGameInFile(row);
+							ImGui::TableNextRow();
+							
+							if (row == ChessAPI::GetActiveGame())
+								ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
 
-								if (ImGui::BeginDragDropSource())
+							for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
+							{
+								if (!ImGui::TableSetColumnIndex(column) && column > 0)
+									continue;
+								if (column == 0)
 								{
-									ImGui::SetDragDropPayload("Database", &row, sizeof(int));
-									ImGui::EndDragDropSource();
+									ImGui::PushID(row);
+									
+									//m_IsOpened.emplace_back(new ) = ChessAPI::IsGameOpen(row);
+									
+									ImGui::GetStyle().FramePadding.y *= 0.4f;
+									//ImGui::Checkbox("##isopen", (bool*)& m_IsOpened[row - clipper.DisplayStart]);
+									ImGui::GetStyle().FramePadding.y *= 2.5f;
+
+									//ImGui::SameLine();
+									ImGui::Text("Line %d", row + 1);
+
+									ImGui::PopID();
 								}
-								ImGui::PopID();
+								else
+								{
+									ImGui::PushID(row * ImGui::TableGetColumnCount() + column);
+
+									auto& game = pgnfile->operator[](row);
+
+									if (&game && ImGui::Selectable(game[m_important_prop[column - 1]].c_str()))
+										m_lastPointedRow = row;
+									if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+										ChessAPI::OpenChessGameInFile(row);
+
+									if (ImGui::BeginDragDropSource())
+									{
+										ImGui::SetDragDropPayload("Database", &row, sizeof(int));
+										ImGui::EndDragDropSource();
+									}
+									ImGui::PopID();
+								}
 							}
 						}
 					}
 				}
 				else
 				{
-					start = m_search_resualt.size() * (scrollpos / maxscrollpos) - showed;
-					all = m_search_resualt.size();
-					if (start < 0)
-						start = 0;
-					for (int i = start; i < start + showed && i < all; i++)
+					auto result = work.GetResult();
+					all = result.size();
+
+					ImGuiListClipper clipper;
+					clipper.Begin(all);
+					while (clipper.Step())
 					{
-						ImGui::TableNextRow();
-
-						if (ChessAPI::GetActiveGame() == m_lastPointedRow && m_search_resualt[i] == m_lastPointedRow)
-							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 80, 80, 255));
-						else if (m_search_resualt[i] == m_lastPointedRow)
-							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
-						else if(m_search_resualt[i] == ChessAPI::GetActiveGame())
-							ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 110, 50, 255));
-
-						for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
+						for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
 						{
-							if (!ImGui::TableSetColumnIndex(column) && column > 0)
-								continue;
-							if (column == 0)
-								ImGui::Text("Line %d", m_search_resualt[i] + 1);
-							else
-							{
-								ImGui::PushID(i * ImGui::TableGetColumnCount() + column);
-								if (ImGui::Selectable(pgnfile->operator[](m_search_resualt[i])[m_important_prop[column - 1]].c_str()))
-								{
-									ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
-									m_lastPointedRow = m_search_resualt[i];
-								}
-								if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-									ChessAPI::OpenChessGameInFile(m_search_resualt[i]);
-								if (ImGui::BeginDragDropSource())
-								{
-									ImGui::SetDragDropPayload("Database", &m_search_resualt[i], sizeof(int));
-									ImGui::EndDragDropSource();
-								}
+							ImGui::TableNextRow();
 
-								ImGui::PopID();
+							if (result[row] == ChessAPI::GetActiveGame())
+								ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
+
+							for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
+							{
+								if (!ImGui::TableSetColumnIndex(column) && column > 0)
+									continue;
+								if (column == 0)
+								{
+									ImGui::PushID(result[row]);
+
+									//m_IsOpened[m_search_resualt[row] - clipper.DisplayStart] = ChessAPI::IsGameOpen(m_search_resualt[row]);
+
+									ImGui::GetStyle().FramePadding.y *= 0.4f;
+									//ImGui::Checkbox("##isopen", (bool*)&m_IsOpened[row - clipper.DisplayStart]);
+									ImGui::GetStyle().FramePadding.y *= 2.5f;
+
+									//ImGui::SameLine();
+									ImGui::Text("Line %d", result[row] + 1);
+
+									ImGui::PopID();
+								}
+								else
+								{
+									ImGui::PushID(row * ImGui::TableGetColumnCount() + column);
+
+									auto& game = pgnfile->operator[](result[row]);
+
+									if (&game && ImGui::Selectable(game[m_important_prop[column - 1]].c_str()))
+										m_lastPointedRow = result[row];
+									if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+										ChessAPI::OpenChessGameInFile(result[row]);
+									if (ImGui::BeginDragDropSource())
+									{
+										ImGui::SetDragDropPayload("Database", &result[row], sizeof(int));
+										ImGui::EndDragDropSource();
+									}
+
+									ImGui::PopID();
+								}
 							}
 						}
 					}
@@ -272,7 +298,6 @@ namespace Panels
 			m_lastPointedRow = 0;
 			m_eco_to_search = "";
 			m_name_to_search = "";
-			m_search_resualt.clear();
 		}
 	}
 

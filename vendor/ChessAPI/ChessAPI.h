@@ -14,16 +14,17 @@ namespace ChessAPI
 
 	int GetActiveGame();
 	std::vector<int>& GetOpenGames();
+	bool IsGameOpen(size_t index);
 	void CloseOpenGame(int index);
 
-	Chess::Pgn_File* GetPgnFile();
-	Chess::Pgn_Game* GetPgnGame();
+	Chess::PgnFile* GetPgnFile();
+	Chess::PgnGame* GetPgnGame();
 	std::string& GetPgnFilePath();
 	std::string& GetPgnFileName();
 
 	std::vector<std::string>		GetCurPgnLabelNames();
 	std::string&					GetCurPgnLabelValue(const std::string& name);
-	void							GetMovesPgnFormat(Chess::Pgn_Game::ChessMovesPath& moves);
+	void							GetMovesPgnFormat(Chess::PgnGame::ChessMovesPath& moves);
 	std::vector<int>&				GetMoveIntFormat();
 	std::string&					GetNote(const std::vector<int>& pathmove);
 	

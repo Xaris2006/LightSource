@@ -450,25 +450,12 @@ namespace Chess
 			return BLACK;
 	}
 
-	Board::KingStatus Board::GetKingStatus(Color playerColor) const
+	Board::KingStatus Board::GetKingStatus() const
 	{
-		std::vector<Move> kingMoves;
-		FindKingMoves(kingMoves);
-
-		if (playerColor == WHITE)
+		if (m_PlayerToPlay == WHITE)
 		{
 			int kingIndex = (int)std::log2(m_mapWhitePieces[KING].Data());
 			
-			for (int i = 0; i < kingMoves.size(); i++)
-			{
-				if (kingMoves[i].index != kingIndex)
-				{
-					kingMoves.erase(kingMoves.begin() + i);
-					i--;
-				}
-			}
-
-			KingStatus ret = kingMoves.empty() ? MATED : CHECKED;
 
 			int yLevel = kingIndex / 8;
 			int xLevel = kingIndex % 8;
@@ -492,7 +479,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenBishop.At(kingIndex + y * 9))
-					return ret;
+					goto skip;
 
 				if (m_BlackPieces.At(kingIndex + y * 9))
 					break;
@@ -503,7 +490,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenBishop.At(kingIndex + y * 7))
-					return ret;
+					goto skip;
 
 				if (m_BlackPieces.At(kingIndex + y * 7))
 					break;
@@ -514,7 +501,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenBishop.At(kingIndex - y * 9))
-					return ret;
+					goto skip;
 
 				if (m_BlackPieces.At(kingIndex - y * 9))
 					break;
@@ -525,7 +512,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenBishop.At(kingIndex - y * 7))
-					return ret;
+					goto skip;
 
 				if (m_BlackPieces.At(kingIndex - y * 7))
 					break;
@@ -537,7 +524,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenRook.At(kingIndex + y * 8))
-					return ret;
+					goto skip;
 
 				if (m_BlackPieces.At(kingIndex + y * 8))
 					break;
@@ -548,7 +535,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenRook.At(kingIndex - y))
-					return ret;
+					goto skip;
 
 				if (m_BlackPieces.At(kingIndex - y))
 					break;
@@ -559,7 +546,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenRook.At(kingIndex - y * 8))
-					return ret;
+					goto skip;
 
 				if (m_BlackPieces.At(kingIndex - y * 8))
 					break;
@@ -570,58 +557,47 @@ namespace Chess
 					break;
 
 				if (enemyQueenRook.At(kingIndex + y))
-					return ret;
+					goto skip;
 
 				if (m_BlackPieces.At(kingIndex + y))
 					break;
 			}
 
 			if ((m_mapBlackPieces[PAWN].At(kingIndex + 7) && left) || (m_mapBlackPieces[PAWN].At(kingIndex + 9) && right))
-				return ret;
+				goto skip;
 
 			if (ok_up)
 			{
 				if (left && m_mapBlackPieces[KNIGHT].At(kingIndex + KnightMoves[3]))
-					return ret;
+					goto skip;
 				if (right && m_mapBlackPieces[KNIGHT].At(kingIndex + KnightMoves[2]))
-					return ret;
+					goto skip;
 			}
 			if (ok_down)
 			{
 				if (left && m_mapBlackPieces[KNIGHT].At(kingIndex - KnightMoves[2]))
-					return ret;
+					goto skip;
 				if (right && m_mapBlackPieces[KNIGHT].At(kingIndex - KnightMoves[3]))
-					return ret;
+					goto skip;
 			}
 			if (ok_left)
 			{
 				if (down && m_mapBlackPieces[KNIGHT].At(kingIndex - KnightMoves[1]))
-					return ret;
+					goto skip;
 				if (up && m_mapBlackPieces[KNIGHT].At(kingIndex + KnightMoves[0]))
-					return ret;
+					goto skip;
 			}
 			if (ok_right)
 			{
 				if (down && m_mapBlackPieces[KNIGHT].At(kingIndex - KnightMoves[0]))
-					return ret;
+					goto skip;
 				if (up && m_mapBlackPieces[KNIGHT].At(kingIndex + KnightMoves[1]))
-					return ret;
+					goto skip;
 			}
 		}
 		else
 		{
 			int kingIndex = (int)std::log2(m_mapBlackPieces[KING].Data());
-
-			for (int i = 0; i < kingMoves.size(); i++)
-			{
-				if (kingMoves[i].index != kingIndex)
-				{
-					kingMoves.erase(kingMoves.begin() + i);
-					i--;
-				}
-			}
-
-			KingStatus ret = kingMoves.empty() ? MATED : CHECKED;
 
 			int yLevel = kingIndex / 8;
 			int xLevel = kingIndex % 8;
@@ -645,7 +621,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenBishop.At(kingIndex + y * 9))
-					return ret;
+					goto skip;
 
 				if (m_WhitePieces.At(kingIndex + y * 9))
 					break;
@@ -656,7 +632,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenBishop.At(kingIndex + y * 7))
-					return ret;
+					goto skip;
 
 				if (m_WhitePieces.At(kingIndex + y * 7))
 					break;
@@ -667,7 +643,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenBishop.At(kingIndex - y * 9))
-					return ret;
+					goto skip;
 
 				if (m_WhitePieces.At(kingIndex - y * 9))
 					break;
@@ -678,7 +654,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenBishop.At(kingIndex - y * 7))
-					return ret;
+					goto skip;
 
 				if (m_WhitePieces.At(kingIndex - y * 7))
 					break;
@@ -690,7 +666,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenRook.At(kingIndex + y * 8))
-					return ret;
+					goto skip;
 
 				if (m_WhitePieces.At(kingIndex + y * 8))
 					break;
@@ -701,7 +677,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenRook.At(kingIndex - y))
-					return ret;
+					goto skip;
 
 				if (m_WhitePieces.At(kingIndex - y))
 					break;
@@ -712,7 +688,7 @@ namespace Chess
 					break;
 
 				if (enemyQueenRook.At(kingIndex - y * 8))
-					return ret;
+					goto skip;
 
 				if (m_WhitePieces.At(kingIndex - y * 8))
 					break;
@@ -723,65 +699,75 @@ namespace Chess
 					break;
 
 				if (enemyQueenRook.At(kingIndex + y))
-					return ret;
+					goto skip;
 
 				if (m_WhitePieces.At(kingIndex + y))
 					break;
 			}
 
 			if ((m_mapWhitePieces[PAWN].At(kingIndex - 9) && left) || (m_mapWhitePieces[PAWN].At(kingIndex - 7) && right))
-				return ret;
+				goto skip;
 
 			if (ok_up)
 			{
 				if (left && m_mapWhitePieces[KNIGHT].At(kingIndex + KnightMoves[3]))
-					return ret;
+					goto skip;
 				if (right && m_mapWhitePieces[KNIGHT].At(kingIndex + KnightMoves[2]))
-					return ret;
+					goto skip;
 			}
 			if (ok_down)
 			{
 				if (left && m_mapWhitePieces[KNIGHT].At(kingIndex - KnightMoves[2]))
-					return ret;
+					goto skip;
 				if (right && m_mapWhitePieces[KNIGHT].At(kingIndex - KnightMoves[3]))
-					return ret;
+					goto skip;
 			}
 			if (ok_left)
 			{
 				if (down && m_mapWhitePieces[KNIGHT].At(kingIndex - KnightMoves[1]))
-					return ret;
+					goto skip;
 				if (up && m_mapWhitePieces[KNIGHT].At(kingIndex + KnightMoves[0]))
-					return ret;
+					goto skip;
 			}
 			if (ok_right)
 			{
 				if (down && m_mapWhitePieces[KNIGHT].At(kingIndex - KnightMoves[0]))
-					return ret;
+					goto skip;
 				if (up && m_mapWhitePieces[KNIGHT].At(kingIndex + KnightMoves[1]))
-					return ret;
+					goto skip;
 			}
 		}
 
 		return SECURE;
+
+		skip:
+
+		std::vector<Move> moves;
+		GetAvailableMoves(moves);
+
+		if (moves.empty())
+			return MATED;
+		
+		return CHECKED;
 	}
 
 	Board::MakeMoveStatus Board::MakeMove(Move move, Piece piecePromotion)
 	{
 		//safe
-		bool exists = false;
-		std::vector<Move> PossibleMoves;
-		GetAvailableMoves(PossibleMoves);
-		for(auto& m : PossibleMoves)
-		{
-			if (m.index == move.index && m.move == move.move)
-			{
-				exists = true;
-				break;
-			}
-		}
-
-		if (!exists)
-			return ERROR;
+		//bool exists = false;
+		//std::vector<Move> PossibleMoves;
+		//GetAvailableMoves(PossibleMoves);
+		//for(auto& m : PossibleMoves)
+		//{
+		//	if (m.index == move.index && m.move == move.move)
+		//	{
+		//		exists = true;
+		//		break;
+		//	}
+		//}
+		//
+		//if (!exists)
+		//	return ERROR;
 
 		Color nextToPlay = m_PlayerToPlay;
 		Piece type = NONE, enemyType = NONE;
@@ -797,7 +783,7 @@ namespace Chess
 
 		//safe
 		if (type == NONE)
-			return ERROR;
+			return MOVEERROR;
 
 		//safe
 		if (type == PAWN && ((direction / 8) == 0 || (direction / 8) == 7) && (piecePromotion > QUEEN || piecePromotion == PAWN))
@@ -807,7 +793,7 @@ namespace Chess
 		if (type == KING && std::abs(move.move) == 2)
 		{
 			if (MakeMove({ (move.move > 0 ? move.index + 3 : move.index - 4), (move.move > 0 ? -2 : 3) }) != SUCCESS)
-				return ERROR;//safe
+				return MOVEERROR;//safe
 			m_PlayerToPlay = nextToPlay;
 			if (m_PlayerToPlay == BLACK)
 				m_BlackMovesCounter--;
@@ -1083,7 +1069,7 @@ namespace Chess
 		}
 
 		if (type == NONE)
-			return ERROR;
+			return MOVEERROR;
 
 		m_Virtual_Pieces.Set(move.index, false);
 		m_Virtual_mapPieces[type].Set(move.index, false);
@@ -2244,7 +2230,7 @@ namespace Chess
 		if (kingsDistance == 1 || kingsDistance == 7 || kingsDistance == 8 || kingsDistance == 9)
 			return false;
 
-		if (GetKingStatus((m_PlayerToPlay == WHITE ? BLACK : WHITE)) != SECURE)
+		if (GetKingStatus() != SECURE)
 			return false;
 		
 		return true;
