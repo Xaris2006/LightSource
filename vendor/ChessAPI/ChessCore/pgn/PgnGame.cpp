@@ -71,6 +71,10 @@ namespace Chess
 
 	void PgnGame::Clear()
 	{
+		m_firstNote = "";
+		//m_Count = 0;
+		m_DataRead = "";
+
 		m_labels.clear();
 		m_chessmoves.children.clear();
 		m_chessmoves.details.clear();
@@ -162,7 +166,7 @@ namespace Chess
 		Parse(data);
 	}
 
-	void PgnGame::Parse(std::string& data)
+	void PgnGame::Parse(std::string& data, bool onlyRead, bool readMoves)
 	{
 		Clear();
 
@@ -182,8 +186,14 @@ namespace Chess
 		std::string labelvaluestr = "";
 
 		ChessMovesPath* Parent = &m_chessmoves;
-		Parent->move.push_back("");
 
+		if (readMoves)
+		{
+			Parent->details.reserve(20);
+			Parent->move.reserve(80);
+			Parent->move.emplace_back("");
+		}
+		
 		for (size_t i = 0; i < data.size(); i++)
 		{
 			if (labelArea)
@@ -249,6 +259,9 @@ namespace Chess
 				}
 			}
 
+			if (!readMoves)
+				break;
+
 			//--moveArea--
 
 			//dollar???
@@ -307,11 +320,13 @@ namespace Chess
 					if (Parent->move[Parent->move.size() - 1].empty())
 						Parent->move.resize(Parent->move.size() - 1);
 
-					Parent->children.push_back(ChessMovesPath(Parent));
-					Parent->move.push_back("child");
+					Parent->children.emplace_back(ChessMovesPath(Parent));
+					Parent->move.emplace_back("child");
 					Parent = &Parent->children[Parent->children.size() - 1];
 
-					Parent->move.push_back("");
+					Parent->details.reserve(20);
+					Parent->move.reserve(30);
+					Parent->move.emplace_back("");
 					continue;
 				}
 
@@ -330,7 +345,7 @@ namespace Chess
 					}
 
 					Parent = Parent->parent;
-					Parent->move.push_back("");
+					Parent->move.emplace_back("");
 
 					continue;
 				}
@@ -348,7 +363,7 @@ namespace Chess
 						continue;
 					}
 
-					Parent->move.push_back("");
+					Parent->move.emplace_back("");
 					continue;
 				}
 
@@ -398,7 +413,8 @@ namespace Chess
 		else
 			m_resualt = m_labels["Result"];
 
-		m_DataRead = GetData();
+		if(!onlyRead)
+			m_DataRead = GetData();
 	}
 
 	void PgnGame::WriteMoves(std::string& op, ChessMovesPath par) const

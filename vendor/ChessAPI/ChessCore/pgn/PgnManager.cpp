@@ -73,14 +73,19 @@ namespace Chess
 			s_PgnManager->m_SearchWorkers[threadIndex] = new std::thread(
 				[threadIndex, &numberOfActive]()
 				{
-					std::vector<std::pair<PgnGame, size_t>> games;
+					std::vector<PgnGame> games;
+					std::vector<size_t> gamesIndex;
 					std::vector<int> IndexesToAdd;
 			
+					games.reserve(40'000);
+					gamesIndex.reserve(40'000);
+
 					bool leader = false;
 
 					while (!s_PgnManager->m_endWorkers[threadIndex])
 					{
-						games.clear();
+						//games.clear();
+						gamesIndex.clear();
 						IndexesToAdd.clear();
 						
 						bool found = false;
@@ -190,7 +195,11 @@ namespace Chess
 											strData += data[o];
 									}
 
-									games.emplace_back(PgnGame(), j).first.Parse(strData);
+									gamesIndex.emplace_back(j);
+									if((gamesIndex.size() - 1) < games.size())
+										games[gamesIndex.size() - 1].Parse(strData, true, false);
+									else
+										games.emplace_back().Parse(strData, true, false);
 								}
 
 								delete[] data;
@@ -198,18 +207,18 @@ namespace Chess
 
 							bool doubleBreak = false;
 							int correct = 0;
-							for (int j = 0; j < games.size(); j++)
+							for (int j = 0; j < gamesIndex.size(); j++)
 							{
-								if (fileData->EditedGames.contains(games[j].second))
+								if (fileData->EditedGames.contains(gamesIndex[j]))
 									continue;
 
-								for (auto& existedLabelName : games[j].first.GetLabelNames())
+								for (auto& existedLabelName : games[j].GetLabelNames())
 								{
 									for (auto& [searchLabelName, LabelValue] : target->Settings)
 									{
 										if (existedLabelName == searchLabelName)
 										{
-											if (games[j].first[searchLabelName].find(LabelValue) + 1)
+											if (games[j][searchLabelName].find(LabelValue) + 1)
 												correct += 1;
 											else
 												doubleBreak = true;
@@ -223,7 +232,7 @@ namespace Chess
 									}
 									if (correct == target->Settings.size())
 									{
-										IndexesToAdd.emplace_back(games[j].second);
+										IndexesToAdd.emplace_back(gamesIndex[j]);
 										break;
 									}
 								}

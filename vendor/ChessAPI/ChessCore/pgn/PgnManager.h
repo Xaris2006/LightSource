@@ -50,7 +50,7 @@ namespace Chess
 
 		struct SearchWorkData
 		{
-			const size_t countPerJob = 20'000ull;
+			const size_t countPerJob = 2'000ull;
 			
 			struct Job
 			{

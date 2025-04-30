@@ -69,6 +69,8 @@ namespace Chess
 
 	float SearchWork::GetPercentage() const
 	{
-		return 1.0f - ((float)m_Data->JobsToDo.size() / m_Data->Jobs);
+		if (m_Data->Jobs == 0)
+			return 0.0f;
+		return 100.0f - (float)m_Data->JobsToDo.size() / m_Data->Jobs * 100.0f;
 	}
 }

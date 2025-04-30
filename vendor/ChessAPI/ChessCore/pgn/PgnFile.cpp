@@ -79,7 +79,7 @@ namespace Chess
 			infile.close();
 		}
 
-		std::filesystem::create_directory(cachePath);
+		std::filesystem::create_directories(cachePath);
 
 		{
 			std::ofstream outfile(cachePath / "thisfile.ppgn", std::ios::binary);
@@ -98,14 +98,19 @@ namespace Chess
 		if (m_Data->EditedGames.empty() && path == m_Data->FilePath)
 			return;
 
+		std::ofstream testfile(path);
+		testfile.close();
+
 		PgnPath_Hash hasher;
 		auto hash = hasher(path);
 		auto cachePath = s_cachedDirectory / std::to_string(hash);
 
+		if (std::filesystem::exists(cachePath) && !std::filesystem::is_directory(cachePath))
+			std::filesystem::create_directory(cachePath);
+
 		if (m_Data->EditedGames.empty())
 		{
-			if (std::filesystem::exists(cachePath) && std::filesystem::is_directory(cachePath))
-				std::filesystem::create_directory(cachePath);
+			
 			auto fileHash = shaFile(m_Data->FilePath);
 
 			{
@@ -130,24 +135,111 @@ namespace Chess
 		}
 
 		std::vector<size_t> NDataPointers;
-		NDataPointers.reserve(GetSize() + 1);
-		NDataPointers.emplace_back(0);
-
+		NDataPointers.reserve(GetSize());
+		
 		{
-			std::ofstream outfile(s_cachedDirectory / "helper", std::ios::binary);
+			std::ifstream source(m_Data->FilePath, std::ios::binary);
+			std::ofstream outfile(s_cachedDirectory / "helper", std::ios::binary, std::ios::trunc);
 
-			for (int i = 0; i < GetSize(); ++i)
+			size_t lastIndex = 0;
+			size_t NPointersIndex = 0;
+			
+			std::vector<size_t> EditedGamesSorted;
+
+			auto loadFileByChunk = [this, &source, &outfile, &lastIndex, &NPointersIndex, &NDataPointers](size_t endPoint, size_t gameIndex)
+				{
+					if (m_Data->DataPointers.empty())
+						return;
+
+					const std::streamsize chunkSize = 1024 * 1024;
+
+					std::vector<char> buffer(chunkSize);
+					std::streamsize remaining = endPoint - m_Data->DataPointers[lastIndex];
+
+					source.seekg(m_Data->DataPointers[lastIndex]);
+					//outfile.seekp(std::ios::app);
+
+					while (remaining > 0)
+					{
+						std::streamsize currentChunk = std::min(remaining, chunkSize);
+
+						source.read(buffer.data(), currentChunk);
+						//std::streamsize bytesRead = source.gcount();
+						//if (bytesRead == 0)
+						//	continue;
+
+						//outfile.write(buffer.data(), bytesRead);
+						outfile.write(buffer.data(), currentChunk);
+
+						//remaining -= bytesRead;
+						remaining -= currentChunk;
+					}
+
+					for (int i = 0; i < gameIndex - lastIndex; i++)
+						NDataPointers.emplace_back(m_Data->DataPointers[lastIndex + i] - m_Data->DataPointers[lastIndex] + NPointersIndex);
+
+					NPointersIndex += (endPoint - m_Data->DataPointers[lastIndex]);
+				};
+
+
+			for (auto& game : m_Data->EditedGames)
 			{
-				outfile.seekp(NDataPointers[NDataPointers.size() - 1]);
-				auto dataToAdd = operator[] (i).GetData();
-				outfile.write(dataToAdd.data(), dataToAdd.size());
-				NDataPointers.emplace_back(dataToAdd.size() + NDataPointers[NDataPointers.size() - 1]);
+				bool founded = false;
+
+				for (int i = 0; i < EditedGamesSorted.size(); i++)
+				{
+					if (game.first < EditedGamesSorted[i])
+					{
+						EditedGamesSorted.insert(EditedGamesSorted.begin() + i, game.first);
+						founded = true;
+						break;
+					}
+				}
+
+				if (!founded)
+					EditedGamesSorted.emplace_back(game.first);
+			}
+
+			for (auto& game : EditedGamesSorted)
+			{
+				if (game > lastIndex && game < m_Data->DataPointers.size())
+					loadFileByChunk(m_Data->DataPointers[game], game);
+				
+				if (game == m_Data->DataPointers.size())
+				{
+					source.seekg(0, std::ios::end);
+					loadFileByChunk((size_t)source.tellg(), m_Data->DataPointers.size());
+				}
+				
+				lastIndex = game + 1;
+
+				if (game == 0)
+					NDataPointers.emplace_back(0);
+				else
+				{
+					if (m_Data->EditedGames.contains(game - 1) || game > m_Data->DataPointers.size())
+						NDataPointers.emplace_back(NDataPointers[NDataPointers.size() - 1] + m_Data->Games[game - 1].GetData().size() + 1);
+					else if (game == m_Data->DataPointers.size())
+						NDataPointers.emplace_back(NPointersIndex);
+					else
+						NDataPointers.emplace_back(NDataPointers[NDataPointers.size() - 1] + m_Data->DataPointers[game] - m_Data->DataPointers[game - 1]);
+				}
+
+				std::string strData = m_Data->Games[game].GetData() + '\n';
+				NPointersIndex += strData.size();
+				//outfile.seekp(std::ios::app);
+				outfile.write(strData.data(), strData.size());
+			}
+
+			if (EditedGamesSorted[EditedGamesSorted.size() - 1] != (GetSize() - 1))
+			{
+				source.seekg(0, std::ios::end);
+				loadFileByChunk((size_t)source.tellg(), m_Data->DataPointers.size());
 			}
 
 			outfile.close();
+			source.close();
 		}
-
-		NDataPointers.pop_back();
 
 		{
 			std::ifstream source(s_cachedDirectory / "helper", std::ios::binary);

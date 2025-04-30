@@ -140,23 +140,6 @@ namespace Panels {
 
 			ImGui::Separator();
 
-			ImGui::BeginChild("Files", ImVec2(0, ImGui::GetContentRegionAvail().y - 8 * ImGui::GetStyle().ItemSpacing.y));
-
-			if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-				s_openEmptyPopup = true;
-			
-			static float padding = 32.0f;
-			static float thumbnailSize = 128.0f;
-			static float cellSize;
-			cellSize = thumbnailSize + padding;
-
-			static float panelWidth;
-			panelWidth = ImGui::GetContentRegionAvail().x;
-			static int columnCount;
-			columnCount = (int)(panelWidth / cellSize);
-			if (columnCount < 1)
-				columnCount = 1;
-
 			ImGui::PushStyleColor(ImGuiCol_Text, { 0.38, 0.67, 0, 1 });
 			ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
 
@@ -177,6 +160,23 @@ namespace Panels {
 
 			ImGui::Separator();
 			ImGui::NewLine();
+
+			ImGui::BeginChild("Files", ImVec2(0, ImGui::GetContentRegionAvail().y - 8 * ImGui::GetStyle().ItemSpacing.y));
+
+			if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+				s_openEmptyPopup = true;
+			
+			static float padding = 32.0f;
+			static float thumbnailSize = 128.0f;
+			static float cellSize;
+			cellSize = thumbnailSize + padding;
+
+			static float panelWidth;
+			panelWidth = ImGui::GetContentRegionAvail().x;
+			static int columnCount;
+			columnCount = (int)(panelWidth / cellSize);
+			if (columnCount < 1)
+				columnCount = 1;
 
 			ImGui::Columns(columnCount, 0, false);
 

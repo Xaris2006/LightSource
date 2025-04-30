@@ -68,6 +68,9 @@ void ImGuiBoard::OnAttach()
 	m_board[1] = std::make_shared<Walnut::Image>("Resources\\Board\\boardRev.png");
 	m_bar = std::make_shared<Walnut::Image>("Resources\\ChessBar.png");
 
+	m_WhiteBox = std::make_shared<Walnut::Image>("Resources\\Board\\WhiteBox.png");
+	m_BlackBox = std::make_shared<Walnut::Image>("Resources\\Board\\BlackBox.png");
+
 	m_pieces[0] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_pawn.png");
 	m_pieces[1] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_knight.png");
 	m_pieces[2] = std::make_shared<Walnut::Image>("Resources\\piecies\\white_bishop.png");
@@ -86,7 +89,7 @@ void ImGuiBoard::OnAttach()
 	
 	m_RedTag = std::make_shared<Walnut::Image>("Resources\\Board\\RedTag.png");
 	m_GreenTag = std::make_shared<Walnut::Image>("Resources\\Board\\GreenTag.png");
-	m_BlueTag = std::make_shared<Walnut::Image>("Resources\\Board\\BlueTag.png");
+	m_BlueTag = std::make_shared<Walnut::Image>("Resources\\Board\\BlueTag .png");
 
 	m_RedArrow = std::make_shared<Walnut::Image>("Resources\\Board\\RedArrow.png");
 	m_GreenArrow = std::make_shared<Walnut::Image>("Resources\\Board\\GreenArrow.png");
@@ -330,11 +333,11 @@ void ImGuiBoard::OnUIRender()
 					if (!m_reverse)
 					{
 						vh += hor[(int)MousePos.x];
-						vh += ver[7 - (int)MousePos.y];
+						vh += ver[(int)MousePos.y];
 					}
 					else
 					{
-						vh += hor[7 - (int)MousePos.x];
+						vh += hor[(int)MousePos.x];
 						vh += ver[(int)MousePos.y];
 					}
 
@@ -397,11 +400,11 @@ void ImGuiBoard::OnUIRender()
 					if (!m_reverse)
 					{
 						vh += hor[(int)MousePos.x];
-						vh += ver[7 - (int)MousePos.y];
+						vh += ver[(int)MousePos.y];
 					}
 					else
 					{
-						vh += hor[7 - (int)MousePos.x];
+						vh += hor[(int)MousePos.x];
 						vh += ver[(int)MousePos.y];
 					}
 
@@ -464,11 +467,11 @@ void ImGuiBoard::OnUIRender()
 					if (!m_reverse)
 					{
 						vh += hor[(int)MousePos.x];
-						vh += ver[7 - (int)MousePos.y];
+						vh += ver[(int)MousePos.y];
 					}
 					else
 					{
-						vh += hor[7 - (int)MousePos.x];
+						vh += hor[(int)MousePos.x];
 						vh += ver[(int)MousePos.y];
 					}
 
@@ -535,15 +538,15 @@ void ImGuiBoard::OnUIRender()
 					if (!m_reverse)
 					{
 						vh += hor[(int)s_startPressedPos.x];
-						vh += ver[7 - (int)s_startPressedPos.y];
+						vh += ver[(int)s_startPressedPos.y];
 						vh += hor[(int)MousePos.x];
-						vh += ver[7 - (int)MousePos.y];
+						vh += ver[(int)MousePos.y];
 					}
 					else
 					{
-						vh += hor[7 - (int)s_startPressedPos.x];
+						vh += hor[(int)s_startPressedPos.x];
 						vh += ver[(int)s_startPressedPos.y];
-						vh += hor[7 - (int)MousePos.x];
+						vh += hor[(int)MousePos.x];
 						vh += ver[(int)MousePos.y];
 					}
 
@@ -575,7 +578,7 @@ void ImGuiBoard::OnUIRender()
 							else
 							{
 								bool last = false;
-								if (note[indexVH + 2] == ']')
+								if (note[indexVH + 4] == ']')
 									last = true;
 
 								if (last)
@@ -605,15 +608,15 @@ void ImGuiBoard::OnUIRender()
 					if (!m_reverse)
 					{
 						vh += hor[(int)s_startPressedPos.x];
-						vh += ver[7 - (int)s_startPressedPos.y];
+						vh += ver[(int)s_startPressedPos.y];
 						vh += hor[(int)MousePos.x];
-						vh += ver[7 - (int)MousePos.y];
+						vh += ver[(int)MousePos.y];
 					}
 					else
 					{
-						vh += hor[7 - (int)s_startPressedPos.x];
+						vh += hor[(int)s_startPressedPos.x];
 						vh += ver[(int)s_startPressedPos.y];
-						vh += hor[7 - (int)MousePos.x];
+						vh += hor[(int)MousePos.x];
 						vh += ver[(int)MousePos.y];
 					}
 
@@ -645,7 +648,7 @@ void ImGuiBoard::OnUIRender()
 							else
 							{
 								bool last = false;
-								if (note[indexVH + 2] == ']')
+								if (note[indexVH + 4] == ']')
 									last = true;
 
 								if (last)
@@ -675,15 +678,15 @@ void ImGuiBoard::OnUIRender()
 					if (!m_reverse)
 					{
 						vh += hor[(int)s_startPressedPos.x];
-						vh += ver[7 - (int)s_startPressedPos.y];
+						vh += ver[(int)s_startPressedPos.y];
 						vh += hor[(int)MousePos.x];
-						vh += ver[7 - (int)MousePos.y];
+						vh += ver[(int)MousePos.y];
 					}
 					else
 					{
-						vh += hor[7 - (int)s_startPressedPos.x];
+						vh += hor[(int)s_startPressedPos.x];
 						vh += ver[(int)s_startPressedPos.y];
-						vh += hor[7 - (int)MousePos.x];
+						vh += hor[(int)MousePos.x];
 						vh += ver[(int)MousePos.y];
 					}
 
@@ -745,7 +748,7 @@ void ImGuiBoard::OnUIRender()
 	m_startCursor.y = ImGui::GetCursorPosY();
 	m_startCursor.x = ImGui::GetWindowContentRegionWidth() / 2 - m_size / 2;
 
-
+	RenderPlayerColorBox();
 	RenderBoard();
 	if (ImGui::BeginDragDropTarget())
 	{
@@ -792,11 +795,20 @@ void ImGuiBoard::OnUIRender()
 
 	auto MousePos = FindMousePos();
 
+	ImVec2 bsize = { m_size / 10, m_size / 10 };
+
+	int yCor = (3 - MousePos.y);
+	int xCor = -(4 - MousePos.x);
+	float blockSize = m_size / 9;
+
+	ImVec2 bsize2 = { blockSize * std::max(std::abs(xCor), 1), blockSize * std::max(std::abs(yCor), 1) };
+	RenderRotatedImage((ImTextureID)m_RedLine->GetRendererID(), ImGui::GetMousePos(), bsize2, -yCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)), xCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)), IM_COL32(255, 255, 255, 210));
+
+
 	//ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0, 0, 0 });
 	//ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0, 0, 0, 0 });
 	//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0, 0, 0, 0 });
 
-	ImVec2 bsize = { m_size / 10, m_size / 10 };
 
 	//Piece Moving and Playing
 	if (!ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
@@ -969,10 +981,29 @@ void ImGuiBoard::OnUIRender()
 
 }
 
+void ImGuiBoard::RenderPlayerColorBox()
+{
+	ImVec2 bsize = { m_size / 10, m_size / 10 };
+	float blockSize = m_size / 9;
+
+	float sizef = 1.43f;
+	float xposition = blockSize;
+	float yposition = blockSize;
+	xposition = 8.2f * blockSize;
+	yposition = 8.2f * blockSize;
+
+	ImGui::SetCursorPos(ImVec2(xposition - bsize.x / 2 + m_startCursor.x, yposition - bsize.y / 2 + m_startCursor.y));
+
+	if (ChessAPI::GetPlayerColor())
+		ImGui::Image((ImTextureID)m_WhiteBox->GetRendererID(), { bsize.x * sizef, bsize.y * sizef });
+	else
+		ImGui::Image((ImTextureID)m_BlackBox->GetRendererID(), { bsize.x * sizef, bsize.y * sizef });
+}
+
 void ImGuiBoard::RenderBoard()
 {
 	ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionWidth() / 2 - m_size / 2, m_startCursor.y));
-
+	
 	auto& board = m_board[m_reverse];
 	ImGui::Image((ImTextureID)board->GetRendererID(), { m_size, m_size });
 }
@@ -1076,16 +1107,16 @@ void ImGuiBoard::RenderArrows()
 	for(auto& arrowD : s_arrows)
 	{
 		auto arrow = m_RedArrow;
-		auto colorLine = IM_COL32(161, 7, 13, 250);
+		auto colorLine = IM_COL32(161, 7, 13, 170);
 		if (arrowD.type == 2)
 		{
 			arrow = m_GreenArrow;
-			colorLine = IM_COL32(30, 172, 8, 250);
+			colorLine = IM_COL32(30, 172, 8, 170);
 		}
 		else if (arrowD.type == 3)
 		{
 			arrow = m_BlueArrow;
-			colorLine = IM_COL32(0, 172, 234, 250);
+			colorLine = IM_COL32(0, 172, 234, 170);
 		}
 
 		ImGuiWindow* window = ImGui::GetCurrentWindow();

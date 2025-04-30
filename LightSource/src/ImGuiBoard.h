@@ -27,6 +27,7 @@ public:
 	bool ShowArrows = true;
 
 private:
+	void RenderPlayerColorBox();
 	void RenderBoard();
 	void RenderPieces();
 	void RenderTags();
@@ -55,7 +56,9 @@ private:
 	std::shared_ptr<Walnut::Image> m_pieces[12];
 	std::shared_ptr<Walnut::Image> m_bar;
 
-	
+	std::shared_ptr<Walnut::Image> m_WhiteBox;
+	std::shared_ptr<Walnut::Image> m_BlackBox;
+
 	std::shared_ptr<Walnut::Image> m_circleFromStart;
 	std::shared_ptr<Walnut::Image> m_circleToEnd;
 	
@@ -70,7 +73,7 @@ private:
 	std::shared_ptr<Walnut::Image> m_BlueArrow;
 
 	std::shared_ptr<Walnut::Image> m_RedLine;
-
+	
 	std::array<std::array<int, 8>, 8> m_block;
 	
 private:

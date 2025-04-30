@@ -79,6 +79,8 @@ namespace Panels
 
 			if (ImGui::Button("Search"))
 			{
+				work.Clear();
+
 				s_searched = true;
 				m_lastPointedRow = 0;
 				if (m_name_white || !m_name_black)
@@ -115,6 +117,7 @@ namespace Panels
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
+
 			if (ImGui::Button("Clear"))
 			{
 				work.Clear();
@@ -122,6 +125,33 @@ namespace Panels
 				m_name_to_search = "";
 				m_eco_to_search = "";
 			}
+			ImGui::PopStyleColor(3);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.58f, 0.97f, 0.6f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.58f, 0.97f, 0.6f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.58f, 0.97f, 0.6f));
+
+			ImGui::Button((std::to_string((int)work.GetPercentage()) + '%').c_str(), { 55, ImGui::GetFrameHeight() });
+
+			ImGui::PopStyleColor(3);
+
+			ImGui::SameLine();
+
+			auto ycursor = ImGui::GetCursorPosY();
+			auto xcursor = ImGui::GetCursorPosX();
+
+			float availx = ImGui::GetContentRegionAvail().x;
+			ImGui::Button("##end", ImVec2(availx, 0));
+
+			ImGui::SetCursorPosY(ycursor);
+			ImGui::SetCursorPosX(xcursor);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.353f, 0.314f, 0.0118f, 1.0f));
+
+			ImGui::Button("##bar", ImVec2(availx * work.GetPercentage() / 100, 0));
+
 			ImGui::PopStyleColor(3);
 
 			ImGui::NewLine();
@@ -232,7 +262,8 @@ namespace Panels
 				}
 				else
 				{
-					auto result = work.GetResult();
+					static std::vector<size_t> result;
+					result = work.GetResult();
 					all = result.size();
 
 					ImGuiListClipper clipper;

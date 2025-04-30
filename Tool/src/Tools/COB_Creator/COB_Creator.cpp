@@ -22,8 +22,9 @@ namespace Tools::COBCreator
 {
 	void Layer::OnAttach()
 	{
+		Chess::PgnManager::Init();
 		Creator::Init();
-
+		
 		auto& colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_TableBorderLight] = ImColor(255, 225, 135, 80);
 

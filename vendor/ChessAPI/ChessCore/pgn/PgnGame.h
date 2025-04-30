@@ -60,7 +60,7 @@ namespace Chess
 
 		void Parse(std::istream& f);
 
-		void Parse(std::string& data);
+		void Parse(std::string& data, bool onlyRead = false, bool readMoves = true);
 
 	private:
 
