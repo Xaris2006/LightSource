@@ -87,9 +87,9 @@ void ImGuiBoard::OnAttach()
 	m_circleFromStart = std::make_shared<Walnut::Image>("Resources\\Board\\f.png");
 	m_circleToEnd = std::make_shared<Walnut::Image>("Resources\\Board\\f2.png");
 	
-	m_RedTag = std::make_shared<Walnut::Image>("Resources\\Board\\RedTag.png");
-	m_GreenTag = std::make_shared<Walnut::Image>("Resources\\Board\\GreenTag.png");
-	m_BlueTag = std::make_shared<Walnut::Image>("Resources\\Board\\BlueTag .png");
+	m_RedTag = std::make_shared<Walnut::Image>("Resources\\Board\\RedTagB.png");
+	m_GreenTag = std::make_shared<Walnut::Image>("Resources\\Board\\GreenTagB.png");
+	m_BlueTag = std::make_shared<Walnut::Image>("Resources\\Board\\BlueTagB.png");
 
 	m_RedArrow = std::make_shared<Walnut::Image>("Resources\\Board\\RedArrow.png");
 	m_GreenArrow = std::make_shared<Walnut::Image>("Resources\\Board\\GreenArrow.png");

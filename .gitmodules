@@ -2,3 +2,7 @@
 	path = Walnut
 	url = https://github.com/Xaris2006/Walnut.git
 	branch = dev
+[submodule "vendor/xxHash"]
+	path = vendor/xxHash
+	url = https://github.com/Xaris2006/xxHash.git
+	branch = release

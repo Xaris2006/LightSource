@@ -51,7 +51,9 @@ namespace Chess
 								continue;
 							}
 
-							if (hasRef && Sha256(data->Games[key].GetData()) != Sha256(data->Games[key].GetDataRead()))
+							std::hash<std::string> hasher;
+
+							if (hasRef && hasher(data->Games[key].GetData()) != hasher(data->Games[key].GetDataRead()))
 								data->EditedGames[key] = 0;
 
 							++it;

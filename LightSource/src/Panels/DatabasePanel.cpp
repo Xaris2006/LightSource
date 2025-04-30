@@ -140,7 +140,7 @@ namespace Panels
 			auto ycursor = ImGui::GetCursorPosY();
 			auto xcursor = ImGui::GetCursorPosX();
 
-			float availx = ImGui::GetContentRegionAvail().x;
+			float availx = ImGui::CalcTextSize("12345678911131517192123252729313335").x;
 			ImGui::Button("##end", ImVec2(availx, 0));
 
 			ImGui::SetCursorPosY(ycursor);

@@ -14,12 +14,12 @@ project "ChessAPI"
 	
 	includedirs
 	{
-		"%{IncludeDir.OpenSSL}"
+		"../xxHash/"
 	}
 
 	links
     {
-		"%{Library.OpenSSL_Crypto}"
+		"xxHash"
 	}
 
 	filter "system:windows"

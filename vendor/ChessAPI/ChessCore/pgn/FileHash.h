@@ -1,41 +1,55 @@
 #pragma once
 
-#include <openssl/sha.h>
+#include "xxhash.h"
 
 #include <filesystem>
 #include <fstream>
 #include <array>
 
-inline std::array<uint8_t, SHA_DIGEST_LENGTH> shaFile(const std::filesystem::path& path)
+#define HASH_LENGTH 8
+
+inline std::array<uint8_t, HASH_LENGTH> xxHashFile(const std::filesystem::path& path)
 {
-	std::array<uint8_t, SHA_DIGEST_LENGTH> hash;
-	SHA_CTX sha;
-	SHA1_Init(&sha);
+	constexpr size_t BUF_SIZE = 64 * 1024 * 1024 * 30; // 64 MB buffer
+	std::unique_ptr<char[]> buffer(new char[BUF_SIZE]);
 
-	std::ifstream file(path, std::ifstream::binary);
+	std::ifstream file(path, std::ios::binary);
+	if (!file) throw std::runtime_error("Cannot open file");
 
-	const std::streamsize buffer_size = 64'000'000;
-	char* buffer = new char[buffer_size];
+	XXH3_state_t* state = XXH3_createState();
+	XXH3_64bits_reset(state);
 
-	while (file.read(buffer, buffer_size))
-		SHA1_Update(&sha, buffer, file.gcount());
+	while (file) {
+		file.read(buffer.get(), BUF_SIZE);
+		std::streamsize read_bytes = file.gcount();
+		if (read_bytes > 0) {
+			XXH3_64bits_update(state, buffer.get(), static_cast<size_t>(read_bytes));
+		}
+	}
 
-	SHA1_Update(&sha, buffer, file.gcount());
+	uint64_t hash = XXH3_64bits_digest(state);
+	XXH3_freeState(state);
 
-	delete[] buffer;
+	std::array<uint8_t, HASH_LENGTH> ret;
+	// Convert the 64-bit hash to a byte array
+	ret[0] = (hash >> 56) & 0xFF;
+	ret[1] = (hash >> 48) & 0xFF;
+	ret[2] = (hash >> 40) & 0xFF;
+	ret[3] = (hash >> 32) & 0xFF;
+	ret[4] = (hash >> 24) & 0xFF;
+	ret[5] = (hash >> 16) & 0xFF;
+	ret[6] = (hash >> 8) & 0xFF;
+	ret[7] = hash & 0xFF;
 
-	SHA1_Final(hash.data(), &sha);
 
-	return hash;
+	// Fill the rest with zeros
+	for (size_t i = 8; i < HASH_LENGTH; ++i)
+		ret[i] = 0;
+
+	return ret;
 }
 
-inline std::array<uint8_t, SHA256_DIGEST_LENGTH> Sha256(const std::string& str)
+inline std::array<uint8_t, HASH_LENGTH> HashFile(const std::filesystem::path& path)
 {
-	std::array<uint8_t, SHA256_DIGEST_LENGTH> hash;
-	SHA256_CTX sha256;
-	SHA256_Init(&sha256);
-	SHA256_Update(&sha256, str.c_str(), str.size());
-	SHA256_Final(hash.data(), &sha256);
-
-	return hash;
+	return xxHashFile(path);
 }

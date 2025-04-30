@@ -26,7 +26,7 @@ namespace Chess
 		Clear();
 
 		m_Data->FilePath = path;
-		auto fileHash = shaFile(m_Data->FilePath);
+		auto fileHash = HashFile(m_Data->FilePath);
 
 		PgnPath_Hash hasher;
 		auto hash = hasher(path);
@@ -39,9 +39,9 @@ namespace Chess
 			{
 				std::ifstream infile(cachePath / "sha256.hpgn", std::ios::binary);
 
-				std::array<uint8_t, SHA_DIGEST_LENGTH> NFileHash;
+				std::array<uint8_t, HASH_LENGTH> NFileHash;
 
-				infile.read((char*)NFileHash.data(), SHA_DIGEST_LENGTH);
+				infile.read((char*)NFileHash.data(), HASH_LENGTH);
 
 				if (NFileHash != fileHash)
 					changed = true;
@@ -88,7 +88,7 @@ namespace Chess
 		}
 		{
 			std::ofstream outfile(cachePath / "sha256.hpgn", std::ios::binary);
-			outfile.write((char*)fileHash.data(), SHA_DIGEST_LENGTH);
+			outfile.write((char*)fileHash.data(), HASH_LENGTH);
 			outfile.close();
 		}
 	}
@@ -111,7 +111,7 @@ namespace Chess
 		if (m_Data->EditedGames.empty())
 		{
 			
-			auto fileHash = shaFile(m_Data->FilePath);
+			auto fileHash = HashFile(m_Data->FilePath);
 
 			{
 				std::ifstream source(m_Data->FilePath, std::ios::binary);
@@ -129,7 +129,7 @@ namespace Chess
 			}
 			{
 				std::ofstream outfile(cachePath / "sha256.hpgn", std::ios::binary);
-				outfile.write((char*)fileHash.data(), 32);
+				outfile.write((char*)fileHash.data(), HASH_LENGTH);
 				outfile.close();
 			}
 		}
@@ -252,7 +252,7 @@ namespace Chess
 		}
 
 		m_Data->FilePath = path;
-		auto fileHash = shaFile(m_Data->FilePath);
+		auto fileHash = HashFile(m_Data->FilePath);
 		m_Data->DataPointers = NDataPointers;
 		m_AddedGamesCount = 0;
 
@@ -268,7 +268,7 @@ namespace Chess
 		}
 		{
 			std::ofstream outfile(cachePath / "sha256.hpgn", std::ios::binary);
-			outfile.write((char*)fileHash.data(), 32);
+			outfile.write((char*)fileHash.data(), HASH_LENGTH);
 			outfile.close();
 		}
 	}
