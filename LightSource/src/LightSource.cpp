@@ -505,9 +505,32 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		ImGui::Spacing();
 
 		static bool RB = false;
+		
+		float startingCursorX = ImGui::GetCursorPosX();
+
+		ImVec2 size(ImGui::GetStyle().FramePadding.x * 4 + 13 + ImGui::CalcTextSize((RB == true ? "Board" : "DataBase")).x, 37);
+
+		static ImVec4 colorBoard(0.1f, 0.7f, 0.1f, 0.65f);
+		static ImVec4 colorDatabase(0.3f, 0.58f, 0.97f, 0.6f);
+
+		ImVec4 color = (RB == true ? colorBoard : colorDatabase);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, color);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
+		ImGui::PushItemFlag(ImGuiItemFlags_Disabled | ImGuiItemFlags_ReadOnly, true);
+		
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
+		ImGui::Button("##ModeBackground", size);
+		
+		ImGui::PopItemFlag();
+		ImGui::PopStyleColor(3);
+
+		ImGui::SetCursorPosX(startingCursorX + 5);
 
 		ImGui::GetStyle().FramePadding.y *= 0.4f;
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2 * ImGui::GetStyle().FramePadding.y);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2 * ImGui::GetStyle().FramePadding.y + 5);
+		ImGui::SetItemAllowOverlap();
 		if (ImGui::RadioButton("##Mode", RB))
 		{
 			RB = !RB;
@@ -521,7 +544,6 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 0.5f * ImGui::GetStyle().FramePadding.y);
 		ImGui::Text((RB == true ? "Board" : "DataBase"));
-
 	});
 	return app;
 }

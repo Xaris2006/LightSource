@@ -13,6 +13,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 group "Vendor"
    include "vendor/ChessAPI"
    include "vendor/Web"
+   include "vendor/xxHash"
 group ""
 
 include "Build-Walnut-External.lua"
