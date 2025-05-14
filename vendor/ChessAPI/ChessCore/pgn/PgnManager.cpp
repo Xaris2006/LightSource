@@ -54,7 +54,7 @@ namespace Chess
 							std::hash<std::string> hasher;
 
 							if (hasRef && hasher(data->Games[key].GetData()) != hasher(data->Games[key].GetDataRead()))
-								data->EditedGames[key] = 0;
+								data->EditedGames.insert(key);
 
 							++it;
 						}
@@ -68,7 +68,7 @@ namespace Chess
 
 		int numberOfActive = 0;
 
-		for (int threadIndex = 0; threadIndex < 4; threadIndex++)
+		for (int threadIndex = 0; threadIndex < s_amountOfWorkers; threadIndex++)
 		{
 			s_PgnManager->m_endWorkers[threadIndex] = false;
 			
@@ -79,8 +79,8 @@ namespace Chess
 					std::vector<size_t> gamesIndex;
 					std::vector<int> IndexesToAdd;
 			
-					games.reserve(40'000);
-					gamesIndex.reserve(40'000);
+					games.reserve(SearchWorkData::s_countPerJob);
+					gamesIndex.reserve(SearchWorkData::s_countPerJob);
 
 					bool leader = false;
 
@@ -154,7 +154,7 @@ namespace Chess
 
 								size_t size;
 
-								if (fileData->DataPointers.size() <= job.Index + workData->countPerJob)
+								if (fileData->DataPointers.size() <= job.Index + SearchWorkData::s_countPerJob)
 								{
 									infile.seekg(0, std::ios_base::end);
 									std::streampos maxSize = infile.tellg();
@@ -163,7 +163,7 @@ namespace Chess
 									size = std::streamoff(maxSize) - fileData->DataPointers[job.Index];
 								}
 								else
-									size = fileData->DataPointers[job.Index + workData->countPerJob] - fileData->DataPointers[job.Index] - 1;
+									size = fileData->DataPointers[job.Index + SearchWorkData::s_countPerJob] - fileData->DataPointers[job.Index] - 1;
 
 								char* data = new char[size];
 
@@ -175,7 +175,7 @@ namespace Chess
 								std::string strData;
 								size_t nextMax = size;
 
-								size_t pointerMax = std::min(fileData->DataPointers.size(), job.Index + workData->countPerJob);
+								size_t pointerMax = std::min(fileData->DataPointers.size(), job.Index + SearchWorkData::s_countPerJob);
 
 								for (int j = job.Index; j < pointerMax; j++)
 								{
@@ -263,7 +263,7 @@ namespace Chess
 	{
 		s_PgnManager->m_endWorkers.fill(true);
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < s_amountOfWorkers; i++)
 		{
 			s_PgnManager->m_SearchWorkers[i]->join();
 			delete s_PgnManager->m_SearchWorkers[i];

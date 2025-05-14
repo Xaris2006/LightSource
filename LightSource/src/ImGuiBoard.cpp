@@ -743,10 +743,15 @@ void ImGuiBoard::OnUIRender()
 		}
 	}
 
-	m_size = ImGui::GetWindowHeight() - ImGui::GetCursorPosY() - 2 * ImGui::GetStyle().ItemSpacing.y;
+	m_size = ImGui::GetWindowHeight() - ImGui::GetCursorPosY() - 4 * ImGui::GetStyle().ItemSpacing.y;
 
 	m_startCursor.y = ImGui::GetCursorPosY();
+	
 	m_startCursor.x = ImGui::GetWindowContentRegionWidth() / 2 - m_size / 2;
+	//m_startCursor.x = ImGui::GetCursorPosX();
+	//m_startCursor = ImGui::GetMousePos();
+
+	//std::cout << "Start: " << m_startCursor.x - ImGui::GetMousePos().x << ' ' << m_startCursor.y - ImGui::GetMousePos().y << '\n';
 
 	RenderPlayerColorBox();
 	RenderBoard();
@@ -796,13 +801,13 @@ void ImGuiBoard::OnUIRender()
 	auto MousePos = FindMousePos();
 
 	ImVec2 bsize = { m_size / 10, m_size / 10 };
-
-	int yCor = (3 - MousePos.y);
-	int xCor = -(4 - MousePos.x);
-	float blockSize = m_size / 9;
-
-	ImVec2 bsize2 = { blockSize * std::max(std::abs(xCor), 1), blockSize * std::max(std::abs(yCor), 1) };
-	RenderRotatedImage((ImTextureID)m_RedLine->GetRendererID(), ImGui::GetMousePos(), bsize2, -yCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)), xCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)), IM_COL32(255, 255, 255, 210));
+	//
+	//int yCor = (3 - MousePos.y);
+	//int xCor = -(4 - MousePos.x);
+	//float blockSize = m_size / 9;
+	//
+	//ImVec2 bsize2 = { blockSize * std::max(std::abs(xCor), 1), blockSize * std::max(std::abs(yCor), 1) };
+	//RenderRotatedImage((ImTextureID)m_RedLine->GetRendererID(), ImGui::GetMousePos(), bsize2, -yCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)), xCor / glm::sqrt(glm::pow(xCor, 2) + glm::pow(yCor, 2)), IM_COL32(255, 255, 255, 210));
 
 
 	//ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0, 0, 0 });
@@ -1002,7 +1007,7 @@ void ImGuiBoard::RenderPlayerColorBox()
 
 void ImGuiBoard::RenderBoard()
 {
-	ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionWidth() / 2 - m_size / 2, m_startCursor.y));
+	ImGui::SetCursorPos(m_startCursor);
 	
 	auto& board = m_board[m_reverse];
 	ImGui::Image((ImTextureID)board->GetRendererID(), { m_size, m_size });
@@ -1446,7 +1451,7 @@ void ImGuiBoard::EditorPopup()
 
 		for (int i = 0; i < 6; i++)
 		{
-			if (ImGui::ImageButton((uint32_t*)m_pieces[i]->GetRendererID(), { 50, 50 }))
+			if (ImGui::ImageButton((uint32_t*)m_pieces[i]->GetRendererID(), {50, 50}))
 			{
 				pointIndex = i;
 			}

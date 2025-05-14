@@ -31,7 +31,6 @@ namespace Panels {
 		std::string m_eco_to_search;
 		std::vector<std::string> m_ecoItems;
 		std::string m_date_to_search;
-		int m_lastPointedRow = 0;
 
 		std::vector<bool*> m_IsOpened;
 

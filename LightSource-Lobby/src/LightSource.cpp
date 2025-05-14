@@ -8,6 +8,7 @@
 
 #include "Manager/AppManager.h"
 #include "Manager/ToolManager.h"
+#include "ChessCore/pgn/PgnManager.h"
 
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/ProfilePanel.h"
@@ -23,6 +24,7 @@
 #include "implot.h"
 
 std::string g_AppDirectory;
+std::filesystem::path g_cachedDirectory = "LightSourceApp\\Resources\\cache";
 Walnut::ApplicationSpecification g_spec;
 
 bool g_AlreadyOpenedModalOpen = false;
@@ -58,6 +60,7 @@ public:
 		
 		Manager::AppManager::Init();
 		Manager::ToolManager::Init();
+		Chess::PgnManager::Init();
 
 		using namespace std::chrono_literals;
 
@@ -112,6 +115,7 @@ public:
 		else
 			return;
 		
+		Chess::PgnManager::Shutdown();
 		Manager::AppManager::Shutdown();
 		Manager::ToolManager::Shutdown();
 	}

@@ -26,6 +26,7 @@
 #include "GLFW/glfw3.h"
 
 std::string g_AppDirectory;
+std::filesystem::path g_cachedDirectory = "Resources\\cache";
 Walnut::ApplicationSpecification g_spec;
 bool g_AlreadyOpenedModalOpen = false;
 
@@ -88,7 +89,10 @@ public:
 		{
 			if (ImGui::IsKeyPressed(ImGuiKey_N))
 			{
-				New();
+				if (ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift))
+					AppManagerChild::OpenChessFileInOtherApp();
+				else
+					New();
 			}
 
 			if (ImGui::IsKeyPressed(ImGuiKey_O))
@@ -391,6 +395,10 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				chessLayer->New();
 			}
+			if (ImGui::MenuItem("New Window", "Ctr+Shift+N"))
+			{
+				AppManagerChild::OpenChessFileInOtherApp();
+			}
 			if (ImGui::MenuItem("Open", "Ctr+O"))
 			{
 				chessLayer->Open();
@@ -403,6 +411,10 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				chessLayer->SaveAs();
 			}
+			//if (ImGui::MenuItem("Remove Deleted and Save"))
+			//{
+			//	ChessAPI::DeleteGamesInFile();
+			//}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit", "Alt+F4"))
 			{
@@ -460,7 +472,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			}
 			if (ImGui::MenuItem("Show Possible Moves", 0, &chessLayer->ShowPossibleMoves())) {}
 			if (ImGui::MenuItem("Show Tags", 0, &chessLayer->ShowTags())) {}
-			if (ImGui::MenuItem("Show Arrows \"Buggy :(\"", 0, &chessLayer->ShowArrows())) {}
+			if (ImGui::MenuItem("Show Arrows", 0, &chessLayer->ShowArrows())) {}
 			
 			ImGui::EndMenu();
 		}
@@ -504,46 +516,48 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 
 		ImGui::Spacing();
 
-		static bool RB = false;
-		
-		float startingCursorX = ImGui::GetCursorPosX();
-
-		ImVec2 size(ImGui::GetStyle().FramePadding.x * 4 + 13 + ImGui::CalcTextSize((RB == true ? "Board" : "DataBase")).x, 37);
-
-		static ImVec4 colorBoard(0.1f, 0.7f, 0.1f, 0.65f);
-		static ImVec4 colorDatabase(0.3f, 0.58f, 0.97f, 0.6f);
-
-		ImVec4 color = (RB == true ? colorBoard : colorDatabase);
-
-		ImGui::PushStyleColor(ImGuiCol_Button, color);
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
-		ImGui::PushItemFlag(ImGuiItemFlags_Disabled | ImGuiItemFlags_ReadOnly, true);
-		
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
-		ImGui::Button("##ModeBackground", size);
-		
-		ImGui::PopItemFlag();
-		ImGui::PopStyleColor(3);
-
-		ImGui::SetCursorPosX(startingCursorX + 5);
-
-		ImGui::GetStyle().FramePadding.y *= 0.4f;
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2 * ImGui::GetStyle().FramePadding.y + 5);
-		ImGui::SetItemAllowOverlap();
-		if (ImGui::RadioButton("##Mode", RB))
 		{
-			RB = !RB;
-			if (RB)
-				ImGui::GetIO().IniFilename = "imgui2.ini";
-			else
-				ImGui::GetIO().IniFilename = "imgui.ini";
-			ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
+			static bool RB = false;
+
+			float startingCursorX = ImGui::GetCursorPosX();
+
+			ImVec2 size(ImGui::GetStyle().FramePadding.x * 4 + 13 + ImGui::CalcTextSize((RB == true ? "Board" : "DataBase")).x, 37);
+
+			static ImVec4 colorBoard(0.1f, 0.7f, 0.1f, 0.65f);
+			static ImVec4 colorDatabase(0.3f, 0.58f, 0.97f, 0.6f);
+
+			ImVec4 color = (RB == true ? colorBoard : colorDatabase);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, color);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled | ImGuiItemFlags_ReadOnly, true);
+
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
+			ImGui::Button("##ModeBackground", size);
+
+			ImGui::PopItemFlag();
+			ImGui::PopStyleColor(3);
+
+			ImGui::SetCursorPosX(startingCursorX + 5);
+
+			ImGui::GetStyle().FramePadding.y *= 0.4f;
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2 * ImGui::GetStyle().FramePadding.y + 5);
+			ImGui::SetItemAllowOverlap();
+			if (ImGui::RadioButton("##Mode", RB))
+			{
+				RB = !RB;
+				if (RB)
+					ImGui::GetIO().IniFilename = "imgui2.ini";
+				else
+					ImGui::GetIO().IniFilename = "imgui.ini";
+				ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
+			}
+			ImGui::GetStyle().FramePadding.y *= 2.5f;
+
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 0.5f * ImGui::GetStyle().FramePadding.y);
+			ImGui::Text((RB == true ? "Board" : "DataBase"));
 		}
-		ImGui::GetStyle().FramePadding.y *= 2.5f;
-		
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 0.5f * ImGui::GetStyle().FramePadding.y);
-		ImGui::Text((RB == true ? "Board" : "DataBase"));
 	});
 	return app;
 }

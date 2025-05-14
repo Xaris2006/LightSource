@@ -178,6 +178,8 @@ namespace Panels {
 			if (columnCount < 1)
 				columnCount = 1;
 
+			ImGui::NewLine();
+
 			ImGui::Columns(columnCount, 0, false);
 
 			for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
@@ -601,6 +603,10 @@ namespace Panels {
 				ImGui::CloseCurrentPopup();
 			}
 
+			ImGui::Separator();
+
+			ImGui::BeginDisabled(Manager::AppManager::Get().IsAppOpen(s_path));
+
 			if (ImGui::Selectable("Delete"))
 			{
 				std::error_code ec;
@@ -614,6 +620,19 @@ namespace Panels {
 				
 				ImGui::CloseCurrentPopup();
 			}
+			
+
+			if (ImGui::Selectable("Remove Deleted Games"))
+			{
+				Chess::PgnFile::RemoveDeletedGames(s_path);
+
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndDisabled();
+
+			ImGui::Separator();
+
 			if (ImGui::Selectable("Open Explorer"))
 			{
 				std::string cmd = "explorer " + s_path.parent_path().u8string();
@@ -643,6 +662,9 @@ namespace Panels {
 				s_oldpath = m_CurrentDirectory;
 				ImGui::CloseCurrentPopup();
 			}
+
+			ImGui::Separator();
+
 			if (ImGui::Selectable("Open Explorer"))
 			{
 				std::string cmd = "explorer " + m_CurrentDirectory.u8string();

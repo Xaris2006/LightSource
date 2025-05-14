@@ -36,7 +36,6 @@ namespace Panels
 		m_ecoItems.clear();
 		m_date_to_search.clear();
 		s_searched = false;
-		m_lastPointedRow = 0;
 	}
 
 	void DatabasePanel::OnImGuiRender()
@@ -57,6 +56,9 @@ namespace Panels
 			ImGui::InputText("Name", &m_name_to_search);
 
 			ImGui::SameLine();
+
+			ImGui::SetNextItemWidth(ImGui::CalcTextSize(" --A00-- ").x);
+			ImGui::InputText("ECO", &m_eco_to_search);
 
 			//ImGuiLayer::TextInputComboBox("ECO", m_eco_to_search, m_ecoItems, 3, ImGui::CalcTextSize("1234567").x);
 
@@ -82,7 +84,6 @@ namespace Panels
 				work.Clear();
 
 				s_searched = true;
-				m_lastPointedRow = 0;
 				if (m_name_white || !m_name_black)
 				{
 					m_searchSetting->clear();
@@ -122,8 +123,8 @@ namespace Panels
 			{
 				work.Clear();
 				s_searched = false;
-				m_name_to_search = "";
-				m_eco_to_search = "";
+				m_name_to_search.clear();
+				m_eco_to_search.clear();
 			}
 			ImGui::PopStyleColor(3);
 
@@ -164,15 +165,26 @@ namespace Panels
 			if (ImGui::Button("New Game"))
 			{
 				ChessAPI::NewGameInFile();
-				m_lastPointedRow = pgnfile->GetSize() - 1;
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Delete Game"))
-			{
-				ChessAPI::DeleteGameInFile(m_lastPointedRow);
-				m_lastPointedRow = 0;
-			}
 
+			bool IsDeleted = pgnfile->IsGameDeleted(ChessAPI::GetActiveGame());
+
+			if (IsDeleted)
+			{
+				if (ImGui::Button("Recover Game"))
+					pgnfile->RecoverGame(ChessAPI::GetActiveGame());
+			}
+			else
+			{
+				if (ImGui::Button("Delete Game"))
+				{
+					pgnfile->DeleteGame(ChessAPI::GetActiveGame());
+					//ChessAPI::DeleteGameInFile(m_lastPointedRow);
+					//m_lastPointedRow = 0;
+				}
+			}
+			
 			ImGui::PopStyleColor(3);
 
 			ImGui::Separator();
@@ -216,8 +228,12 @@ namespace Panels
 						{
 							ImGui::TableNextRow();
 							
+							bool IsDeleted = pgnfile->IsGameDeleted(row);
+
 							if (row == ChessAPI::GetActiveGame())
 								ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
+							else if (IsDeleted)
+								ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(0.7f, 0.1f, 0.1f, 0.65f));
 
 							for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
 							{
@@ -244,8 +260,8 @@ namespace Panels
 
 									auto& game = pgnfile->operator[](row);
 
-									if (&game && ImGui::Selectable(game[m_important_prop[column - 1]].c_str()))
-										m_lastPointedRow = row;
+									ImGui::Selectable(game[m_important_prop[column - 1]].c_str());
+									
 									if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 										ChessAPI::OpenChessGameInFile(row);
 
@@ -274,8 +290,12 @@ namespace Panels
 						{
 							ImGui::TableNextRow();
 
+							bool IsDeleted = pgnfile->IsGameDeleted(result[row]);
+
 							if (result[row] == ChessAPI::GetActiveGame())
 								ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(40, 50, 110, 255));
+							else if (IsDeleted)
+								ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor(0.7f, 0.1f, 0.1f, 0.65f));
 
 							for (int column = 0; column < ImGui::TableGetColumnCount(); column++)
 							{
@@ -302,8 +322,8 @@ namespace Panels
 
 									auto& game = pgnfile->operator[](result[row]);
 
-									if (&game && ImGui::Selectable(game[m_important_prop[column - 1]].c_str()))
-										m_lastPointedRow = result[row];
+									ImGui::Selectable(game[m_important_prop[column - 1]].c_str());
+
 									if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 										ChessAPI::OpenChessGameInFile(result[row]);
 									if (ImGui::BeginDragDropSource())
@@ -326,7 +346,6 @@ namespace Panels
 		}
 		else
 		{
-			m_lastPointedRow = 0;
 			m_eco_to_search = "";
 			m_name_to_search = "";
 		}

@@ -16,15 +16,22 @@ namespace Chess
 
 		PgnManager::FileID GetID() const;
 		size_t GetSize() const;
+		std::unordered_set<size_t> GetDeletedGames() const;
 		PgnGame& operator[] (size_t index);
 
 		PgnFile& operator=(const PgnFile& other) = delete;
 		void Clear();
-		//void ClearSearchWork();
 
 		void CreateGame(size_t index = -1); //index = -1 -> placed at the end
 		void DeleteGame(size_t index);
+		void RecoverGame(size_t index);
 		void MoveGame(size_t position, size_t direction);
+
+		bool IsGameDeleted(size_t index) const;
+		bool IsGameEdited(size_t index) const;
+
+	public:
+		static void RemoveDeletedGames(const std::filesystem::path& path);
 
 	public:
 		struct PgnPath_Hash
@@ -64,6 +71,8 @@ namespace Chess
 	private:
 		PgnManager::FileID m_ID;
 		std::shared_ptr<PgnManager::PgnFileData> m_Data;
+
+		std::unordered_set<size_t> m_DeletedGames;
 
 		int m_AddedGamesCount = 0;		
 	};

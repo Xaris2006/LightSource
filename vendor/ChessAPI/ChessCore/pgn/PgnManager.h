@@ -2,6 +2,7 @@
 
 #include <array>
 #include <unordered_map>
+#include <unordered_set>
 #include <chrono>
 #include <thread>
 #include <mutex>
@@ -32,7 +33,7 @@ namespace Chess
 
 			std::filesystem::path				FilePath = "";
 			std::unordered_map<size_t, PgnGame> Games;//protect
-			std::unordered_map<size_t, uint8_t> EditedGames;//protect
+			std::unordered_set<size_t> EditedGames;//protect
 			std::unordered_map<size_t, std::chrono::high_resolution_clock::time_point> GamesTimer;//protect
 			std::vector<size_t> DataPointers;
 		};
@@ -50,7 +51,7 @@ namespace Chess
 
 		struct SearchWorkData
 		{
-			const size_t countPerJob = 2'000ull;
+			static constexpr size_t s_countPerJob = 500ull;
 			
 			struct Job
 			{
@@ -84,14 +85,13 @@ namespace Chess
 		std::unordered_map<FileID, std::shared_ptr<PgnFileData>> m_FileDataPtr;
 		std::unordered_map<WorkID, std::shared_ptr<SearchWorkData>> m_WorkDataPtr;
 
-		//FileID m_FileIDNext = -1;
-		//WorkID m_WorkIDNext = -1;
-
 		std::thread* m_ThreadFileHandler = nullptr;
 		bool m_endThread = true;
 
-		std::array<std::thread*, 4> m_SearchWorkers;
-		std::array<bool, 4> m_endWorkers;
+		static constexpr size_t s_amountOfWorkers = 4;
+
+		std::array<std::thread*, s_amountOfWorkers> m_SearchWorkers;
+		std::array<bool, s_amountOfWorkers> m_endWorkers;
 	};
 
 }

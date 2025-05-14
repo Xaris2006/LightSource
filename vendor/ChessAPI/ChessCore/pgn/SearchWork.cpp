@@ -26,7 +26,7 @@ namespace Chess
 		m_Data->Targets[nID]->FDataID = id;
 		m_Data->Targets[nID]->Settings = settings;
 
-		for (size_t i = 0; i < file->DataPointers.size(); i += m_Data->countPerJob)
+		for (size_t i = 0; i < file->DataPointers.size(); i += PgnManager::SearchWorkData::s_countPerJob)
 		{
 			PgnManager::SearchWorkData::Job job;
 			job.Index = i;

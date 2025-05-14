@@ -42,7 +42,8 @@ namespace ChessAPI
 	void OpenChessGameInFile(int index);
 	void OverWriteChessFile(const std::string& filepath);
 	void NewGameInFile();
-	void DeleteGameInFile(int index);
+	//Should not be used
+	void DeleteGamesInFile();
 
 	void SetNotePanelPointed(const bool& ispointed);
 

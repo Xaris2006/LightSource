@@ -29,6 +29,8 @@ namespace Manager
 
 		void CreateApp(std::string cmd);
 	
+		bool IsAppOpen(const std::filesystem::path& path) const;
+	
 	private:
 		AppManager() = default;
 

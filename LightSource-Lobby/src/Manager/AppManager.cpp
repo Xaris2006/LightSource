@@ -213,4 +213,22 @@ namespace Manager
 		addMutex.unlock();
 	}
 
+	bool AppManager::IsAppOpen(const std::filesystem::path& path) const
+	{
+		bool founded = false;
+		Chess::PgnFile::PgnPath_Hash hasher;
+
+
+		for (auto& [key, value] : m_OpenedPaths)
+		{
+			if (value == hasher(path))
+			{
+				founded = true;
+				break;
+			}
+		}
+
+		return founded;
+	}
+
 }

@@ -97,7 +97,6 @@ namespace AppManagerChild
 
 	void OpenChessFileInOtherApp(const std::filesystem::path& path)
 	{
-		std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << path.u8string() << ":Path \n";
 #ifndef WL_DIST
 
 		return;
@@ -111,7 +110,8 @@ namespace AppManagerChild
 			return;
 		}
 
-		std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << s_Hasher(path) << ":Path \n";
+		std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << path.u8string() << ":Path \n";
+		//std::cerr << "App: " << std::this_thread::get_id() << " - *Open Path:" << s_Hasher(path) << ":Path \n";
 	}
 
 	void OwnChessFile(const std::filesystem::path& path)

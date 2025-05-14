@@ -70,7 +70,7 @@ public:
             &piProcInfo);  // receives PROCESS_INFORMATION 
 
 		if (!bSuccess)
-			throw std::runtime_error("CreateProcess");
+			printf("Error in CreateProcess");
         else
         {
             CloseHandle(piProcInfo.hProcess);
@@ -95,7 +95,7 @@ public:
 
         bSuccess = WriteFile(m_ChildStd_IN_Wr, message.c_str(), message.size(), &dwWritten, NULL);
         if (!bSuccess)
-            throw std::runtime_error("Write to Process");
+            printf("Error in Writing to Process");
     }
 
     std::string Read()
@@ -112,7 +112,7 @@ public:
             if (!bSuccess || dwRead == 0)
                 break;
             if (!bSuccess)//will not be hitted 
-                throw std::runtime_error("Read Process");
+                printf("Error in Reading Process");
             output += std::string(chBuf, dwRead);
         } while (dwRead == BUFSIZE);
 
@@ -126,49 +126,3 @@ private:
 
 #endif // PLATFORM_WINDOWS_64
 };
-
-#if 0
-int notmain()
-{
-    std::string overall;
-    float score = 0;
-
-    Process stockfish(L"stockfish.exe", L"");
-    stockfish.Write("ucinewgame");
-    stockfish.Write("position fen 4r3/6pp/pp1k1b2/2p1N3/5P2/2P3P1/P4K1P/4R3 w - - 5 31");
-    stockfish.Write("d");
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
-    std::cout << stockfish.Read() << '\n' << score;
-    stockfish.Write("go infinite");
-    for (int i = 0; i < 200; i++)
-    {
-        overall.clear();
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(0.4s);
-        overall += stockfish.Read();
-        int index = overall.find("score cp");
-        if (index + 9 < overall.size() && index >= 0)
-        {
-            index += 9;
-            std::string strscore;
-            for (int j = index; j < overall.size(); j++)
-            {
-                if (overall[j] == ' ')
-                    break;
-                strscore += overall[j];
-            }
-            score = (float)std::stoi(strscore) / 100.0f;
-        }
-        std::cout << '\r' << score;
-    }
-
-    //stockfish.Write("stop");
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(0.4s);
-    std::cout << stockfish.Read();
-
-    
-    printf("\n->End of parent execution.\n");
-}
-#endif

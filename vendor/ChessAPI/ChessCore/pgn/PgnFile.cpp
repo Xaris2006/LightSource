@@ -6,7 +6,7 @@
 
 #include "FileHash.h"
 
-static std::filesystem::path s_cachedDirectory = "Resources\\cache";
+extern std::filesystem::path g_cachedDirectory;
 
 namespace Chess
 {
@@ -30,14 +30,14 @@ namespace Chess
 
 		PgnPath_Hash hasher;
 		auto hash = hasher(path);
-		auto cachePath = s_cachedDirectory / std::to_string(hash);
+		auto cachePath = g_cachedDirectory / std::to_string(hash);
 
 		if (std::filesystem::exists(cachePath) && std::filesystem::is_directory(cachePath))
 		{
 			bool changed = false;
 
 			{
-				std::ifstream infile(cachePath / "sha256.hpgn", std::ios::binary);
+				std::ifstream infile(cachePath / "thisfile.hpgn", std::ios::binary);
 
 				std::array<uint8_t, HASH_LENGTH> NFileHash;
 
@@ -51,23 +51,44 @@ namespace Chess
 
 			if (!changed)
 			{
-				std::ifstream infile(cachePath / "thisfile.ppgn", std::ios::binary);
+				{
+					std::ifstream infile(cachePath / "thisfile.ppgn", std::ios::binary);
 
-				infile.seekg(0, std::ios_base::end);
-				std::streampos maxSize = infile.tellg();
-				infile.seekg(0, std::ios_base::beg);
+					infile.seekg(0, std::ios_base::end);
+					std::streampos maxSize = infile.tellg();
+					infile.seekg(0, std::ios_base::beg);
 
-				char* data = new char[maxSize];
-				infile.read(data, maxSize);
+					char* data = new char[maxSize];
+					infile.read(data, maxSize);
 
-				infile.close();
+					infile.close();
 
-				m_Data->DataPointers.reserve(maxSize / 8);
+					m_Data->DataPointers.reserve(maxSize / 8);
 
-				for (int i = 0; i < maxSize; i += 8)
-					m_Data->DataPointers.emplace_back(*(size_t*)(&data[i]));
+					for (int i = 0; i < maxSize; i += 8)
+						m_Data->DataPointers.emplace_back(*(size_t*)(&data[i]));
 
-				delete[] data;
+					delete[] data;
+				}
+				{
+					std::ifstream infile(cachePath / "thisfile.dpgn", std::ios::binary);
+					
+					infile.seekg(0, std::ios_base::end);
+					std::streampos maxSize = infile.tellg();
+					infile.seekg(0, std::ios_base::beg);
+
+					char* data = new char[maxSize];
+					infile.read(data, maxSize);
+
+					infile.close();
+
+					m_DeletedGames.reserve(maxSize / 8);
+
+					for (int i = 0; i < maxSize; i += 8)
+						m_DeletedGames.emplace(*(size_t*)(&data[i]));
+
+					delete[] data;
+				}
 
 				return;
 			}
@@ -87,30 +108,56 @@ namespace Chess
 			outfile.close();
 		}
 		{
-			std::ofstream outfile(cachePath / "sha256.hpgn", std::ios::binary);
+			std::ofstream outfile(cachePath / "thisfile.hpgn", std::ios::binary);
 			outfile.write((char*)fileHash.data(), HASH_LENGTH);
 			outfile.close();
 		}
+		{
+			std::ofstream outfile(cachePath / "thisfile.dpgn", std::ios::binary);
+			outfile.close();
+		}
+		
+		//{
+		//	auto deletedfileHash = HashFile(cachePath / "thisfile.dpgn");
+		//
+		//	std::ofstream outfile(cachePath / "deletedfile.hpgn", std::ios::binary);
+		//	outfile.write((char*)deletedfileHash.data(), HASH_LENGTH);
+		//	outfile.close();
+		//}
 	}
 
 	void PgnFile::SaveFile(const std::filesystem::path& path)
 	{
-		if (m_Data->EditedGames.empty() && path == m_Data->FilePath)
-			return;
-
-		std::ofstream testfile(path);
-		testfile.close();
+		bool diffFile = path != m_Data->FilePath;
+		
+		if (diffFile)
+		{
+			std::ofstream testfile(path, std::ios::trunc);
+			testfile.close();
+		}
 
 		PgnPath_Hash hasher;
 		auto hash = hasher(path);
-		auto cachePath = s_cachedDirectory / std::to_string(hash);
+		auto cachePath = g_cachedDirectory / std::to_string(hash);
 
 		if (std::filesystem::exists(cachePath) && !std::filesystem::is_directory(cachePath))
 			std::filesystem::create_directory(cachePath);
 
+
+		{
+			std::ofstream outfile(cachePath / "thisfile.dpgn", std::ios::binary | std::ios::trunc);
+			
+			for (auto& gameDeleted : m_DeletedGames)
+				outfile.write((char*)&gameDeleted, 8);
+
+			outfile.close();
+		}
+
+		if (m_Data->EditedGames.empty() && !diffFile)
+			return;
+
 		if (m_Data->EditedGames.empty())
 		{
-			
 			auto fileHash = HashFile(m_Data->FilePath);
 
 			{
@@ -128,10 +175,12 @@ namespace Chess
 				outfile.close();
 			}
 			{
-				std::ofstream outfile(cachePath / "sha256.hpgn", std::ios::binary);
+				std::ofstream outfile(cachePath / "thisfile.hpgn", std::ios::binary);
 				outfile.write((char*)fileHash.data(), HASH_LENGTH);
 				outfile.close();
 			}
+
+			return;
 		}
 
 		std::vector<size_t> NDataPointers;
@@ -139,7 +188,7 @@ namespace Chess
 		
 		{
 			std::ifstream source(m_Data->FilePath, std::ios::binary);
-			std::ofstream outfile(s_cachedDirectory / "helper", std::ios::binary, std::ios::trunc);
+			std::ofstream outfile(cachePath / "helper", std::ios::binary, std::ios::trunc);
 
 			size_t lastIndex = 0;
 			size_t NPointersIndex = 0;
@@ -180,24 +229,23 @@ namespace Chess
 
 					NPointersIndex += (endPoint - m_Data->DataPointers[lastIndex]);
 				};
-
-
+			
 			for (auto& game : m_Data->EditedGames)
 			{
 				bool founded = false;
 
 				for (int i = 0; i < EditedGamesSorted.size(); i++)
 				{
-					if (game.first < EditedGamesSorted[i])
+					if (game < EditedGamesSorted[i])
 					{
-						EditedGamesSorted.insert(EditedGamesSorted.begin() + i, game.first);
+						EditedGamesSorted.insert(EditedGamesSorted.begin() + i, game);
 						founded = true;
 						break;
 					}
 				}
 
 				if (!founded)
-					EditedGamesSorted.emplace_back(game.first);
+					EditedGamesSorted.emplace_back(game);
 			}
 
 			for (auto& game : EditedGamesSorted)
@@ -213,14 +261,14 @@ namespace Chess
 				
 				lastIndex = game + 1;
 
-				if (game == 0)
+				if (NDataPointers.empty())
 					NDataPointers.emplace_back(0);
 				else
 				{
-					if (m_Data->EditedGames.contains(game - 1) || game > m_Data->DataPointers.size())
-						NDataPointers.emplace_back(NDataPointers[NDataPointers.size() - 1] + m_Data->Games[game - 1].GetData().size() + 1);
-					else if (game == m_Data->DataPointers.size())
+					if (game == m_Data->DataPointers.size())
 						NDataPointers.emplace_back(NPointersIndex);
+					else if(m_Data->EditedGames.contains(game - 1))
+						NDataPointers.emplace_back(NDataPointers[NDataPointers.size() - 1] + m_Data->Games[game - 1].GetData().size() + 1);
 					else
 						NDataPointers.emplace_back(NDataPointers[NDataPointers.size() - 1] + m_Data->DataPointers[game] - m_Data->DataPointers[game - 1]);
 				}
@@ -231,7 +279,7 @@ namespace Chess
 				outfile.write(strData.data(), strData.size());
 			}
 
-			if (EditedGamesSorted[EditedGamesSorted.size() - 1] != (GetSize() - 1))
+			if (EditedGamesSorted[EditedGamesSorted.size() - 1] < m_Data->DataPointers.size() - 1)
 			{
 				source.seekg(0, std::ios::end);
 				loadFileByChunk((size_t)source.tellg(), m_Data->DataPointers.size());
@@ -242,7 +290,7 @@ namespace Chess
 		}
 
 		{
-			std::ifstream source(s_cachedDirectory / "helper", std::ios::binary);
+			std::ifstream source(cachePath / "helper", std::ios::binary);
 			std::ofstream destination(path, std::ios::binary);
 
 			destination << source.rdbuf();
@@ -251,23 +299,23 @@ namespace Chess
 			destination.close();
 		}
 
-		m_Data->FilePath = path;
-		auto fileHash = HashFile(m_Data->FilePath);
-		m_Data->DataPointers = NDataPointers;
-		m_AddedGamesCount = 0;
-
 		{
 			std::unique_lock<std::shared_mutex> ul(m_Data->FileMutex);
 			m_Data->EditedGames.clear();
+			m_Data->FilePath = path;
+			m_Data->DataPointers = NDataPointers;
+			m_AddedGamesCount = 0;
 		}
 
+		auto fileHash = HashFile(m_Data->FilePath);
+		
 		{
 			std::ofstream outfile(cachePath / "thisfile.ppgn", std::ios::binary);
 			outfile.write((char*)m_Data->DataPointers.data(), m_Data->DataPointers.size() * 8);
 			outfile.close();
 		}
 		{
-			std::ofstream outfile(cachePath / "sha256.hpgn", std::ios::binary);
+			std::ofstream outfile(cachePath / "thisfile.hpgn", std::ios::binary);
 			outfile.write((char*)fileHash.data(), HASH_LENGTH);
 			outfile.close();
 		}
@@ -344,33 +392,6 @@ namespace Chess
 		return stream;
 	}
 
-	
-	//void SearchMoves(std::vector<int>& possitiveIndexes, int& searched, const std::vector<std::string>& moves)
-	//{
-	//
-	//	//unsafe
-	//	bool wrong = true;
-	//	searched = 0;
-	//	if (moves.empty())
-	//		return;
-	//	for (int i = 0; i < GetSize(); i++)
-	//	{
-	//		for (int j = 0; j < m_Data->Games[i].GetMovePathbyRef().move.size() && j < moves.size(); j++)
-	//		{
-	//			wrong = false;
-	//			if (m_Data->Games[i].GetMovePathbyRef().move[j] != moves[j])
-	//			{
-	//				wrong = true;
-	//				break;
-	//			}
-	//		}
-	//		if (!wrong)
-	//			possitiveIndexes.push_back(i);
-	//		searched += 1;
-	//		wrong = true;
-	//	}
-	//}
-
 	PgnManager::FileID PgnFile::GetID() const
 	{
 		return m_ID;
@@ -379,6 +400,11 @@ namespace Chess
 	size_t PgnFile::GetSize() const
 	{
 		return m_Data->DataPointers.size() + m_AddedGamesCount;
+	}
+
+	std::unordered_set<size_t> PgnFile::GetDeletedGames() const
+	{
+		return m_DeletedGames;
 	}
 
 	PgnGame& PgnFile::operator[] (size_t index)
@@ -442,7 +468,7 @@ namespace Chess
 	void PgnFile::Clear()
 	{
 		std::unique_lock<std::shared_mutex> ul(m_Data->FileMutex);
-
+		
 		m_Data->FilePath = "";
 		m_Data->GamesTimer.clear();
 		m_Data->EditedGames.clear();
@@ -450,6 +476,7 @@ namespace Chess
 
 		m_Data->DataPointers.clear();
 		m_AddedGamesCount = 0;
+		m_DeletedGames.clear();
 	}
 
 	void PgnFile::CreateGame(size_t index)
@@ -458,7 +485,7 @@ namespace Chess
 		{
 			std::unique_lock<std::shared_mutex> ul(m_Data->FileMutex);
 			m_Data->Games[GetSize()];
-			m_Data->EditedGames[GetSize()] = 0;
+			m_Data->EditedGames.insert(GetSize());
 			m_AddedGamesCount++;
 
 			return;
@@ -467,12 +494,177 @@ namespace Chess
 
 	void PgnFile::DeleteGame(size_t index)
 	{
-		//m_Games.erase(m_Games.begin() + index);
+		m_DeletedGames.emplace(index);
+	}
+
+	void PgnFile::RecoverGame(size_t index)
+	{
+		if (m_DeletedGames.contains(index))
+			m_DeletedGames.erase(index);
 	}
 
 	void PgnFile::MoveGame(size_t position, size_t direction)
 	{
 		//m_Games.insert(m_Games.begin() + direction, m_Games[position]);
 		//m_Games.erase(m_Games.begin() + direction);
+	}
+
+
+	bool PgnFile::IsGameDeleted(size_t index) const
+	{
+		if (m_DeletedGames.contains(index))
+			return true;
+		return false;
+	}
+
+	bool PgnFile::IsGameEdited(size_t index) const
+	{
+		if (m_Data->EditedGames.contains(index))
+			return true;
+		return false;
+	}
+
+	void PgnFile::RemoveDeletedGames(const std::filesystem::path& path)
+	{
+		PgnFile file;
+		file.OpenFile(path);
+
+		if (file.m_DeletedGames.empty())
+			return;
+
+		PgnPath_Hash hasher;
+		auto hash = hasher(path);
+		auto cachePath = g_cachedDirectory / std::to_string(hash);
+
+		std::vector<size_t> NDataPointers;
+		std::vector<size_t> DeletedGamesSorted;
+
+		for (auto& game : file.m_DeletedGames)
+		{
+			bool founded = false;
+
+			for (int i = 0; i < DeletedGamesSorted.size(); i++)
+			{
+				if (game < DeletedGamesSorted[i])
+				{
+					DeletedGamesSorted.insert(DeletedGamesSorted.begin() + i, game);
+					founded = true;
+					break;
+				}
+			}
+
+			if (!founded)
+				DeletedGamesSorted.emplace_back(game);
+		}
+
+		{
+			std::ifstream source(file.m_Data->FilePath, std::ios::binary);
+			std::ofstream outfile(cachePath / "helper", std::ios::binary, std::ios::trunc);
+
+			size_t indexMove = 0;
+
+			for (int i = 0; i < DeletedGamesSorted.size(); i++)
+			{
+				if (file.m_Data->DataPointers.size() == DeletedGamesSorted[i] + 1)
+					break;
+
+
+				if (DeletedGamesSorted[i] == 0)
+				{
+					indexMove += (file.m_Data->DataPointers[DeletedGamesSorted[i] + 1] - file.m_Data->DataPointers[DeletedGamesSorted[i]]);
+
+					continue;
+				}
+
+				const std::streamsize chunkSize = 1024 * 1024;
+				
+				size_t lastIndex = file.m_Data->DataPointers[DeletedGamesSorted[i]];
+				//if (i + 1 == DeletedGamesSorted.size())
+				//{
+				//	source.seekg(0, std::ios::end);
+				//	lastIndex = (size_t)source.tellg();
+				//}
+
+				size_t startIndex = 0; 
+				if (i > 0)
+					startIndex = file.m_Data->DataPointers[DeletedGamesSorted[i - 1] + 1];
+				
+				std::vector<char> buffer(chunkSize);
+				std::streamsize remaining = lastIndex - startIndex;
+				source.seekg(startIndex);
+
+				while (remaining > 0)
+				{
+					std::streamsize currentChunk = std::min(remaining, chunkSize);
+
+					source.read(buffer.data(), currentChunk);
+					outfile.write(buffer.data(), currentChunk);
+
+					remaining -= currentChunk;
+				}
+
+				for (int j = (i == 0 ? 0 : DeletedGamesSorted[i - 1] + 1); j < DeletedGamesSorted[i]; j++)
+					NDataPointers.emplace_back(file.m_Data->DataPointers[j] - indexMove);
+
+				indexMove += (file.m_Data->DataPointers[DeletedGamesSorted[i] + 1] - file.m_Data->DataPointers[DeletedGamesSorted[i]]);
+			}
+
+			if (DeletedGamesSorted[DeletedGamesSorted.size() - 1] < file.m_Data->DataPointers.size() - 1)
+			{
+				const std::streamsize chunkSize = 1024 * 1024;
+
+				source.seekg(0, std::ios::end);
+				size_t lastIndex = (size_t)source.tellg();
+
+				size_t startIndex = file.m_Data->DataPointers[DeletedGamesSorted[DeletedGamesSorted.size() - 1] + 1];
+
+				std::vector<char> buffer(chunkSize);
+				std::streamsize remaining = lastIndex - startIndex;
+				source.seekg(startIndex);
+
+				while (remaining > 0)
+				{
+					std::streamsize currentChunk = std::min(remaining, chunkSize);
+
+					source.read(buffer.data(), currentChunk);
+					outfile.write(buffer.data(), currentChunk);
+
+					remaining -= currentChunk;
+				}
+
+				for (int j = DeletedGamesSorted[DeletedGamesSorted.size() - 1] + 1; j < file.m_Data->DataPointers.size(); j++)
+					NDataPointers.emplace_back(file.m_Data->DataPointers[j] - indexMove);
+			}
+
+			source.close();
+			outfile.close();
+		}
+
+		{
+			std::ifstream source(cachePath / "helper", std::ios::binary);
+			std::ofstream destination(path, std::ios::binary);
+
+			destination << source.rdbuf();
+
+			source.close();
+			destination.close();
+		}
+
+		auto fileHash = HashFile(path);
+
+		{
+			std::ofstream outfile(cachePath / "thisfile.ppgn", std::ios::binary);
+			outfile.write((char*)NDataPointers.data(), NDataPointers.size() * 8);
+			outfile.close();
+		}
+		{
+			std::ofstream outfile(cachePath / "thisfile.hpgn", std::ios::binary);
+			outfile.write((char*)fileHash.data(), HASH_LENGTH);
+			outfile.close();
+		}
+		{
+			std::ofstream outfile(cachePath / "thisfile.dpgn", std::ios::binary, std::ios::trunc);
+			outfile.close();
+		}
 	}
 }

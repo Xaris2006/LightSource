@@ -41,7 +41,7 @@ namespace ChessAPI
 		s_PngName = "New Game";
 
 		s_ActiveGame = 0;
-		s_OpenGames.push_back(0);
+		s_OpenGames.emplace_back(0);
 
 		s_Games[0].InitPgnGame(s_PngFile->operator[](0));
 		s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
@@ -279,66 +279,73 @@ namespace ChessAPI
 		
 	}
 
-	void DeleteGameInFile(int index)
+	void DeleteGamesInFile()
 	{
+		return;
+
 		s_movePromotion.index = -1;
 
-		s_PngFile->DeleteGame(index);
-
-		s_Games.erase(index);
-		s_MovePathIntFormat.erase(index);
-
-		for (int i = 0; i < s_OpenGames.size(); i++)
+		for (auto& index : s_PngFile->GetDeletedGames())
 		{
-			if (s_OpenGames[i] == index)
+			s_Games.erase(index);
+			s_MovePathIntFormat.erase(index);
+
+			for (int i = 0; i < s_OpenGames.size(); i++)
 			{
-				s_OpenGames.erase(s_OpenGames.begin() + i);
-				break;
+				if (s_OpenGames[i] == index)
+				{
+					s_OpenGames.erase(s_OpenGames.begin() + i);
+					break;
+				}
+			}
+
+			if (!s_PngFile->GetSize())
+			{
+				s_PngFile->CreateGame();
+
+				s_ActiveGame = 0;
+				s_OpenGames.emplace_back(0);
+
+				s_Games[0].Clear();
+				s_Games[0].InitPgnGame(s_PngFile->operator[](0));
+				s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
+
+				return;
+			}
+
+			if (s_OpenGames.empty())
+			{
+				s_ActiveGame = 0;
+				s_OpenGames.emplace_back(0);
+
+				s_Games[0].Clear();
+				s_Games[0].InitPgnGame(s_PngFile->operator[](0));
+				s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
+
+				return;
+			}
+
+			for (auto& game : s_OpenGames)
+			{
+				if (game > index)
+					game--;
+			}
+			if (s_ActiveGame > index)
+				s_ActiveGame--;
+
+			if (s_ActiveGame == index)
+			{
+				s_ActiveGame = s_OpenGames[0];
+
+				s_Games[s_ActiveGame].Clear();
+				s_Games[s_ActiveGame].InitPgnGame(s_PngFile->operator[](s_ActiveGame));
+				s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
 			}
 		}
 
-		if (!s_PngFile->GetSize())
-		{
-			s_PngFile->CreateGame();
+		s_PngFile->SaveFile(s_PngPath);
 
-			s_ActiveGame = 0;
-			s_OpenGames.emplace_back(0);
-			
-			s_Games[0].Clear();
-			s_Games[0].InitPgnGame(s_PngFile->operator[](0));
-			s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
-
-			return;
-		}
-
-		if (s_OpenGames.empty())
-		{
-			s_ActiveGame = 0;
-			s_OpenGames.emplace_back(0);
-
-			s_Games[0].Clear();
-			s_Games[0].InitPgnGame(s_PngFile->operator[](0));
-			s_MovePathIntFormat[0] = s_Games[0].GetLastMoveKey();
-
-			return;
-		}
-
-		for (auto& game : s_OpenGames)
-		{
-			if (game > index)
-				game--;
-		}
-		if (s_ActiveGame > index)
-			s_ActiveGame--;
-
-		if (s_ActiveGame == index)
-		{
-			s_ActiveGame = s_OpenGames[0];
-
-			s_Games[s_ActiveGame].Clear();
-			s_Games[s_ActiveGame].InitPgnGame(s_PngFile->operator[](s_ActiveGame));
-			s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
-		}
+		OpenChessFile(s_PngPath);
 	}
 
 	void SetNewPieceType(int type)
