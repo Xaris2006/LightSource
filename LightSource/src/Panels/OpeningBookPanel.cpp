@@ -29,62 +29,60 @@ namespace Panels
 		}
 
 		ImGui::Begin("Opening Book", &m_viewPanel);
-			
-		ImGui::PushID("Play");
 		
-		ImVec2 textSize = ImGui::CalcTextSize("Load Chess Opening Book (.cob)");
-
-		{
-			float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
-			float availX = ImGui::GetContentRegionAvail().x;
-
-			float offX = (availX - actualSizeX) * 0.5f;
-			if (offX > 0.0f)
-				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
-		}
-
-		{
-			float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
-			float availY = ImGui::GetContentRegionAvail().y;
-
-			float offY = (availY - actualSizeY) * 0.5f;
-			if (offY > 0.0f)
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
-		}
-
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
-
-		if (ImGui::Button("Load Chess Opening Book (.cob)"))
-		{
-			CloseCOBfile();
-			std::string path = Windows::Utils::OpenFile("Chess Opening Book (*.cob)\0*.cob\0");
-			if (!path.empty())
-				OpenCOBfile(path);
-		}
-
-		ImGui::PopID();
-
-		ImGui::PopStyleColor();
-		
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-			{
-				const wchar_t* path = (const wchar_t*)payload->Data;
-				std::wstring wstr(path);
-				std::string str(wstr.begin(), wstr.end());
-				if(std::filesystem::path(str).extension() == ".cob")
-					OpenCOBfile(str);
-			}
-			ImGui::EndDragDropTarget();
-		}
-				
 		if (!m_cobPath.empty())
 		{
 			ImGui::TextWrapped(m_cobFilename.c_str());
-			if(ImGui::Button("Close"))
+			if (ImGui::Button("Close"))
 			{
 				CloseCOBfile();
+			}
+		}
+		else
+		{
+			ImVec2 textSize = ImGui::CalcTextSize("Load Chess Opening Book (.cob)");
+
+			{
+				float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
+				float availX = ImGui::GetContentRegionAvail().x;
+
+				float offX = (availX - actualSizeX) * 0.5f;
+				if (offX > 0.0f)
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
+			}
+
+			{
+				float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+				float availY = ImGui::GetContentRegionAvail().y;
+
+				float offY = (availY - actualSizeY) * 0.5f;
+				if (offY > 0.0f)
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
+			}
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+
+			if (ImGui::Button("Load Chess Opening Book (.cob)"))
+			{
+				CloseCOBfile();
+				std::string path = Windows::Utils::OpenFile("Chess Opening Book (*.cob)\0*.cob\0");
+				if (!path.empty())
+					OpenCOBfile(path);
+			}
+
+			ImGui::PopStyleColor();
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					const wchar_t* path = (const wchar_t*)payload->Data;
+					std::wstring wstr(path);
+					std::string str(wstr.begin(), wstr.end());
+					if (std::filesystem::path(str).extension() == ".cob")
+						OpenCOBfile(str);
+				}
+				ImGui::EndDragDropTarget();
 			}
 		}
 

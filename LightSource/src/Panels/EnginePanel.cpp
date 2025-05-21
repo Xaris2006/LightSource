@@ -22,6 +22,7 @@ static std::mutex s_vectorMutex;
 static std::mutex s_moveMutex;
 
 static Walnut::Timer s_time;
+static Walnut::Timer s_timeScore;
 
 static int FindLastOf(const std::string& source, const std::string& target)
 {
@@ -74,6 +75,10 @@ namespace Panels
 
 	void EnginePanel::OnImGuiRender()
 	{
+
+		if (ImGui::IsKeyDown(ImGuiKey_LeftArrow) || ImGui::IsKeyDown(ImGuiKey_RightArrow))// || ImGui::IsMouseDown(ImGuiMouseButton_Left))
+			s_timeScore.Reset();
+
 		{
 			m_AvailEngines.clear();
 
@@ -161,7 +166,7 @@ namespace Panels
 		//green(0.1, 0.79, 0.31) -> white
 		auto curBoard = ChessAPI::GetFormatedPosition();
 		if (m_oldBoard != curBoard && m_running && !ChessAPI::IsWaitingForNewType()
-			&& !ImGui::IsKeyPressed(ImGuiKey_RightArrow) && !ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+			&& s_timeScore.Elapsed() > 0.2)
 		{
 			m_oldBoard = curBoard;
 			CommandChessEngine("stop");
@@ -184,8 +189,7 @@ namespace Panels
 		else
 			ImGui::TextWrapped("%.2f", m_Score[0]);
 
-		if (!ImGui::IsKeyDown(ImGuiKey_LeftArrow) && !ImGui::IsKeyDown(ImGuiKey_RightArrow))
-			g_ChessEngineValue = m_Score[0];
+		g_ChessEngineValue = m_Score[0];
 
 		ImGui::PopFont();
 		ImGui::PopStyleColor();
@@ -455,6 +459,9 @@ namespace Panels
 
 					for(int list = 0; list < 5; list++)
 					{
+						if (s_timeScore.Elapsed() < 0.5)
+							break;
+
 						if (m_FinalStreams[list] == -1)
 							continue;
 
@@ -644,7 +651,7 @@ namespace Panels
 	{
 		moves.clear();
 
-		if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_RightArrow))			
+		if (s_timeScore.Elapsed() < 0.5)			
 			return;
 
 		s_moveMutex.lock();

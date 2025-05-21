@@ -5,3 +5,4 @@
 <a href="https://www.flaticon.com/free-icons/question-mark" title="question mark icons">Question mark icons created by Hight Quality Icons - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/back" title="back icons">Back icons created by Roundicons - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/turbo" title="turbo icons">Turbo icons created by IwitoStudio - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/up-arrow" title="up-arrow icons">Up-arrow icons created by Pixel perfect - Flaticon</a>

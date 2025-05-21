@@ -41,7 +41,9 @@ namespace Chess
 				std::size_t hash = 0;
 				std::hash<std::string> hasher;
 
-				auto cpath = std::filesystem::canonical(path);
+				std::error_code ec;
+
+				auto cpath = std::filesystem::canonical(path, ec);
 
 				if (cpath.extension() != ".pgn")
 					return hash;

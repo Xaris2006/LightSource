@@ -69,8 +69,12 @@ public:
             &siStartInfo,  // STARTUPINFO pointer 
             &piProcInfo);  // receives PROCESS_INFORMATION 
 
-		if (!bSuccess)
-			printf("Error in CreateProcess");
+        if (!bSuccess)
+        {
+			std::ofstream errorProcess("ErrorProcess.txt");
+			errorProcess << "Error in CreateProcess: " << GetLastError() << std::endl;
+			errorProcess.close();
+        }
         else
         {
             CloseHandle(piProcInfo.hProcess);
@@ -95,7 +99,11 @@ public:
 
         bSuccess = WriteFile(m_ChildStd_IN_Wr, message.c_str(), message.size(), &dwWritten, NULL);
         if (!bSuccess)
-            printf("Error in Writing to Process");
+        {
+            std::ofstream errorProcess("ErrorProcess.txt");
+            errorProcess << "Error in WriteProcess: " << GetLastError() << std::endl;
+            errorProcess.close();
+        }
     }
 
     std::string Read()
@@ -112,7 +120,11 @@ public:
             if (!bSuccess || dwRead == 0)
                 break;
             if (!bSuccess)//will not be hitted 
-                printf("Error in Reading Process");
+            {
+                std::ofstream errorProcess("ErrorProcess.txt");
+                errorProcess << "Error in ReadingProcess: " << GetLastError() << std::endl;
+                errorProcess.close();
+            }
             output += std::string(chBuf, dwRead);
         } while (dwRead == BUFSIZE);
 

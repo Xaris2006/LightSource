@@ -15,9 +15,10 @@
 #include "Panels/ToolsPanel.h"
 #include "Panels/HelpPanel.h"
 
+#include "Update/Update.h"
+
 #include <iostream>
 #include <array>
-#include <concepts>
 
 #include "GLFW/glfw3.h"
 
@@ -41,9 +42,8 @@ public:
 	{
 		s_hMutex = CreateMutex(NULL, TRUE, L"MyUniqueAppMutex");
 
-		if (GetLastError() == ERROR_ALREADY_EXISTS) {
+		if (GetLastError() == ERROR_ALREADY_EXISTS)
 			s_IamSecond = true;
-		}
 
 		if (s_IamSecond)
 		{
@@ -56,11 +56,25 @@ public:
 			return;
 		}
 
-		Process startProcess(L"start.exe", L"");
+		Process startProcess(L"Start.exe", L"");
 		
 		Manager::AppManager::Init();
 		Manager::ToolManager::Init();
 		Chess::PgnManager::Init();
+
+		m_ContentBrowserPanel = std::make_unique<Panels::ContentBrowserPanel>();
+		m_ProfilePanel		  = std::make_unique<Panels::ProfilePanel>();
+		m_ToolsPanel		  = std::make_unique<Panels::ToolsPanel>();
+		m_HelpPanel			  = std::make_unique<Panels::HelpPanel>();
+
+		m_Update			  = std::make_unique<Update>();
+
+		m_HomeIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\home-button.png");
+		m_ProfilIcon		  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\user.png");
+		m_WebIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\internet.png");
+		m_ToolsIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\spanner.png");
+		m_HelpIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\question-mark.png");
+		m_UpdateIcon		  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\up-arrow.png");
 
 		using namespace std::chrono_literals;
 
@@ -85,17 +99,6 @@ public:
 			//	m_chess.openBook.OpenCOBfile(commandLineArgs[1]);
 			//}
 		}
-
-		m_ContentBrowserPanel = std::make_unique<Panels::ContentBrowserPanel>();
-		m_ProfilePanel		  = std::make_unique<Panels::ProfilePanel>();
-		m_ToolsPanel		  = std::make_unique<Panels::ToolsPanel>();
-		m_HelpPanel			  = std::make_unique<Panels::HelpPanel>();
-
-		m_HomeIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\home-button.png");
-		m_ProfilIcon		  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\user.png");
-		m_WebIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\internet.png");
-		m_ToolsIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\spanner.png");
-		m_HelpIcon			  = std::make_shared<Walnut::Image>("LightSourceApp\\Resources\\menu\\question-mark.png");
 
 		auto& colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_TableBorderLight] = ImColor(255, 225, 135, 80);
@@ -203,6 +206,16 @@ public:
 		{
 			m_MenuIntex = 4;
 		}
+
+		ImGui::BeginDisabled(!m_Update->IsUpdateAvailable());
+
+		ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - ImGui::GetStyle().FramePadding.y * 2.0f - IconSize.y);
+		if (ImGui::ImageButton((ImTextureID)m_UpdateIcon->GetRendererID(), IconSize))
+		{
+			m_Update->ShowUpdateModal();
+		}
+
+		ImGui::EndDisabled();
 
 		ImGui::PopStyleColor();
 
@@ -317,6 +330,8 @@ public:
 			m_HelpPanel->OnImGuiRender();
 		}
 
+		m_Update->OnImGuiRender();
+
 		UI_DrawAboutModal();
 		AlreadyOpenedModal();
 	}
@@ -339,6 +354,7 @@ public:
 			ImGui::BeginGroup();
 			ImGui::Text("LightSource is a Chess GUI");
 			ImGui::Text("by C.Betsakos");
+			ImGui::Text("Version: %s", m_Update->GetVersion().c_str());
 			ImGui::EndGroup();
 
 			if (Walnut::UI::ButtonCentered("Close"))
@@ -411,12 +427,15 @@ private:
 
 	int m_MenuIntex = 0;
 
+	std::unique_ptr<Update> m_Update;
+
 	//menu Icons
 	std::shared_ptr<Walnut::Image> m_HomeIcon;
 	std::shared_ptr<Walnut::Image> m_ProfilIcon;
 	std::shared_ptr<Walnut::Image> m_WebIcon;
 	std::shared_ptr<Walnut::Image> m_ToolsIcon;
 	std::shared_ptr<Walnut::Image> m_HelpIcon;
+	std::shared_ptr<Walnut::Image> m_UpdateIcon;
 
 	bool m_AboutModalOpen = false;
 };

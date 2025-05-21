@@ -31,6 +31,7 @@ Walnut::ApplicationSpecification g_spec;
 bool g_AlreadyOpenedModalOpen = false;
 
 static std::vector<std::string> s_arg;
+static bool s_Mode = false;
 
 class ChessLayer : public Walnut::Layer
 {
@@ -121,6 +122,16 @@ public:
 			if (ImGui::IsKeyPressed(ImGuiKey_B))
 			{
 				ImGui::SetClipboardText(ChessAPI::GetFEN().c_str());
+			}
+
+			if (ImGui::IsKeyPressed(ImGuiKey_R))
+			{
+				//s_Mode = !s_Mode;
+				//if (s_Mode)
+				//	ImGui::GetIO().IniFilename = "imgui2.ini";
+				//else
+				//	ImGui::GetIO().IniFilename = "imgui.ini";
+				//ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
 			}
 
 			if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
@@ -517,16 +528,14 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		ImGui::Spacing();
 
 		{
-			static bool RB = false;
-
 			float startingCursorX = ImGui::GetCursorPosX();
 
-			ImVec2 size(ImGui::GetStyle().FramePadding.x * 4 + 13 + ImGui::CalcTextSize((RB == true ? "Board" : "DataBase")).x, 37);
+			ImVec2 size(ImGui::GetStyle().FramePadding.x * 4 + 13 + ImGui::CalcTextSize((s_Mode == true ? "Board" : "DataBase")).x, 37);
 
 			static ImVec4 colorBoard(0.1f, 0.7f, 0.1f, 0.65f);
 			static ImVec4 colorDatabase(0.3f, 0.58f, 0.97f, 0.6f);
 
-			ImVec4 color = (RB == true ? colorBoard : colorDatabase);
+			ImVec4 color = (s_Mode == true ? colorBoard : colorDatabase);
 
 			ImGui::PushStyleColor(ImGuiCol_Button, color);
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
@@ -544,10 +553,10 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			ImGui::GetStyle().FramePadding.y *= 0.4f;
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2 * ImGui::GetStyle().FramePadding.y + 5);
 			ImGui::SetItemAllowOverlap();
-			if (ImGui::RadioButton("##Mode", RB))
+			if (ImGui::RadioButton("##Mode", s_Mode))
 			{
-				RB = !RB;
-				if (RB)
+				s_Mode = !s_Mode;
+				if (s_Mode)
 					ImGui::GetIO().IniFilename = "imgui2.ini";
 				else
 					ImGui::GetIO().IniFilename = "imgui.ini";
@@ -556,7 +565,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			ImGui::GetStyle().FramePadding.y *= 2.5f;
 
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 0.5f * ImGui::GetStyle().FramePadding.y);
-			ImGui::Text((RB == true ? "Board" : "DataBase"));
+			ImGui::Text((s_Mode == true ? "Board" : "DataBase"));
 		}
 	});
 	return app;

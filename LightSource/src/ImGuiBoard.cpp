@@ -762,11 +762,7 @@ void ImGuiBoard::OnUIRender()
 			const wchar_t* path = (const wchar_t*)payload->Data;
 			std::wstring wstrpath = path;
 			std::string strpath = std::string(wstrpath.begin(), wstrpath.end());
-			if (std::filesystem::path(strpath).extension().string() != ".pgn")
-			{
-				printf("Could not load {0} - not a chess file", path);
-			}
-			else
+			if (std::filesystem::path(strpath).extension().string() == ".pgn")
 			{
 				bool anwser = AppManagerChild::IsChessFileAvail(strpath);
 
@@ -1275,7 +1271,51 @@ void ImGuiBoard::NextMovePopup()
 				ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 				ImGui::CloseCurrentPopup();
 			}
+			
+			ImGui::SameLine();
+
+			{
+				std::string childID;
+				//int j = 1;
+
+				//if (it->second[1] < 24)
+				//{
+				//	childID += (char)('A' + it->second[1]);
+				//	childID += '.';
+				//	j = 3;
+				//}
+
+				//for (; j < it->second.size(); j += 2)
+				//{
+				//	childID += std::to_string(it->second[j] + 1);
+				//	childID += '.';
+				//}
+
+				//childID.pop_back();
+				if (it->second.size() == 3)
+					childID = (char)('A' + it->second[it->second.size() - 2]);
+				else
+					childID = std::to_string(it->second[it->second.size() - 2] + 1);
+
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.48f, 0.87f, 0.65f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.48f, 0.87f, 0.45f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.48f, 0.87f, 0.45f));
+
+				ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
+
+				ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - ImGui::GetStyle().FramePadding.x * 2.0f - ImGui::CalcTextSize(childID.c_str()).x);
+				ImGui::SmallButton(childID.c_str());
+
+				ImGui::PopItemFlag();
+
+				ImGui::PopStyleColor(3);
+			}
+
 		}
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 
 		if (ImGui::Button("Play Main"))
 		{
@@ -1284,13 +1324,22 @@ void ImGuiBoard::NextMovePopup()
 			ImGui::CloseCurrentPopup();
 		}
 
+		ImGui::PopStyleColor(3);
+
 		ImGui::SameLine();
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 
 		if (ImGui::Button("Cansel"))
 		{
 			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
+
+		ImGui::PopStyleColor(3);
+
 		if (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
 		{
 			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
@@ -1344,13 +1393,24 @@ void ImGuiBoard::NewVariantPopup()
 			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
+
 		if (ImGui::Button("Play Default"))
 		{
 			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
 
+		ImGui::PopStyleColor(3);
+
 		ImGui::SameLine();
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 
 		if (ImGui::Button("Cansel")
 			|| (!ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_LeftArrow)))
@@ -1365,6 +1425,8 @@ void ImGuiBoard::NewVariantPopup()
 			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
 			ImGui::CloseCurrentPopup();
 		}
+
+		ImGui::PopStyleColor(3);
 
 		ImGui::EndPopup();
 	}

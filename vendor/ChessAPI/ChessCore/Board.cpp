@@ -124,17 +124,26 @@ namespace Chess
 
 		std::array<Piece, 64> blocks;
 
-		for (int j = 0; j < 6; j++)
-			for (int i = 0; i < 64; i++)
-				blocks[i] = m_mapPieces[j].At(i) ? (Piece)j : NONE;
+		for (int i = 0; i < 64; i++)
+		{
+			for (uint8_t j = 0; j < 6; j++)
+			{
+				if (m_mapPieces[j].At(i))
+				{
+					blocks[i] = (Piece)j;
+					break;
+				}
+				else
+					blocks[i] = NONE;
+			}
+		}
 
 		std::vector<uint8_t> pos;
 		int blockFilled = 0;
 		bool firstfour = true;
 		int blocks_empty = 0;
 
-		constexpr uint8_t classnames[6] = { 0b00000000, 0b00000001, 0b00000010,
-								  0b00000011, 0b00000100, 0b00000101 };
+		constexpr uint8_t classnames[6] = { 0b00000000, 0b00000001, 0b00000010, 0b00000011, 0b00000100, 0b00000101 };
 		constexpr uint8_t color[2] = { 0b00000000, 0b00001000 };
 		constexpr uint8_t empty[4] = { 0b00000110, 0b00001110, 0b00000111, 0b00001111 };
 
@@ -754,20 +763,8 @@ namespace Chess
 	Board::MakeMoveStatus Board::MakeMove(Move move, Piece piecePromotion)
 	{
 		//safe
-		//bool exists = false;
-		//std::vector<Move> PossibleMoves;
-		//GetAvailableMoves(PossibleMoves);
-		//for(auto& m : PossibleMoves)
-		//{
-		//	if (m.index == move.index && m.move == move.move)
-		//	{
-		//		exists = true;
-		//		break;
-		//	}
-		//}
-		//
-		//if (!exists)
-		//	return ERROR;
+		if (!IsMoveValid(move))
+			return MOVEERROR;
 
 		Color nextToPlay = m_PlayerToPlay;
 		Piece type = NONE, enemyType = NONE;

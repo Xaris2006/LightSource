@@ -159,12 +159,7 @@ namespace Panels {
 
 			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
-				//Bug when open file it does not reset the other panels
-				if (path.extension().u8string() != ".pgn")
-				{
-					printf("Could not load %s - not a chess file", path.filename().u8string().c_str());
-				}
-				else
+				if (path.extension().u8string() == ".pgn")
 				{
 					bool anwser = AppManagerChild::IsChessFileAvail(path);
 
@@ -188,12 +183,7 @@ namespace Panels {
 			{
 				if (ImGui::Selectable("Open"))
 				{
-					//Bug when open file it does not reset the other panels
-					if (path.extension().u8string() != ".pgn")
-					{
-						printf("Could not load %s - not a chess file", path.filename().u8string());
-					}
-					else
+					if (path.extension().u8string() == ".pgn")
 					{
 						bool anwser = AppManagerChild::IsChessFileAvail(path);
 
@@ -210,14 +200,9 @@ namespace Panels {
 
 					ImGui::CloseCurrentPopup();
 				}
-				if (ImGui::Selectable("Open in window"))
+				if (ImGui::Selectable("Open in new Window"))
 				{
-					//Bug when open file it does not reset the other panels
-					if (path.extension().u8string() != ".pgn")
-					{
-						printf("Could not load %s - not a chess file", path.filename().u8string());
-					}
-					else
+					if (path.extension().u8string() == ".pgn")
 					{
 						bool anwser = AppManagerChild::IsChessFileAvail(path);
 

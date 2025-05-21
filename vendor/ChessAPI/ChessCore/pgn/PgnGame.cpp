@@ -415,6 +415,8 @@ namespace Chess
 
 		if(!onlyRead)
 			m_DataRead = GetData();
+
+		m_chessmoves.ReloadChildren();
 	}
 
 	void PgnGame::WriteMoves(std::string& op, ChessMovesPath par) const

@@ -140,9 +140,13 @@ namespace Chess
 		auto hash = hasher(path);
 		auto cachePath = g_cachedDirectory / std::to_string(hash);
 
-		if (std::filesystem::exists(cachePath) && !std::filesystem::is_directory(cachePath))
-			std::filesystem::create_directory(cachePath);
+		bool firstTime = !std::filesystem::exists(cachePath);
 
+		if (!firstTime)
+			firstTime = !std::filesystem::is_directory(cachePath);
+
+		if (firstTime)
+			std::filesystem::create_directories(cachePath);
 
 		{
 			std::ofstream outfile(cachePath / "thisfile.dpgn", std::ios::binary | std::ios::trunc);

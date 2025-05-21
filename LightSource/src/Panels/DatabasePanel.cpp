@@ -178,11 +178,7 @@ namespace Panels
 			else
 			{
 				if (ImGui::Button("Delete Game"))
-				{
 					pgnfile->DeleteGame(ChessAPI::GetActiveGame());
-					//ChessAPI::DeleteGameInFile(m_lastPointedRow);
-					//m_lastPointedRow = 0;
-				}
 			}
 			
 			ImGui::PopStyleColor(3);

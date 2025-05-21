@@ -14,7 +14,11 @@ inline std::array<uint8_t, HASH_LENGTH> xxHashFile(const std::filesystem::path& 
 	std::unique_ptr<char[]> buffer(new char[BUF_SIZE]);
 
 	std::ifstream file(path, std::ios::binary);
-	if (!file) throw std::runtime_error("Cannot open file");
+	if (!file)
+	{
+		printf("Cannot open file");
+		return {};
+	}
 
 	XXH3_state_t* state = XXH3_createState();
 	XXH3_64bits_reset(state);

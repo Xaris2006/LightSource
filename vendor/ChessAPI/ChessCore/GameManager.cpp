@@ -189,7 +189,13 @@ namespace Chess
 			m_mapMoves[m_lastMoveKey] = moveD;
 		}
 		else
-			m_Board.MakeMove(m_mapMoves[m_lastMoveKey].move, m_mapMoves[m_lastMoveKey].piecePromote);
+		{
+			if (m_Board.MakeMove(m_mapMoves[m_lastMoveKey].move, m_mapMoves[m_lastMoveKey].piecePromote) != Board::SUCCESS)
+			{
+				GoInitialPosition();
+				m_mapMoves.clear();
+			}
+		}
 	}
 
 	void GameManager::GoPreviusMove()
@@ -244,22 +250,36 @@ namespace Chess
 		if (m_lastMoveKey[m_lastMoveKey.size() - 1] != -1)
 			return;
 
-		m_lastMoveKey.erase(m_lastMoveKey.end() - 1);
-		m_lastMoveKey.erase(m_lastMoveKey.end() - 1);
+		//m_lastMoveKey.erase(m_lastMoveKey.end() - 1);
+		//m_lastMoveKey.erase(m_lastMoveKey.end() - 1);
+		m_lastMoveKey.pop_back();
+		m_lastMoveKey.pop_back();
 
 		GetCurrentPgnMovePath(currentPath);
 
+		if (m_lastMoveKey[m_lastMoveKey.size() - 1] < 0)
+		{
+			m_lastMoveKey[m_lastMoveKey.size() - 1] = -1;
+			return;
+		}
+
 		do
 		{
 			m_lastMoveKey[m_lastMoveKey.size() - 1]--;
 
-		} while (currentPath->move[m_lastMoveKey[m_lastMoveKey.size() - 1]] == "child");
+		} while (currentPath->move[m_lastMoveKey[m_lastMoveKey.size() - 1]] == "child" && m_lastMoveKey[m_lastMoveKey.size() - 1] > -1);
+
+		if (m_lastMoveKey[m_lastMoveKey.size() - 1] < 0)
+		{
+			m_lastMoveKey[m_lastMoveKey.size() - 1] = -1;
+			return;
+		}
 
 		do
 		{
 			m_lastMoveKey[m_lastMoveKey.size() - 1]--;
 
-		} while (currentPath->move[m_lastMoveKey[m_lastMoveKey.size() - 1]] == "child");
+		} while (currentPath->move[m_lastMoveKey[m_lastMoveKey.size() - 1]] == "child" && m_lastMoveKey[m_lastMoveKey.size() - 1] > -1);
 	}
 
 	void GameManager::GoInitialPosition()
@@ -467,6 +487,7 @@ namespace Chess
 		{
 			auto Parent = currentPath->parent;
 			Parent->children.erase(Parent->children.begin() + moveKey[moveKey.size() - 2]);
+			Parent->ReloadChildren();
 			Parent->move.erase(Parent->move.begin() + moveKey[moveKey.size() - 3]);
 		}
 
@@ -731,6 +752,7 @@ namespace Chess
 
 	void GameManager::AddMove(const std::string& strmove, const MoveData& move)
 	{
+		//bug
 		PgnGame::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
 		
 		for (int i = 1; i < m_lastMoveKey.size(); i += 2)
@@ -805,8 +827,9 @@ namespace Chess
 
 		currentPath->move.insert(currentPath->move.begin() + nextIndex + 1, "child");
 		currentPath->children.insert(currentPath->children.begin() + childIndex + childAmount, PgnGame::ChessMovesPath());
+		currentPath->ReloadChildren();
 		currentPath->children[childIndex + childAmount].move.emplace_back(strmove);
-		currentPath->children[childIndex + childAmount].parent = currentPath;
+		//currentPath->children[childIndex + childAmount].parent = currentPath;
 
 		m_lastMoveKey[m_lastMoveKey.size() - 1] = nextIndex + childAmount + 1;
 		m_lastMoveKey.emplace_back(childIndex + childAmount);
