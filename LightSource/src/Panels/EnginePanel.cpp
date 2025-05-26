@@ -117,39 +117,43 @@ namespace Panels
 		static bool barCheckBox = false;
 		barCheckBox = g_ChessEngineOpen;
 
-		if (ImGui::TreeNode("Settings"))
-		{
-			ImGui::NewLine();
+		//if (ImGui::TreeNode("Settings"))
+		//{
+		//	ImGui::NewLine();
+		//
+		//	if (ImGui::InputInt("Thread Count", &m_threadCount, 1, 1))
+		//	{
+		//		if (m_threadCount < 1) { m_threadCount = 1; }
+		//		if (m_threadCount > std::thread::hardware_concurrency()) { m_threadCount = std::thread::hardware_concurrency(); }
+		//
+		//		m_running = false;
+		//		CommandChessEngine("stop");
+		//		CommandChessEngine("setoption name Threads value " + std::to_string(m_threadCount));
+		//		CommandChessEngine("setoption name Hash value " + std::to_string(m_hashMb));
+		//		//CommandChessEngine("ucinewgame");
+		//
+		//	}
+		//	if (ImGui::InputInt("Hash amount", &m_hashMb, 1, 1))
+		//	{
+		//		if (m_hashMb < 64) { m_hashMb = 64; }
+		//		if (m_hashMb > 1024) { m_hashMb = 1024; }
+		//
+		//		m_running = false;
+		//		CommandChessEngine("stop");
+		//		CommandChessEngine("setoption name Threads value " + std::to_string(m_threadCount));
+		//		CommandChessEngine("setoption name Hash value " + std::to_string(m_hashMb));
+		//		//CommandChessEngine("ucinewgame");
+		//
+		//	}
+		//	
+		//	ImGui::Checkbox("Evaluation Bar", &barCheckBox);
+		//
+		//	ImGui::TreePop();
+		//}
 
-			if (ImGui::InputInt("Thread Count", &m_threadCount, 1, 1))
-			{
-				if (m_threadCount < 1) { m_threadCount = 1; }
-				if (m_threadCount > std::thread::hardware_concurrency()) { m_threadCount = std::thread::hardware_concurrency(); }
 
-				m_running = false;
-				CommandChessEngine("stop");
-				CommandChessEngine("setoption name Threads value " + std::to_string(m_threadCount));
-				CommandChessEngine("setoption name Hash value " + std::to_string(m_hashMb));
-				//CommandChessEngine("ucinewgame");
+		ImGui::Checkbox("Evaluation Bar", &barCheckBox);
 
-			}
-			if (ImGui::InputInt("Hash amount", &m_hashMb, 1, 1))
-			{
-				if (m_hashMb < 64) { m_hashMb = 64; }
-				if (m_hashMb > 1024) { m_hashMb = 1024; }
-
-				m_running = false;
-				CommandChessEngine("stop");
-				CommandChessEngine("setoption name Threads value " + std::to_string(m_threadCount));
-				CommandChessEngine("setoption name Hash value " + std::to_string(m_hashMb));
-				//CommandChessEngine("ucinewgame");
-
-			}
-			
-			ImGui::Checkbox("Evaluation Bar", &barCheckBox);
-
-			ImGui::TreePop();
-		}
 		ImGui::Separator();
 
 		g_ChessEngineOpen = barCheckBox;

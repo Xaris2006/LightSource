@@ -5,7 +5,6 @@
 #include "Walnut/ApplicationGUI.h"
 
 static bool s_IsVariationChecked = false;
-//static bool s_IsVariationCheckedActive = false;
 static Chess::GameManager::MoveKey s_VariationKey;
 
 static auto hoveredColor = ImVec4(0.2f, 0.48f, 0.87f, 1.0f);

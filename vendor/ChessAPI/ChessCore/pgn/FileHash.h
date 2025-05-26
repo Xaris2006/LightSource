@@ -16,7 +16,7 @@ inline std::array<uint8_t, HASH_LENGTH> xxHashFile(const std::filesystem::path& 
 	std::ifstream file(path, std::ios::binary);
 	if (!file)
 	{
-		printf("Cannot open file");
+		//printf("Cannot open file");
 		return {};
 	}
 

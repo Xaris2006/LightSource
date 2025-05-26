@@ -78,7 +78,7 @@ public:
 
 		using namespace std::chrono_literals;
 
-		std::this_thread::sleep_for(2s);
+		//std::this_thread::sleep_for(2s);
 
 		startProcess.EndProcess();
 
@@ -227,37 +227,37 @@ public:
 		}
 		else if (m_MenuIntex == 1)
 		{
-			ImGui::Begin("Not Ready");
+			//ImGui::Begin("Not Ready");
+			//
+			//ImVec2 textSize = ImGui::CalcTextSize("Coming Soon!");
+			//
+			//{
+			//	float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
+			//	float availX = ImGui::GetContentRegionAvail().x;
+			//
+			//	float offX = (availX - actualSizeX) * 0.5f;
+			//	if (offX > 0.0f)
+			//		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
+			//}
+			//
+			//{
+			//	float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+			//	float availY = ImGui::GetContentRegionAvail().y;
+			//
+			//	float offY = (availY - actualSizeY) * 0.5f;
+			//	if (offY > 0.0f)
+			//		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
+			//}
+			//
+			//ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+			//
+			//ImGui::Text("Coming Soon!");
+			//
+			//ImGui::PopStyleColor();
+			//
+			//ImGui::End();
 
-			ImVec2 textSize = ImGui::CalcTextSize("Coming Soon!");
-
-			{
-				float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
-				float availX = ImGui::GetContentRegionAvail().x;
-
-				float offX = (availX - actualSizeX) * 0.5f;
-				if (offX > 0.0f)
-					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
-			}
-
-			{
-				float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
-				float availY = ImGui::GetContentRegionAvail().y;
-
-				float offY = (availY - actualSizeY) * 0.5f;
-				if (offY > 0.0f)
-					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
-			}
-
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
-
-			ImGui::Text("Coming Soon!");
-
-			ImGui::PopStyleColor();
-
-			ImGui::End();
-
-			//m_ProfilePanel->OnImGuiRender();
+			m_ProfilePanel->OnImGuiRender();
 		}
 		else if (m_MenuIntex == 2)
 		{
@@ -293,36 +293,6 @@ public:
 		}
 		else if (m_MenuIntex == 3)
 		{
-			//ImGui::Begin("Not Ready");
-			//
-			//ImVec2 textSize = ImGui::CalcTextSize("Coming Soon!");
-			//
-			//{
-			//	float actualSizeX = textSize.x + ImGui::GetStyle().FramePadding.x * 2.0f;
-			//	float availX = ImGui::GetContentRegionAvail().x;
-			//
-			//	float offX = (availX - actualSizeX) * 0.5f;
-			//	if (offX > 0.0f)
-			//		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offX);
-			//}
-			//
-			//{
-			//	float actualSizeY = textSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
-			//	float availY = ImGui::GetContentRegionAvail().y;
-			//
-			//	float offY = (availY - actualSizeY) * 0.5f;
-			//	if (offY > 0.0f)
-			//		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offY);
-			//}
-			//
-			//ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f/255.0f, 225.0f/255.0f, 135.0f/255.0f, 255.0f/255.0f));
-			//
-			//ImGui::Text("Coming Soon!");
-			//
-			//ImGui::PopStyleColor();
-			//
-			//ImGui::End();
-
 			m_ToolsPanel->OnImGuiRender();
 		}
 		else if (m_MenuIntex == 4)
@@ -352,16 +322,30 @@ public:
 			Walnut::UI::ShiftCursorX(20.0f);
 
 			ImGui::BeginGroup();
+
 			ImGui::Text("LightSource is a Chess GUI");
 			ImGui::Text("by C.Betsakos");
+			
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+
 			ImGui::Text("Version: %s", m_Update->GetVersion().c_str());
+
+			ImGui::PopStyleColor();
+			
+			
 			ImGui::EndGroup();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 
 			if (Walnut::UI::ButtonCentered("Close"))
 			{
 				m_AboutModalOpen = false;
 				ImGui::CloseCurrentPopup();
 			}
+
+			ImGui::PopStyleColor(3);
 
 			ImGui::EndPopup();
 		}
@@ -387,13 +371,18 @@ public:
 			ImGui::PushID("in2");
 
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("Close").x - 18);
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
+
 			if (ImGui::Button("Close"))
 			{
 				g_AlreadyOpenedModalOpen = false;
 				ImGui::CloseCurrentPopup();
 			}
-			ImGui::PopStyleColor();
+
+			ImGui::PopStyleColor(3);
 
 			ImGui::PopID();
 

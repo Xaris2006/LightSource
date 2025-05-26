@@ -81,6 +81,8 @@ void Update::StartOperationForUpdate()
 			Web::DownLoadStatus status = Web::Nothing;
 			auto name = Web::DownLoadFileFromGoogleDrive("1aBeo7DlwrKIB9tZD7FSKWKxEdkyEHW88", "ALoNOglt_2hYbSiwowwywADKOhaq:1747598185917", status);
 
+			std::filesystem::remove_all("toUpdate");
+
 			if (status == Web::Finished)
 			{
 				std::string command = "powershell -command \"Expand-Archive -Path '";
@@ -134,9 +136,9 @@ void Update::StartOperationForUpdate()
 				//	ef.close();
 				//}
 
-				std::filesystem::copy_file(std::filesystem::current_path() / "Start.exe", std::filesystem::current_path() / "toUpdate" / "Update.exe", std::filesystem::copy_options::overwrite_existing);
+				std::filesystem::copy_file(std::filesystem::current_path() / "Update.exe", std::filesystem::current_path() / "toUpdate" / "Update.exe", std::filesystem::copy_options::overwrite_existing);
 
-				Process startProcess(L"toUpdate/Update.exe", L"");
+				Process startProcess(L"toUpdate\\Update.exe", L"");
 			}
 			else
 				m_UpdateFailed = true;
@@ -162,23 +164,66 @@ void Update::UI_DrawUpdateModal()
 		ImGui::BeginGroup();
 		ImGui::Text("LightSource is a Chess GUI");
 		ImGui::Text("by C.Betsakos");
+
+		ImGui::Separator();
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+
 		ImGui::Text("Version: %s", m_Version.c_str());
 		ImGui::Text("Latest Version: %s", m_LatestVersion.c_str());
+
+		ImGui::PopStyleColor();
+		
+		ImGui::Separator();
+
+		ImGui::PushFont(Walnut::Application::GetFont("Bold"));
+
 		ImGui::Text("If you choose to update then make sure to save any opened files!");
+		
+		ImGui::PopFont();
+
 		ImGui::EndGroup();
 
-		if (Walnut::UI::ButtonCentered("Update"))
 		{
-			m_UpdateModalOpen = false;
-			ImGui::CloseCurrentPopup();
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 
-			ShowStartUpdatingModal();
+			float actualSize = ImGui::CalcTextSize(" Open ").x + ImGui::CalcTextSize(" Unistall ").x + ImGui::GetStyle().FramePadding.x * 3.0f;
+			float avail = ImGui::GetContentRegionAvail().x;
+
+			float off = (avail - actualSize) * 0.5f;
+			if (off > 0.0f)
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+
+
+			if (ImGui::Button("Update"))
+			{
+				m_UpdateModalOpen = false;
+				ImGui::CloseCurrentPopup();
+
+				ShowStartUpdatingModal();
+			}
+
+			ImGui::PopStyleColor(3);
 		}
-		if (Walnut::UI::ButtonCentered("Close"))
+
+		ImGui::SameLine();
+
 		{
-			m_UpdateModalOpen = false;
-			ImGui::CloseCurrentPopup();
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
+
+			if (ImGui::Button("Cansel"))
+			{
+				m_UpdateModalOpen = false;
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::PopStyleColor(3);
 		}
+		
 		ImGui::EndPopup();
 	}
 }
@@ -191,7 +236,11 @@ void Update::UI_DrawStartUpdatingModal()
 	m_StartUpdatingModalOpen = ImGui::BeginPopupModal("Updating", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 	if (m_StartUpdatingModalOpen)
 	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+
 		ImGui::Text("Updating LightSource to the latest version...");
+
+		ImGui::PopStyleColor();
 
 		StartOperationForUpdate();
 		
@@ -207,14 +256,23 @@ void Update::UI_DrawStartUpdatingModal()
 			if (m_UpdateFailed)
 			{
 				m_UpdateFailed = false;
+				
 				ImGui::Text("Update Failed!");
 				ImGui::Text("Please try again later!");
+				
 				ImGui::NewLine();
+
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
+
 				if (Walnut::UI::ButtonCentered("Close"))
 				{
 					m_StartUpdatingModalOpen = false;
 					ImGui::CloseCurrentPopup();
 				}
+
+				ImGui::PopStyleColor(3);
 			}
 			else
 				Walnut::Application::Get().Close();

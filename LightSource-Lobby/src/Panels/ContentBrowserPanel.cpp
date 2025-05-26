@@ -218,7 +218,7 @@ namespace Panels {
 						s_path = path;
 					}
 
-					if (ImGui::BeginDragDropSource())
+					if (!Manager::AppManager::Get().IsAppOpen(path) && ImGui::BeginDragDropSource())
 					{
 						std::filesystem::path relativePath(path);
 						const wchar_t* itemPath = relativePath.c_str();
@@ -578,6 +578,8 @@ namespace Panels {
 				s_oldpath = s_path;
 				ImGui::CloseCurrentPopup();
 			}
+
+			ImGui::BeginDisabled(Manager::AppManager::Get().IsAppOpen(s_path));
 			
 			if (s_path.extension().string() == ".pgn" && ImGui::Selectable("Merge..."))
 			{
@@ -602,6 +604,8 @@ namespace Panels {
 
 				ImGui::CloseCurrentPopup();
 			}
+
+			ImGui::EndDisabled();
 
 			ImGui::Separator();
 

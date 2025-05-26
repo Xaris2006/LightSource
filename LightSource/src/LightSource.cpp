@@ -145,7 +145,6 @@ public:
 			}
 		}
 
-
 		m_ChessBoard.OnUIRender();
 		m_ContentBrowserPanel.OnImGuiRender();
 		m_DatabasePanel.OnImGuiRender();
@@ -368,7 +367,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	g_spec.Name = "Light Source";
 	g_spec.CustomTitlebar = true;
-	g_spec.AppIconPath = "Resources\\LightSource\\lsb.png";
+	g_spec.AppIconPath = "Resources\\LightSource\\boardSmall.png";
 	g_spec.IconPath = "Resources\\LightSource\\ls.png";
 	g_spec.HoveredIconPath = "Resources\\LightSource\\lsOn.png";
 	g_spec.FuncIconPressed = []()
@@ -526,7 +525,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		}
 
 		ImGui::Spacing();
-
+		
 		{
 			float startingCursorX = ImGui::GetCursorPosX();
 
