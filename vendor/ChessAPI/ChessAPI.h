@@ -25,8 +25,8 @@ namespace ChessAPI
 	std::vector<std::string>		GetCurPgnLabelNames();
 	std::string&					GetCurPgnLabelValue(const std::string& name);
 	void							GetMovesPgnFormat(Chess::PgnGame::ChessMovesPath& moves);
-	std::vector<int>&				GetMoveIntFormat();
-	std::string&					GetNote(const std::vector<int>& pathmove);
+	Chess::GameManager::MoveKey&	GetMoveIntFormat();
+	std::string&					GetNote(const Chess::GameManager::MoveKey& pathmove);
 	
 	std::string						GetPieceName(int type);
 	int								GetBlockID(int BlockIndex);
@@ -47,7 +47,7 @@ namespace ChessAPI
 
 	void SetNotePanelPointed(const bool& ispointed);
 
-	void GoMoveByIntFormat(std::vector<int>& pathmoves);
+	void GoMoveByIntFormat(Chess::GameManager::MoveKey& pathmoves);
 	void GoMoveByStr(const std::string& movename);
 	void NextSavedMove();
 	void PreviousSavedMove();
@@ -56,9 +56,9 @@ namespace ChessAPI
 	bool MakeMove(glm::vec2 pos, glm::vec2 dir);
 	bool IsBoardChanged();
 
-	void DeleteMove(std::vector<int>& movepath);
-	void DeleteVariation(std::vector<int>& movepath);
-	void PromoteVariation(std::vector<int>& movepath);
+	void DeleteMove(Chess::GameManager::MoveKey& movepath);
+	void DeleteVariation(Chess::GameManager::MoveKey& movepath);
+	void PromoteVariation(Chess::GameManager::MoveKey& movepath);
 
 	void SetNewPieceType(int type);
 	bool IsWaitingForNewType();

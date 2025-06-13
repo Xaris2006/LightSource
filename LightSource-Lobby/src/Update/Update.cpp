@@ -88,7 +88,7 @@ void Update::StartOperationForUpdate()
 				std::string command = "powershell -command \"Expand-Archive -Path '";
 				command += name;
 				command += "' -DestinationPath '";
-				command += (std::filesystem::current_path() / "toUpdate").u8string();
+				command += (std::filesystem::current_path() / "toUpdate").string();
 				command += "'\"";
 
 				STARTUPINFO si = { sizeof(STARTUPINFO) };
@@ -162,10 +162,10 @@ void Update::UI_DrawUpdateModal()
 		ImGui::SameLine();
 		Walnut::UI::ShiftCursorX(20.0f);
 		ImGui::BeginGroup();
-		ImGui::Text("LightSource is a Chess GUI");
-		ImGui::Text("by C.Betsakos");
-
-		ImGui::Separator();
+		//ImGui::Text("Chess Lab is a Chess GUI");
+		//ImGui::Text("by C.Betsakos");
+		//
+		//ImGui::Separator();
 
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
 
@@ -238,7 +238,7 @@ void Update::UI_DrawStartUpdatingModal()
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
 
-		ImGui::Text("Updating LightSource to the latest version...");
+		ImGui::Text("Updating Chess Lab to the latest version...");
 
 		ImGui::PopStyleColor();
 

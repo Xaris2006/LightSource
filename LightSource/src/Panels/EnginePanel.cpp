@@ -9,6 +9,7 @@
 #include <thread>
 #include <string>
 #include <fstream>
+#include <format>
 
 #include "../../Walnut/Source/Walnut/Timer.h"
 
@@ -88,7 +89,7 @@ namespace Panels
 			{
 				std::string nEngine;
 				inFile >> nEngine;
-				int extensionIndex = nEngine.find('.');
+				int extensionIndex = nEngine.find_last_of('.');
 				if (extensionIndex != std::string::npos)
 					nEngine.erase(extensionIndex);
 				m_AvailEngines.emplace_back(nEngine);
@@ -183,20 +184,26 @@ namespace Panels
 		if (m_Score[0] < -0.8) { color = ImVec4(0.79f, 0.1f, 0.1f, 1.0f); }
 		else if (m_Score[0] > 0.8) { color = ImVec4(0.1f, 0.79f, 0.31f, 1.0f); }
 
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.6f, 0.6f, 0.4f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.6f, 0.6f, 0.4f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.6f, 0.6f, 0.4f));
+
 		ImGui::PushStyleColor(ImGuiCol_Text, color);
 		ImGui::PushFont(io.Fonts->Fonts[1]);
 
-		if (std::abs(m_Score[0]) > 1000.0f)
-			ImGui::TextWrapped("Mate in %.0f", m_Score[0] - 1000.0f * std::abs(m_Score[0]) / m_Score[0]);
-		else if (std::abs(m_Score[0]) == 1000.0f)
-			ImGui::TextWrapped("Mated");
-		else
-			ImGui::TextWrapped("%.2f", m_Score[0]);
+		float buSize = ImGui::CalcTextSize("1234567").x;
 
+		if (std::abs(m_Score[0]) > 1000.0f)
+			ImGui::Button(std::format("{0}#", m_Score[0] - 1000.0f * std::abs(m_Score[0]) / m_Score[0]).c_str(), ImVec2(buSize, 0));
+		else if (std::abs(m_Score[0]) == 1000.0f)
+			ImGui::Button("Mated", ImVec2(buSize, 0));
+		else
+			ImGui::Button(std::format("{0}", m_Score[0]).c_str(), ImVec2(buSize, 0));
+		
 		g_ChessEngineValue = m_Score[0];
 
 		ImGui::PopFont();
-		ImGui::PopStyleColor();
+		ImGui::PopStyleColor(4);
 
 		ImGui::SameLine();
 
@@ -270,7 +277,7 @@ namespace Panels
 			GetBestMoveStr(i, EngineMoves);
 			
 			int index = 0;
-			for (int j = 0; j < EngineMoves.size() && m_running; j++)
+			for (int j = 0; j < EngineMoves.size() && m_running && std::abs(m_Score[0]) != 1000.0f; j++)
 			{
 				ImGui::SameLine();
 
@@ -358,13 +365,21 @@ namespace Panels
 
 				m_EndThread = false;
 
+				if (!EngineApp.IsProcessActive())
+				{
+					m_EndThread = true;
+					return;
+				}
+
 				EngineApp.Write("uci");
 				bool uciokFinded = false;
+
 				for (int i = 0; i < 10; i++)
 				{
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 					std::string info = EngineApp.Read();
-					//std::cout << i << " :---: " << info;
+
 					if (info.find("uciok") + 1)
 					{
 						uciokFinded = true;
@@ -383,7 +398,6 @@ namespace Panels
 
 				std::vector<std::string> StockMoveStreams;
 
-				//bool fenUpdated = true;
 				std::string overall;
 				Chess::PgnGame pgngame;
 				Chess::GameManager game;
@@ -393,6 +407,7 @@ namespace Panels
 					if (m_EndThread)
 					{
 						EngineApp.Write("quit");
+
 						return;
 					}
 
@@ -514,7 +529,10 @@ namespace Panels
 									strscore += overall[j];
 								}
 								float score = (float)std::stoi(strscore);
-								m_Score[list] = score + 1000.0f * std::abs(score) / score;
+								if(score == 0)
+									m_Score[list] = 1000.0f;
+								else
+									m_Score[list] = score + 1000.0f * std::abs(score) / score;
 								if (m_BlackToPlay)
 									m_Score[list] *= -1;
 							}

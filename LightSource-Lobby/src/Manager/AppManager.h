@@ -27,7 +27,7 @@ namespace Manager
 			std::string Ask = "";
 		};
 
-		void CreateApp(std::string cmd);
+		void CreateApp(const std::filesystem::path& path);
 	
 		bool IsAppOpen(const std::filesystem::path& path) const;
 	
@@ -44,7 +44,7 @@ namespace Manager
 		std::vector<Command> m_Commands;
 
 		bool m_AddApp = false;
-		std::string m_cmd;
+		std::filesystem::path m_NewPath;
 	};
 
 }

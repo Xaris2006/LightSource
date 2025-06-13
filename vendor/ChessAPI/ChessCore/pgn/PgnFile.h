@@ -39,8 +39,8 @@ namespace Chess
 			size_t operator() (const std::filesystem::path& path) const
 			{
 				std::size_t hash = 0;
-				std::hash<std::string> hasher;
-
+				std::hash<std::u8string> hasher;
+				
 				std::error_code ec;
 
 				auto cpath = std::filesystem::canonical(path, ec);
@@ -48,12 +48,12 @@ namespace Chess
 				if (cpath.extension() != ".pgn")
 					return hash;
 
-				hash ^= hasher(cpath.filename().string()) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+				hash ^= hasher(cpath.filename().u8string()) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 
 				while (cpath.has_parent_path())
 				{
 					// Combine the hash values (simple XOR + shift approach)
-					hash ^= hasher(cpath.parent_path().string()) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+					hash ^= hasher(cpath.parent_path().u8string()) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 
 					auto parent = cpath.parent_path();
 

@@ -1,9 +1,9 @@
 #include "GameManager.h"
 
-static std::string s_strMoveTypes = " NBRQK";
-static std::string s_strMoveTypesSmall = " nbrqk";
-static std::string s_strMoveIndexX = "abcdefgh";
-static std::string s_strMoveIndexY = "12345678";
+static constexpr std::string_view s_strMoveTypes = " NBRQK";
+static constexpr std::string_view s_strMoveTypesSmall = " nbrqk";
+static constexpr std::string_view s_strMoveIndexX = "abcdefgh";
+static constexpr std::string_view s_strMoveIndexY = "12345678";
 
 namespace Chess
 {
@@ -219,7 +219,7 @@ namespace Chess
 		m_Board.RemovePiece(moveD.move.index + moveD.move.move);
 
 		if (moveD.pieceToMove == PAWN && moveD.move.index + moveD.move.move == moveD.lastMoveIndex)
-			m_Board.AddPiece(PAWN, m_Board.GetPlayerToPlayColor(), moveD.move.index + moveD.move.move + m_Board.GetPlayerToPlayColor() == BLACK ? -8 : +8);
+			m_Board.AddPiece(PAWN, m_Board.GetPlayerToPlayColor(), moveD.move.index + moveD.move.move + (m_Board.GetPlayerToPlayColor() == BLACK ? -8 : +8));
 		else if (moveD.pieceOnDirection != NONE)
 			m_Board.AddPiece(moveD.pieceOnDirection, m_Board.GetPlayerToPlayColor(), moveD.move.index + moveD.move.move);
 
@@ -267,7 +267,7 @@ namespace Chess
 		{
 			m_lastMoveKey[m_lastMoveKey.size() - 1]--;
 
-		} while (currentPath->move[m_lastMoveKey[m_lastMoveKey.size() - 1]] == "child" && m_lastMoveKey[m_lastMoveKey.size() - 1] > -1);
+		} while (m_lastMoveKey[m_lastMoveKey.size() - 1] > -1 && currentPath->move[m_lastMoveKey[m_lastMoveKey.size() - 1]] == "child");
 
 		if (m_lastMoveKey[m_lastMoveKey.size() - 1] < 0)
 		{
@@ -279,7 +279,7 @@ namespace Chess
 		{
 			m_lastMoveKey[m_lastMoveKey.size() - 1]--;
 
-		} while (currentPath->move[m_lastMoveKey[m_lastMoveKey.size() - 1]] == "child" && m_lastMoveKey[m_lastMoveKey.size() - 1] > -1);
+		} while (m_lastMoveKey[m_lastMoveKey.size() - 1] > -1 && currentPath->move[m_lastMoveKey[m_lastMoveKey.size() - 1]] == "child");
 	}
 
 	void GameManager::GoInitialPosition()
@@ -575,7 +575,10 @@ namespace Chess
 			strmove += s_strMoveTypes[(int)move.piecePromote];
 		}
 
-		auto kingSecurity = m_Board.GetKingStatus();
+		Board boardCopy = m_Board;
+		boardCopy.MakeMove(move.move, move.piecePromote);
+
+		auto kingSecurity = boardCopy.GetKingStatus();
 
 		if (kingSecurity == Board::CHECKED)
 			strmove += '+';
@@ -658,7 +661,7 @@ namespace Chess
 
 		if (possibleIndexMoves.size() != 1)
 		{
-			int strHelperIndex = (typeToMove == PAWN ? 0 : 1) + startIndex;
+			int strHelperIndex = ((typeToMove == PAWN ? 0 : 1) + startIndex);
 			int helperIndexX = -1;
 			int helperIndexY = -1;
 
@@ -752,7 +755,6 @@ namespace Chess
 
 	void GameManager::AddMove(const std::string& strmove, const MoveData& move)
 	{
-		//bug
 		PgnGame::ChessMovesPath* currentPath = &m_pgnGame->GetMovePathbyRef();
 		
 		for (int i = 1; i < m_lastMoveKey.size(); i += 2)

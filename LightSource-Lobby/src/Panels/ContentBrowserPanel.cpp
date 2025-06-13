@@ -143,7 +143,8 @@ namespace Panels {
 			ImGui::PushStyleColor(ImGuiCol_Text, { 0.38, 0.67, 0, 1 });
 			ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
 
-			auto oldCursorY = ImGui::GetCursorPosY();
+			float oldCursorY;
+			oldCursorY = ImGui::GetCursorPosY();
 			ImGui::SetCursorPosY(oldCursorY + 5);
 
 			ImGui::Text("Search");
@@ -185,31 +186,35 @@ namespace Panels {
 			for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
 			{
 				const auto& path = directoryEntry.path();
-				std::string filenameString = path.filename().u8string();
+				std::u8string filenameU8String = path.filename().u8string();
+				std::string filenameString = std::string(filenameU8String.begin(), filenameU8String.end());
 
 				if (!filter.PassFilter(filenameString.c_str()))
 					continue;
 
-				ImGui::PushID(filenameString.c_str());
-
 				auto icon = m_FileIcon;
 				if (directoryEntry.is_directory())
 					icon = m_DirectoryIcon;
-				else if (directoryEntry.path().extension().u8string() == ".pgn")
+				else if (directoryEntry.path().extension().u8string() == u8".pgn")
 					icon = m_FileIconPGN;
-				else if (directoryEntry.path().extension().u8string() == ".cob")
+				else if (directoryEntry.path().extension().u8string() == u8".cob")
 					icon = m_FileIconCOB;
+
+				if (m_showPGNOnly && !directoryEntry.is_directory() && !(directoryEntry.path().extension().u8string() == u8".pgn"))
+					continue;
+				
+				ImGui::PushID(filenameString.c_str());
 
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 				ImGui::ImageButton((ImTextureID)icon->GetRendererID(), { thumbnailSize, thumbnailSize });
 				ImGui::PopStyleColor();
 
-				if (directoryEntry.is_regular_file() && path.extension().string() == ".pgn")
+				if (directoryEntry.is_regular_file() && path.extension().u8string() == u8".pgn")
 				{
 
 					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 					{
-						Manager::AppManager::Get().CreateApp(path.u8string());
+						Manager::AppManager::Get().CreateApp(path);
 					}
 
 					if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
@@ -217,12 +222,15 @@ namespace Panels {
 						s_openFilePopup = true;
 						s_path = path;
 					}
-
-					if (!Manager::AppManager::Get().IsAppOpen(path) && ImGui::BeginDragDropSource())
+					
+					if (ImGui::BeginDragDropSource())
 					{
-						std::filesystem::path relativePath(path);
-						const wchar_t* itemPath = relativePath.c_str();
-						ImGui::SetDragDropPayload("MERGE_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
+						if (!Manager::AppManager::Get().IsAppOpen(path))
+						{
+							std::filesystem::path relativePath(path);
+							const wchar_t* itemPath = relativePath.c_str();
+							ImGui::SetDragDropPayload("MERGE_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
+						}
 						ImGui::EndDragDropSource();
 					}
 
@@ -276,6 +284,12 @@ namespace Panels {
 
 			ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 128, 256, "%.0f");
 			//ImGui::SliderFloat("Padding", &padding, 0, 32);
+
+			ImGui::SameLine();
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("BOX HERE Show Pgn Files Only").x);
+
+			ImGui::Checkbox("Show Pgn Files Only", &m_showPGNOnly);
 
 		DirectoryChange:
 			ImGui::EndTable();
@@ -363,11 +377,11 @@ namespace Panels {
 						ImGui::Text("%d", i + 1);
 					else if (column == 1)
 					{
-						ImGui::Text(m_filesToBeMerged[i].filename().u8string().c_str());
+						ImGui::Text(m_filesToBeMerged[i].filename().string().c_str());
 					}
 					else if (column == 2)
 					{
-						ImGui::Text(m_filesToBeMerged[i].u8string().c_str());
+						ImGui::Text(m_filesToBeMerged[i].string().c_str());
 					}
 					else
 					{
@@ -410,7 +424,7 @@ namespace Panels {
 				bool alreadyAdded = false;
 				
 				if (m_filesToBeMerged.empty())
-					m_mergedName = spath.filename().u8string();
+					m_mergedName = spath.filename().string();
 				else
 				{
 					for (auto& other : m_filesToBeMerged)
@@ -507,7 +521,11 @@ namespace Panels {
 
 		ImGui::PushStyleColor(ImGuiCol_Text, vcolor);
 		ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
-		if (ImGui::TreeNodeEx(directory.filename().u8string().c_str(), ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow))
+
+		std::u8string directoryU8String = directory.filename().u8string();
+		std::string directoryString = std::string(directoryU8String.begin(), directoryU8String.end());
+
+		if (ImGui::TreeNodeEx(directoryString.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow))
 			openTree = true;
 		ImGui::PopFont();
 		ImGui::PopStyleColor();
@@ -528,20 +546,26 @@ namespace Panels {
 				}
 				else if(directoryEntry.is_regular_file())
 				{
-					ImGui::TreeNodeEx(directoryEntry.path().filename().u8string().c_str(), ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+					const auto& path = directoryEntry.path();
+					std::u8string filenameU8String = path.filename().u8string();
+					std::string filenameString = std::string(filenameU8String.begin(), filenameU8String.end());
+
+					bool isPGN = (path.extension().u8string() == u8".pgn");
+
+					ImGui::TreeNodeEx(filenameString.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
 					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 					{
-						if (directoryEntry.path().extension().string() != ".pgn")
+						if (!isPGN)
 						{
-							printf("Could not load {0} - not a chess file", directoryEntry.path().filename().u8string());
+							printf("Could not load {0} - not a chess file", filenameString);
 						}
 						else
 						{
-							Manager::AppManager::Get().CreateApp(directoryEntry.path().u8string());
+							Manager::AppManager::Get().CreateApp(path);
 						}
 					}
 					
-					if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+					if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && isPGN)
 					{
 						s_openFilePopup = true;
 						s_path = directoryEntry.path();
@@ -559,13 +583,13 @@ namespace Panels {
 			if (ImGui::Selectable("Open"))
 			{
 				//Bug when open file it does not reset the other panels
-				if (s_path.extension().u8string() != ".pgn")
+				if (s_path.extension().string() != ".pgn")
 				{
 					printf("Could not load {0} - not a chess file", s_path.filename().u8string());
 				}
 				else
 				{
-					Manager::AppManager::Get().CreateApp(s_path.u8string());
+					Manager::AppManager::Get().CreateApp(s_path);
 				}
 
 				ImGui::CloseCurrentPopup();
@@ -574,7 +598,7 @@ namespace Panels {
 			if (ImGui::Selectable("Rename"))
 			{
 				s_openRenamePopup = true;
-				s_inputNName = s_path.filename().u8string();
+				s_inputNName = s_path.filename().string();
 				s_oldpath = s_path;
 				ImGui::CloseCurrentPopup();
 			}
@@ -586,7 +610,7 @@ namespace Panels {
 				bool alreadyAdded = false;
 
 				if (m_filesToBeMerged.empty())
-					m_mergedName = s_path.filename().u8string();
+					m_mergedName = s_path.filename().string();
 				else
 				{
 					for (auto& other : m_filesToBeMerged)
@@ -639,7 +663,7 @@ namespace Panels {
 
 			if (ImGui::Selectable("Open Explorer"))
 			{
-				std::string cmd = "explorer " + s_path.parent_path().u8string();
+				std::string cmd = "explorer " + s_path.parent_path().string();
 				std::system(cmd.c_str());
 				ImGui::CloseCurrentPopup();
 			}
@@ -671,7 +695,7 @@ namespace Panels {
 
 			if (ImGui::Selectable("Open Explorer"))
 			{
-				std::string cmd = "explorer " + m_CurrentDirectory.u8string();
+				std::string cmd = "explorer " + m_CurrentDirectory.string();
 				std::system(cmd.c_str());
 				ImGui::CloseCurrentPopup();
 			}
@@ -695,7 +719,7 @@ namespace Panels {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 			if (ImGui::Button("Rename"))
 			{
-				std::string fileNpath = s_oldpath.u8string().substr(0, s_oldpath.string().size() - s_oldpath.filename().u8string().size() - 1) + '\\' + s_inputNName;
+				std::string fileNpath = s_oldpath.string().substr(0, s_oldpath.string().size() - s_oldpath.filename().string().size() - 1) + '\\' + s_inputNName;
 				
 				std::error_code ec;
 				std::filesystem::rename(s_oldpath, fileNpath, ec);
@@ -737,7 +761,7 @@ namespace Panels {
 				std::filesystem::path nPath = std::filesystem::path() / s_oldpath / s_inputNName;
 				if (!nPath.extension().empty())
 				{
-					std::ofstream filepath(nPath.u8string());
+					std::ofstream filepath(nPath.string());
 					filepath.close();
 				}
 				else

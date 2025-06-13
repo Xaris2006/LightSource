@@ -248,7 +248,7 @@ namespace Tools::COBCreator
 					buffer.push_back(format_version[x]);
 
 
-				for (auto& it = PositionMoveMap.begin(); it != PositionMoveMap.end(); it++)
+				for (auto it = PositionMoveMap.begin(); it != PositionMoveMap.end(); it++)
 				{
 					for (int j = 0; j < it->first.size(); j++)
 					{

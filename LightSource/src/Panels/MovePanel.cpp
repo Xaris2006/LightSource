@@ -127,19 +127,19 @@ namespace Panels
 				ImGui::EndTabItem();
 			}
 
-			{
-				ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 5 * ImGui::GetStyle().ItemSpacing.y);
-
-				ImGui::Separator();
-
-				ImGui::PushStyleColor(ImGuiCol_Text, hoveredColor);
-
-				ImGui::Text(("ECO: " + ChessAPI::GetCurPgnLabelValue("ECO")).c_str());
-				ImGui::SameLine();
-				ImGui::Text("Blah blah blaah");
-
-				ImGui::PopStyleColor();
-			}
+			//{
+			//	ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 5 * ImGui::GetStyle().ItemSpacing.y);
+			//
+			//	ImGui::Separator();
+			//
+			//	ImGui::PushStyleColor(ImGuiCol_Text, hoveredColor);
+			//
+			//	ImGui::Text(("ECO: " + ChessAPI::GetCurPgnLabelValue("ECO")).c_str());
+			//	ImGui::SameLine();
+			//	ImGui::Text("Blah blah blaah");
+			//
+			//	ImGui::PopStyleColor();
+			//}
 
 			ImGui::EndTabBar();
 		}

@@ -25,6 +25,7 @@ public:
 	bool ShowPossibleMoves = true;
 	bool ShowTags = true;
 	bool ShowArrows = true;
+	bool AskNewVariation = true;
 
 private:
 	void RenderPlayerColorBox();

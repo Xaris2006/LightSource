@@ -132,8 +132,8 @@ namespace Panels
 
 				ImGui::NewLine();
 
-				static constexpr char* days[7] = { " S", " M", " T", " W", " T", " F", " S" };
-				static constexpr char* months[12] = { "Jenouary", "February", "March", "April", "May", "June", "July", "Augoust",
+				static const char* days[7] = { " S", " M", " T", " W", " T", " F", " S" };
+				static const char* months[12] = { "Jenouary", "February", "March", "April", "May", "June", "July", "Augoust",
 				"Semptember", "October", "Noveber", "Deseber" };
 
 				float tableSize = 895.0f;//ImGui::GetContentRegionAvail().x * 2 / 3;

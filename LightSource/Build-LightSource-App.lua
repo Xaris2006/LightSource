@@ -1,7 +1,7 @@
 project "LightSource"
    kind "ConsoleApp"
    language "C++"
-   cppdialect "C++17"
+   cppdialect "C++20"
    targetdir "bin/%{cfg.buildcfg}"
 
    files { "src/**.h", "src/**.cpp" }

@@ -49,7 +49,12 @@ namespace Panels
 			m_DownloadableToolIcons.clear();
 
 			for (auto& iconPath : m_DownloadableToolIconsToLoad)
-				m_DownloadableToolIcons.emplace_back(std::make_shared<Walnut::Image>(iconPath.string()));
+			{
+				std::u8string iconPathU8String = iconPath.u8string();
+				std::string iconPathString = std::string(iconPathU8String.begin(), iconPathU8String.end());
+
+				m_DownloadableToolIcons.emplace_back(std::make_shared<Walnut::Image>(iconPathString));
+			}
 
 			m_DownloadableToolIconsToLoad.clear();
 		}
@@ -518,7 +523,7 @@ namespace Panels
 											std::string command = "powershell -command \"Expand-Archive -Path '";
 											command += filename;
 											command += "' -DestinationPath '";
-											command += (std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools").u8string();
+											command += (std::filesystem::current_path() / "LightSourceApp\\MyDocuments\\Tools").string();
 											command += "'\"";
 
 											STARTUPINFO si = { sizeof(STARTUPINFO) };
@@ -717,7 +722,11 @@ namespace Panels
 
 			delete[] data;
 			
-			m_ToolIcons.emplace_back(std::make_shared<Walnut::Image>((path / m_ToolLabelNameToValue[filenameString + "Icon"]).u8string()));
+			auto iconPath = (path / m_ToolLabelNameToValue[filenameString + "Icon"]);
+			std::u8string iconPathU8String = iconPath.u8string();
+			std::string iconPathString = std::string(iconPathU8String.begin(), iconPathU8String.end());
+
+			m_ToolIcons.emplace_back(std::make_shared<Walnut::Image>(iconPathString));
 			Manager::ToolManager::Get().AddTool(path / (filenameString + ".exe"), filenameString);
 		}
 	}
@@ -772,7 +781,7 @@ namespace Panels
 				if (ec)
 				{
 					std::ofstream ef("ErrorFile.txt");
-					ef << "func(std::filesystem::remove_all) " << ec << "path: " << IconPath;
+					ef << "func(std::filesystem::remove_all) " << ec.message() << "path: " << IconPath;
 					ef.close();
 				}
 
@@ -780,7 +789,7 @@ namespace Panels
 				if (ec)
 				{
 					std::ofstream ef("ErrorFile.txt");
-					ef << "func(std::filesystem::create_directory) " << ec << "path: " << IconPath;
+					ef << "func(std::filesystem::create_directory) " << ec.message() << "path: " << IconPath;
 					ef.close();
 				}
 				
@@ -792,15 +801,15 @@ namespace Panels
 					if (ec)
 					{
 						std::ofstream ef("ErrorFile.txt");
-						ef << "func(std::filesystem::create_directory) " << ec << "path: " << IconPath / tool.name;
+						ef << "func(std::filesystem::create_directory) " << ec.message() << "path: " << IconPath / tool.name;
 						ef.close();
 					}
 
-					std::filesystem::copy(filename, IconPath / tool.name / filename, std::filesystem::copy_options::overwrite_existing, ec);
+					std::filesystem::copy_file(filename, IconPath / tool.name / filename, std::filesystem::copy_options::overwrite_existing, ec);
 					if (ec)
 					{
 						std::ofstream ef("ErrorFile.txt");
-						ef << "func(std::filesystem::copy) " << ec << "path: " << filename << " to: " << IconPath / tool.name / filename;
+						ef << "func(std::filesystem::copy) " << ec.message() << "path: " << filename << " to: " << IconPath / tool.name / filename;
 						ef.close();
 					}
 
@@ -808,7 +817,7 @@ namespace Panels
 					if (ec)
 					{
 						std::ofstream ef("ErrorFile.txt");
-						ef << "func(std::filesystem::remove_all) " << ec << "path: " << filename;
+						ef << "func(std::filesystem::remove_all) " << ec.message() << "path: " << filename;
 						ef.close();
 					}
 

@@ -39,6 +39,8 @@ namespace Panels
 
 		std::vector<std::filesystem::path> m_filesToBeMerged;
 		std::string m_mergedName;
+
+		bool m_showPGNOnly = false;
 	};
 
 }

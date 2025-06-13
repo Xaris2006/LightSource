@@ -48,7 +48,7 @@ namespace Panels
 		if (m_addinglabel)
 		{
 			ImGui::InputText("Label Name", &m_nlabelname);
-			auto& names = ChessAPI::GetCurPgnLabelNames();
+			auto names = ChessAPI::GetCurPgnLabelNames();
 
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.7f, 0.1f, 0.65f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.7f, 0.1f, 0.45f));

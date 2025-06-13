@@ -148,7 +148,8 @@ namespace Panels {
 			ImGui::PushStyleColor(ImGuiCol_Text, { 0.38, 0.67, 0, 1 });
 			ImGui::PushFont(Walnut::Application::Get().GetFont("Bold"));
 
-			auto oldCursorY = ImGui::GetCursorPosY();
+			static float oldCursorY = 0;
+			oldCursorY = ImGui::GetCursorPosY();
 			ImGui::SetCursorPosY(oldCursorY + 5);
 
 			ImGui::Text("Search");
@@ -171,7 +172,8 @@ namespace Panels {
 			for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
 			{
 				const auto& path = directoryEntry.path();
-				std::string filenameString = path.filename().u8string();
+				std::u8string filenameU8String = path.filename().u8string();
+				std::string filenameString = std::string(filenameU8String.begin(), filenameU8String.end());
 				
 				if (directoryEntry.is_regular_file() && !path.has_extension())
 					continue;

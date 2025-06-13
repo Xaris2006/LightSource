@@ -197,7 +197,7 @@ namespace Chess
 				}
 				size_t s = pos.size();
 				pos[s - 1] |= classnames[blocks[x + 8*y]];
-				pos[s - 1] |= color[m_WhitePieces.At(x + 8 * y) ? 1 : 0];
+				pos[s - 1] |= color[(m_WhitePieces.At(x + 8 * y) ? 1 : 0)];
 				if (firstfour)
 				{
 					pos[s - 1] <<= 4;
@@ -789,7 +789,7 @@ namespace Chess
 		//Roke
 		if (type == KING && std::abs(move.move) == 2)
 		{
-			if (MakeMove({ (move.move > 0 ? move.index + 3 : move.index - 4), (move.move > 0 ? -2 : 3) }) != SUCCESS)
+			if (MakeMove({ (move.move > 0 ? (move.index + 3) : (move.index - 4)), (move.move > 0 ? -2 : 3) }) != SUCCESS)
 				return MOVEERROR;//safe
 			m_PlayerToPlay = nextToPlay;
 			if (m_PlayerToPlay == BLACK)

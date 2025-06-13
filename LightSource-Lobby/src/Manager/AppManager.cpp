@@ -43,6 +43,12 @@ namespace Manager
 
 					for (int i = 0; i < s_AppManager->m_Apps.size(); i++)
 					{
+						if(!s_AppManager->m_Apps[i].IsProcessActive())
+						{
+							endApps.emplace_back(i);
+							continue;
+						}
+
 						std::string Strcmd(s_AppManager->m_Apps[i].Read());
 						//std::cout << Strcmd << std::endl;
 
@@ -155,7 +161,7 @@ namespace Manager
 						s_AppManager->m_AddApp = false;
 						bool alreadyOpened = false;
 
-						std::filesystem::path npath = s_AppManager->m_cmd;
+						std::filesystem::path npath = s_AppManager->m_NewPath;
 
 						for (auto& [key, other] : s_AppManager->m_OpenedPaths)
 						{
@@ -203,12 +209,12 @@ namespace Manager
 		return *s_AppManager;
 	}
 
-	void AppManager::CreateApp(std::string cmd)
+	void AppManager::CreateApp(const std::filesystem::path& path)
 	{
 		addMutex.lock();
 
 		m_AddApp = true;
-		m_cmd = cmd;
+		m_NewPath = path;
 
 		addMutex.unlock();
 	}

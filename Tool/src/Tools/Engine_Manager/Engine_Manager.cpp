@@ -124,7 +124,7 @@ namespace Tools::EngineManager
 
 				for (int i = 0; i < m_AvailableEngines.size(); i++)
 				{
-					auto& path = s_PathToEngines / m_AvailableEngines[i];
+					const auto& path = s_PathToEngines / m_AvailableEngines[i];
 					std::string filenameString = path.filename().string();
 
 					if (!filter.PassFilter(filenameString.c_str()))
@@ -465,7 +465,7 @@ namespace Tools::EngineManager
 								m_DownloadableEngines[s_DownloadAvailIntex].thread = new std::thread(
 									[&]()
 									{
-										std::string filename = Web::DownLoadFileFromGoogleDrive(m_DownloadableEngines[s_DownloadAvailIntex].id, m_DownloadableEngines[s_DownloadAvailIntex].at, m_DownloadableEngines[s_DownloadAvailIntex].status);
+										std::string filename = Web::DownLoadFileFromDropBox(m_DownloadableEngines[s_DownloadAvailIntex].url,m_DownloadableEngines[s_DownloadAvailIntex].status);
 
 										if (m_DownloadableEngines[s_DownloadAvailIntex].status == Web::Finished)
 										{
@@ -650,22 +650,24 @@ namespace Tools::EngineManager
 
 				m_DownloadableEngines.clear();
 
-				//12Nz2689_GmI1YVfUtOFe0FD9c7-Bu8FO
-				std::string file_id = "12Nz2689_GmI1YVfUtOFe0FD9c7-Bu8FO";
-				std::string download_url = "/uc?export=download&id=" + file_id;
-				// Destination path to save the file
-				std::string file_path = "AvailForDownload";
+				std::string file_id = "1P-SrPs7pG-H00sspTkTDsaN41Gs2mbY-";
+				std::string file_at = "AN8xHoo1TeyyQ2xkkEYR5_qCvJvu:1749797388983";
+				
+				std::string file_path = "AvailToDownload_2.txt";
 
-				// Call function to download the file
 				static Web::DownLoadStatus status;
-				Web::DownLoadFile("drive.google.com", download_url, file_path, status);
+				Web::DownLoadFileFromGoogleDrive(file_id, file_at, status);
 
 				std::ifstream inDownFile(file_path);
 				while (inDownFile.good())
 				{
-					std::string name, id, at;
-					inDownFile >> name >> id >> at;
-					m_DownloadableEngines.emplace_back(DownloadableEngine{ name, id, at, Web::Nothing, nullptr });
+					//std::string name, id, at;
+					//inDownFile >> name >> id >> at;
+					
+					std::string name, url;
+					inDownFile >> name >> url;
+
+					m_DownloadableEngines.emplace_back(DownloadableEngine{ name, url, Web::Nothing, nullptr });
 				}
 				inDownFile.close();
 
@@ -933,7 +935,7 @@ namespace Tools::EngineManager
 			}
 		}
 
-		g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().u8string();
+		g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().string();
 
 #if defined(WL_DIST)
 		std::filesystem::current_path(g_AppDirectory);

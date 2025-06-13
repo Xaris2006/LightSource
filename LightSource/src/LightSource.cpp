@@ -44,7 +44,7 @@ public:
 		AppManagerChild::Init();
 		Chess::PgnManager::Init();
 		ChessAPI::Init();
-
+		
 		m_ChessBoard.OnAttach();
 
 		if (s_arg.size() > 1)
@@ -54,11 +54,6 @@ public:
 				ChessAPI::OpenChessFile(s_arg[1]);
 				AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 			}
-			//else if (chess::IsFileValidFormat(commandLineArgs[1], ".cob"))
-			//{
-			//	//m_ChessPanel.IsOpeningBookPanelOpen() = true;
-			//	m_chess.openBook.OpenCOBfile(commandLineArgs[1]);
-			//}
 		}
 
 		std::ifstream lsIni("lightsource.ini");
@@ -71,6 +66,7 @@ public:
 		lsIni >> name >> ShowPossibleMoves();
 		lsIni >> name >> ShowTags();
 		lsIni >> name >> ShowArrows();
+		lsIni >> name >> AskNewVariation();
 		lsIni.close();
 
 		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
@@ -159,6 +155,7 @@ public:
 
 		//ImGui::ShowDemoWindow();
 		//ImGui::ShowMetricsWindow();
+		//ImGui::ShowAboutWindow();
 	}
 
 	void UI_DrawAboutModal()
@@ -177,15 +174,21 @@ public:
 			Walnut::UI::ShiftCursorX(20.0f);
 
 			ImGui::BeginGroup();
-			ImGui::Text("LightSource is a Chess GUI");
+			ImGui::Text("Chess Lab is a Chess GUI");
 			ImGui::Text("by C.Betsakos");
 			ImGui::EndGroup();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 
 			if (Walnut::UI::ButtonCentered("Close"))
 			{
 				m_AboutModalOpen = false;
 				ImGui::CloseCurrentPopup();
 			}
+
+			ImGui::PopStyleColor(3);
 
 			ImGui::EndPopup();
 		}
@@ -204,20 +207,22 @@ public:
 		
 		if (g_AlreadyOpenedModalOpen)
 		{
-			ImGui::TextWrapped("The file that you are trying to open is already opened in a different LightSource Window!");
+			ImGui::TextWrapped("The file that you are trying to open is already opened in a different Chess Lab Window!");
 
 			ImGui::NewLine();
 
 			ImGui::PushID("in2");
 
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ImGui::CalcTextSize("Close").x - 18);
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7, 0.1, 0.1, 0.65));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 0.25f));
 			if (ImGui::Button("Close"))
 			{
 				g_AlreadyOpenedModalOpen = false;
 				ImGui::CloseCurrentPopup();
 			}
-			ImGui::PopStyleColor();
+			ImGui::PopStyleColor(3);
 
 			ImGui::PopID();
 
@@ -296,6 +301,11 @@ public:
 		return m_ChessBoard.ShowArrows;
 	}
 
+	bool& AskNewVariation()
+	{
+		return m_ChessBoard.AskNewVariation;
+	}
+
 	void ShowAboutModal()
 	{
 		m_AboutModalOpen = true;
@@ -365,11 +375,11 @@ private:
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
-	g_spec.Name = "Light Source";
+	g_spec.Name = "Chess Lab Board";
 	g_spec.CustomTitlebar = true;
 	g_spec.AppIconPath = "Resources\\LightSource\\boardSmall.png";
-	g_spec.IconPath = "Resources\\LightSource\\ls.png";
-	g_spec.HoveredIconPath = "Resources\\LightSource\\lsOn.png";
+	g_spec.IconPath = "Resources\\LightSource\\cl.png";
+	g_spec.HoveredIconPath = "Resources\\LightSource\\clOnA.png";
 	g_spec.FuncIconPressed = []()
 		{
 			AppManagerChild::OpenChessFileInOtherApp();
@@ -388,7 +398,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		}
 	}
 
-	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().u8string();
+	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().string();
 
 #if defined(WL_DIST)
 	std::filesystem::current_path(g_AppDirectory);
@@ -452,7 +462,8 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 				lsIni << "Opening_Book"	   << ' ' << chessLayer->OpeningBookPanelViewStatus()	 << '\n';
 				lsIni << "Possible_Moves"  << ' ' << chessLayer->ShowPossibleMoves()			 << '\n';
 				lsIni << "Tags"			   << ' ' << chessLayer->ShowTags()						 << '\n';
-				lsIni << "Arrows"		   << ' ' << chessLayer->ShowArrows();
+				lsIni << "Arrows"		   << ' ' << chessLayer->ShowArrows()					 << '\n';
+				lsIni << "Ask_Variation"   << ' ' << chessLayer->AskNewVariation();
 				lsIni.close();
 			}
 
@@ -483,6 +494,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			if (ImGui::MenuItem("Show Possible Moves", 0, &chessLayer->ShowPossibleMoves())) {}
 			if (ImGui::MenuItem("Show Tags", 0, &chessLayer->ShowTags())) {}
 			if (ImGui::MenuItem("Show Arrows", 0, &chessLayer->ShowArrows())) {}
+			if (ImGui::MenuItem("Ask for New Variation", 0, &chessLayer->AskNewVariation())) {}
 			
 			ImGui::EndMenu();
 		}

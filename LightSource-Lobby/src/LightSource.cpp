@@ -323,17 +323,14 @@ public:
 
 			ImGui::BeginGroup();
 
-			ImGui::Text("LightSource is a Chess GUI");
+			ImGui::Text("Chess Lab is a Chess GUI");
 			ImGui::Text("by C.Betsakos");
 			
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
-
-			ImGui::Text("Version: %s", m_Update->GetVersion().c_str());
-
-			ImGui::PopStyleColor();
-			
-			
 			ImGui::EndGroup();
+						
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 225.0f / 255.0f, 135.0f / 255.0f, 255.0f / 255.0f));
+			ImGui::Text("v%s", m_Update->GetVersion().c_str());
+			ImGui::PopStyleColor();
 
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.65f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.45f));
@@ -364,7 +361,7 @@ public:
 
 		if (g_AlreadyOpenedModalOpen)
 		{
-			ImGui::TextWrapped("The file that you are trying to open is already opened in a different LightSource Window!");
+			ImGui::TextWrapped("The file that you are trying to open is already opened in a different Chess Lab Window!");
 
 			ImGui::NewLine();
 
@@ -431,11 +428,11 @@ private:
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
-	g_spec.Name = "Light Source";
+	g_spec.Name = "Chess Lab";
 	g_spec.CustomTitlebar = true;
-	g_spec.AppIconPath = "LightSourceApp\\Resources\\LightSource\\lsb.png";
-	g_spec.IconPath = "LightSourceApp\\Resources\\LightSource\\ls.png";
-	g_spec.HoveredIconPath = "LightSourceApp\\Resources\\LightSource\\lsOn.png";
+	g_spec.AppIconPath = "LightSourceApp\\Resources\\LightSource\\clb.png";
+	g_spec.IconPath = "LightSourceApp\\Resources\\LightSource\\cl.png";
+	g_spec.HoveredIconPath = "LightSourceApp\\Resources\\LightSource\\clOnA.png";
 	g_spec.FuncIconPressed = []()
 		{
 			Manager::AppManager::Get().CreateApp("");
@@ -454,7 +451,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		}
 	}
 
-	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().u8string();
+	g_AppDirectory = std::filesystem::path(s_arg[0]).parent_path().string();
 
 #if defined(WL_DIST)
 	std::filesystem::current_path(g_AppDirectory);

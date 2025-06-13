@@ -23,8 +23,10 @@ namespace Tools::EngineManager
 		struct DownloadableEngine
 		{
 			std::string name;
-			std::string id;
-			std::string at;
+			//std::string id;
+			//std::string at;
+
+			std::string url;
 
 			Web::DownLoadStatus status = Web::Nothing;
 			std::thread* thread = nullptr;

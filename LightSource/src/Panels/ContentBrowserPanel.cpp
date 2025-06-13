@@ -55,7 +55,7 @@ namespace Panels {
 			}
 			if (ImGui::Selectable("Open Explorer"))
 			{
-				std::string cmd = "explorer " + m_CurrentDirectory.u8string();
+				std::string cmd = "explorer " + m_CurrentDirectory.string();
 				std::system(cmd.c_str());
 				ImGui::CloseCurrentPopup();
 			}
@@ -92,7 +92,7 @@ namespace Panels {
 				std::filesystem::path nPath = std::filesystem::path() / s_oldpath / s_inputNName;
 				if (!nPath.extension().empty())
 				{
-					std::ofstream filepath(nPath.u8string());
+					std::ofstream filepath(nPath.string());
 					filepath.close();
 				}
 				else
@@ -141,16 +141,18 @@ namespace Panels {
 		for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
 			const auto& path = directoryEntry.path();
-			std::string filenameString = path.filename().u8string();
+			std::u8string filenameU8String = path.filename().u8string();
+			std::string filenameString = std::string(filenameU8String.begin(), filenameU8String.end());
+
 
 			ImGui::PushID(filenameString.c_str());
 			
 			auto icon = m_FileIcon;
 			if (directoryEntry.is_directory())
 				icon = m_DirectoryIcon;
-			else if (directoryEntry.path().extension().u8string() == ".pgn")
+			else if (directoryEntry.path().extension().u8string() == u8".pgn")
 				icon = m_FileIconPGN;
-			else if (directoryEntry.path().extension().u8string() == ".cob")
+			else if (directoryEntry.path().extension().u8string() == u8".cob")
 				icon = m_FileIconCOB;
 
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -159,7 +161,7 @@ namespace Panels {
 
 			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
-				if (path.extension().u8string() == ".pgn")
+				if (path.extension().u8string() == u8".pgn")
 				{
 					bool anwser = AppManagerChild::IsChessFileAvail(path);
 
@@ -183,13 +185,13 @@ namespace Panels {
 			{
 				if (ImGui::Selectable("Open"))
 				{
-					if (path.extension().u8string() == ".pgn")
+					if (path.extension().u8string() == u8".pgn")
 					{
 						bool anwser = AppManagerChild::IsChessFileAvail(path);
 
 						if (anwser)
 						{
-							ChessAPI::OpenChessFile(path.u8string());
+							ChessAPI::OpenChessFile(path.string());
 							AppManagerChild::OwnChessFile(ChessAPI::GetPgnFilePath());
 						}
 						else
@@ -202,7 +204,7 @@ namespace Panels {
 				}
 				if (ImGui::Selectable("Open in new Window"))
 				{
-					if (path.extension().u8string() == ".pgn")
+					if (path.extension().u8string() == u8".pgn")
 					{
 						bool anwser = AppManagerChild::IsChessFileAvail(path);
 
@@ -233,13 +235,13 @@ namespace Panels {
 				if (ImGui::Selectable("Rename"))
 				{
 					s_openPopup = true;
-					s_inputNName = path.filename().u8string();
+					s_inputNName = path.filename().string();
 					s_oldpath = path;
 					ImGui::CloseCurrentPopup();
 				}
 				if (ImGui::Selectable("Open Explorer"))
 				{
-					std::string cmd = "explorer " + m_CurrentDirectory.u8string();
+					std::string cmd = "explorer " + m_CurrentDirectory.string();
 					std::system(cmd.c_str());
 					ImGui::CloseCurrentPopup();
 				}
@@ -266,7 +268,7 @@ namespace Panels {
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.1f, 0.25f));
 				if (ImGui::Button("Rename"))
 				{
-					std::string fileNpath = s_oldpath.u8string().substr(0, s_oldpath.string().size() - s_oldpath.filename().u8string().size() - 1) + '\\' + s_inputNName;
+					std::string fileNpath = s_oldpath.string().substr(0, s_oldpath.string().size() - s_oldpath.filename().string().size() - 1) + '\\' + s_inputNName;
 					
 					std::error_code ec;
 					std::filesystem::rename(s_oldpath, fileNpath);

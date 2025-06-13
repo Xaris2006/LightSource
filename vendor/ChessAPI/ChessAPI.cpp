@@ -95,11 +95,11 @@ namespace ChessAPI
 	{
 		moves = s_Games[s_ActiveGame].GetMovesByStr();
 	}
-	std::string& GetNote(const std::vector<int>& pathmove)
+	std::string& GetNote(const Chess::GameManager::MoveKey& pathmove)
 	{
 		return s_Games[s_ActiveGame].GetNote(pathmove);
 	}
-	std::vector<int>& GetMoveIntFormat()
+	Chess::GameManager::MoveKey& GetMoveIntFormat()
 	{
 		return s_MovePathIntFormat[s_ActiveGame];
 	}
@@ -354,7 +354,7 @@ namespace ChessAPI
 		s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
 		s_movePromotion.index = -1;
 	}
-	void GoMoveByIntFormat(std::vector<int>& pathmoves)
+	void GoMoveByIntFormat(Chess::GameManager::MoveKey& pathmoves)
 	{
 		s_movePromotion.index = -1;
 
@@ -429,18 +429,18 @@ namespace ChessAPI
 		return output;
 	}
 
-	void DeleteMove(std::vector<int>& movepath)
+	void DeleteMove(Chess::GameManager::MoveKey& movepath)
 	{
 		s_Games[s_ActiveGame].DeleteMove(movepath);
 		s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
 	}
-	void DeleteVariation(std::vector<int>& movepath)
+	void DeleteVariation(Chess::GameManager::MoveKey& movepath)
 	{
 		movepath[movepath.size() - 1] = 0;
 		s_Games[s_ActiveGame].DeleteMove(movepath);
 		s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
 	}
-	void  PromoteVariation(std::vector<int>& movepath)
+	void  PromoteVariation(Chess::GameManager::MoveKey& movepath)
 	{
 		s_Games[s_ActiveGame].EditVariation(movepath, Chess::GameManager::SWAP);
 		s_MovePathIntFormat[s_ActiveGame] = s_Games[s_ActiveGame].GetLastMoveKey();
