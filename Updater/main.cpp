@@ -161,11 +161,11 @@ int main(int argc, char* argv[])
 
 #ifdef WL_DIST
 
-    std::string iconPathStr = "..\\LightSourceApp\\Resources\\LightSource\\lsb.png";
+    std::string iconPathStr = "..\\ChessLabApp\\Resources\\ChessLab\\lsb.png";
 
 #else
 
-    std::string iconPathStr = "..\\..\\LightSource-Lobby\\LightSourceApp\\Resources\\LightSource\\lsb.png";
+    std::string iconPathStr = "..\\..\\ChessLab-Lobby\\ChessLabApp\\Resources\\ChessLab\\lsb.png";
 
 #endif
 
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
             std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
             std::error_code ec;
-            std::filesystem::copy(std::filesystem::current_path() / "LightSource", std::filesystem::canonical(std::filesystem::current_path() / "..\\..\\LightSource"), std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive);
+            std::filesystem::copy(std::filesystem::current_path() / "ChessLab", std::filesystem::canonical(std::filesystem::current_path() / "..\\..\\LightSource"), std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive);
             
 			std::ofstream outfile("logfile.txt");
 			outfile << ec.message();
@@ -311,7 +311,7 @@ int main(int argc, char* argv[])
 
     glfwTerminate();
 
-    Process RunAgain(L"..\\LightSource.exe", L"");
+    Process RunAgain(L"..\\ChessLab.exe", L"");
 
     return 0;
 }

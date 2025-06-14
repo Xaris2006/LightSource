@@ -7,7 +7,7 @@
 
 #ifndef WL_DIST
 
-#define MYDOCUMENTS std::filesystem::current_path().parent_path() / "LightSource-Lobby\\LightSourceApp\\MyDocuments"
+#define MYDOCUMENTS std::filesystem::current_path().parent_path() / "ChessLab-Lobby\\ChessLabApp\\MyDocuments"
 
 #else
 

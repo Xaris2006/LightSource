@@ -5,8 +5,8 @@
 
 #include "GLFW/glfw3.h"
 
-#include "../../LightSource-Lobby/src/Windows/WindowsUtils.h"
-#include "../../LightSource-Lobby/src/windowsMain.h"
+#include "../../ChessLab-Lobby/src/Windows/WindowsUtils.h"
+#include "../../ChessLab-Lobby/src/windowsMain.h"
 
 #include <fstream>
 #include <iostream>
